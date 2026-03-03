@@ -32,6 +32,68 @@ export default function WorkoutPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Resilient parser: LLMs may return slightly different structures
+    const parseMegaPayload = (raw: string): MegaPayload => {
+        // Strip markdown code fences if LLM wrapped the JSON
+        let cleaned = raw.trim();
+        if (cleaned.startsWith('```')) {
+            cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+        }
+
+        const parsed = JSON.parse(cleaned);
+
+        // Case 1: Already has top-level "components" array → perfect
+        if (Array.isArray(parsed.components)) {
+            return parsed as MegaPayload;
+        }
+
+        // Case 2: LLM returned an array directly
+        if (Array.isArray(parsed)) {
+            return { screen_id: 'workout', components: parsed };
+        }
+
+        // Case 3: Components nested inside "workout", "data", or similar wrapper
+        for (const key of Object.keys(parsed)) {
+            const val = parsed[key];
+            if (Array.isArray(val) && val.length > 0 && val[0]?.type) {
+                return { screen_id: parsed.screen_id || 'workout', components: val };
+            }
+            // One level deeper: { workout: { components: [...] } }
+            if (val && typeof val === 'object' && !Array.isArray(val)) {
+                if (Array.isArray(val.components)) {
+                    return { screen_id: val.screen_id || parsed.screen_id || 'workout', components: val.components };
+                }
+                // Check for exercises array inside sub-object
+                for (const subKey of Object.keys(val)) {
+                    const subVal = val[subKey];
+                    if (Array.isArray(subVal) && subVal.length > 0) {
+                        // Convert raw exercise objects to set_tracker components
+                        const components: SduiComponent[] = subVal.map((item: Record<string, unknown>) => ({
+                            type: 'set_tracker',
+                            payload: {
+                                exercise_id: (item.exercise_id || item.id || '') as string,
+                                exercise_name: (item.exercise_name || item.name || 'Exercise') as string,
+                                target_muscle: (item.target_muscle || item.muscle || '') as string,
+                                sets: (item.sets || 3) as number,
+                                reps: (item.reps || 10) as number,
+                                weight_kg: (item.weight_kg || item.weight || 0) as number,
+                                rest_seconds: (item.rest_seconds || item.rest || 90) as number,
+                            }
+                        }));
+                        return { screen_id: 'workout', components };
+                    }
+                }
+            }
+        }
+
+        // Case 4: Flat object with exercise fields → wrap as single component
+        if (parsed.exercise_name || parsed.exercise_id) {
+            return { screen_id: 'workout', components: [{ type: 'set_tracker', payload: parsed }] };
+        }
+
+        return { screen_id: 'workout', components: [] };
+    };
+
     const handleStart = async () => {
         setError('');
         setLoading(true);
@@ -46,11 +108,12 @@ export default function WorkoutPage() {
 
         if (result.data) {
             try {
-                const parsed = JSON.parse(result.data.megaPayloadJson);
-                setPayload(parsed);
-            } catch {
+                const mega = parseMegaPayload(result.data.megaPayloadJson);
+                setPayload(mega);
+            } catch (e) {
                 setPayload({ components: [] });
                 setError('Failed to parse workout response.');
+                console.error('Parse error:', e, 'Raw:', result.data.megaPayloadJson);
             }
         }
     };
@@ -166,9 +229,9 @@ export default function WorkoutPage() {
                     </div>
 
                     <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <span className="chip chip-success">✓ API Connected</span>
-                        <span className="chip chip-info">gpt-4o-mini</span>
-                        <span className="chip chip-warning">≤$0.05/session</span>
+                        <span className="chip chip-success">✓ Health Check Passed</span>
+                        <span className="chip chip-info">BYO AI Key Active</span>
+                        <span className="chip chip-warning">Model Fallback Enabled</span>
                     </div>
 
                     <button

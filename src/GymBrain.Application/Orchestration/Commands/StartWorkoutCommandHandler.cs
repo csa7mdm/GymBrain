@@ -1,3 +1,4 @@
+using GymBrain.Application.Common;
 using GymBrain.Application.Common.Interfaces;
 using GymBrain.Domain.Interfaces;
 using MediatR;
@@ -50,11 +51,50 @@ public sealed class StartWorkoutCommandHandler(
             ? "Generate a full-body workout for today."
             : $"Generate a workout focused on: {request.WorkoutFocus}";
 
-        // Resolve provider and call LLM
+        // Resolve provider and call LLM with fallback support for free models
         var provider = llmProviderFactory.GetProvider(user.LlmProvider ?? "openai");
-        var model = user.PreferredModel ?? "gpt-4o-mini";
+        var preferredModel = user.PreferredModel ?? "gpt-4o-mini";
+        
+        // Define fallback sequence if the primary is a free model
+        var modelsToTry = new List<string> { preferredModel };
+        if (user.LlmProvider == "openrouter" || user.LlmProvider == "groq")
+        {
+            // Real-time Discovery: fetch what's actually available for this key
+            var availableOnline = await provider.GetAvailableModelsAsync(apiKey, ct);
+            var availableOnlineList = availableOnline.ToList();
 
-        var rawJson = await provider.ChatCompletionAsync(apiKey, model, systemPrompt, userMessage, ct);
+            var otherFreeModels = LlmModelCatalog.GetByProvider(user.LlmProvider)
+                .Where(m => m.IsFree && m.ModelId != preferredModel)
+                .Select(m => m.ModelId)
+                .Where(id => availableOnlineList.Count == 0 || availableOnlineList.Contains(id)); // intersection
+
+            modelsToTry.AddRange(otherFreeModels);
+        }
+
+        string rawJson = string.Empty;
+        Exception? lastException = null;
+
+        foreach (var modelToTry in modelsToTry)
+        {
+            try
+            {
+                rawJson = await provider.ChatCompletionAsync(apiKey, modelToTry, systemPrompt, userMessage, forceJson: true, ct: ct);
+                break; // Success!
+            }
+            catch (Exception ex) when (ex.Message.Contains("429") || ex.Message.Contains("TooManyRequests") || ex.Message.Contains("404"))
+            {
+                lastException = ex;
+                // Continue to next model in fallback list
+                continue;
+            }
+        }
+
+        if (string.IsNullOrEmpty(rawJson))
+        {
+            throw new InvalidOperationException(
+                $"Failed to generate workout after trying {modelsToTry.Count} model(s). Last error: {lastException?.Message}", 
+                lastException);
+        }
 
         // Safety Gate: sanitize hallucinated IDs and clamp weights
         var safeJson = SafetyGate.Validate(rawJson, exercises, request.ExperienceLevel);

@@ -6,8 +6,8 @@ namespace GymBrain.Domain.Common;
 /// </summary>
 public abstract class BaseEntity
 {
-    public Guid Id { get; protected set; } = Guid.NewGuid();
-    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public Guid Id { get; protected set; }
+    public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
 
     private readonly List<IDomainEvent> _domainEvents = [];

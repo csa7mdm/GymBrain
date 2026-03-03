@@ -28,6 +28,33 @@ public static class SystemPromptFactory
     {
         var tokenMap = BuildTokenMap(exercises);
 
+        var jsonExample = """
+            {
+              "screen_id": "workout_today",
+              "components": [
+                {
+                  "type": "tone_card",
+                  "payload": {
+                    "message": "Your motivational message here",
+                    "persona": "Coach"
+                  }
+                },
+                {
+                  "type": "set_tracker",
+                  "payload": {
+                    "exercise_id": "<ID from the list above>",
+                    "exercise_name": "<Name from the list above>",
+                    "target_muscle": "<primary muscle group>",
+                    "sets": 3,
+                    "reps": 10,
+                    "weight_kg": 20,
+                    "rest_seconds": 90
+                  }
+                }
+              ]
+            }
+            """;
+
         return $"""
             You are a gym workout designer. Your persona is: {tonePersona}.
             
@@ -36,12 +63,16 @@ public static class SystemPromptFactory
             
             RULES:
             1. ONLY use exercise IDs from the list above. Never invent IDs.
-            2. Output ONLY valid JSON matching the SDUI mega-payload schema.
-            3. Each exercise block must use "set_tracker" component type.
-            4. Include "tone_card" components with motivational messages matching your persona.
-            5. Suggest weight in kg. For beginners, never exceed 40kg per exercise.
-            6. Include rest_seconds between 60-180 for each set_tracker.
-            7. Keep total exercises between 4-6 per workout.
+            2. Output ONLY valid JSON — no markdown, no backticks, no explanation.
+            3. Suggest weight in kg. For beginners never exceed 40kg.
+            4. Keep total exercises between 4-6 per workout.
+            5. rest_seconds must be between 60-180.
+
+            YOU MUST return EXACTLY this JSON structure (no extra keys, no renaming):
+            {jsonExample}
+
+            Return 1 tone_card at the start, then 4-6 set_tracker components.
+            Use persona "{tonePersona}" in the tone_card payload.
             """;
     }
 }

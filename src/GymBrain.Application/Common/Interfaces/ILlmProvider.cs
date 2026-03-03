@@ -16,5 +16,7 @@ public interface ILlmProvider
     /// <param name="userMessage">User-facing request (e.g. "Generate a push workout").</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Raw JSON mega-payload string from the LLM.</returns>
-    Task<string> ChatCompletionAsync(string apiKey, string model, string systemPrompt, string userMessage, CancellationToken ct = default);
+    Task<string> ChatCompletionAsync(string apiKey, string model, string systemPrompt, string userMessage, bool forceJson = true, int maxTokens = 2048, CancellationToken ct = default);
+    Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default);
+    Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default);
 }

@@ -21,31 +21,49 @@ public sealed class OpenRouterProvider(HttpClient httpClient) : ILlmProvider
         string model,
         string systemPrompt,
         string userMessage,
+        bool forceJson = true,
+        int maxTokens = 2048,
         CancellationToken ct = default)
     {
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        
-        // OpenRouter headers
-        httpClient.DefaultRequestHeaders.Add("HTTP-Referer", "https://gymbrain.ai"); 
-        httpClient.DefaultRequestHeaders.Add("X-Title", "GymBrain");
+        var messages = new List<object>();
 
-        var payload = new
+        // Gemma compatibility: many free endpoints don't support 'system' role
+        if (model.Contains("gemma", StringComparison.OrdinalIgnoreCase))
         {
-            model = model,
-            response_format = new { type = "json_object" },
-            messages = new[]
-            {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = userMessage }
-            },
-            max_tokens = 2048,
-            temperature = 0.7
+            messages.Add(new { role = "user", content = $"[SYSTEM INSTRUCTION]\n{systemPrompt}\n\n[USER REQUEST]\n{userMessage}" });
+        }
+        else
+        {
+            messages.Add(new { role = "system", content = systemPrompt });
+            messages.Add(new { role = "user", content = userMessage });
+        }
+
+        var payload = new Dictionary<string, object>
+        {
+            ["model"] = model,
+            ["messages"] = messages,
+            ["max_tokens"] = maxTokens,
+            ["temperature"] = 0.7
         };
 
-        var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        if (forceJson)
+        {
+            payload["response_format"] = new { type = "json_object" };
+        }
 
-        var response = await httpClient.PostAsync(Endpoint, content, ct);
+        var json = JsonSerializer.Serialize(payload);
+        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        
+        // OpenRouter specific headers
+        request.Headers.Add("HTTP-Referer", "https://gymbrain.ai");
+        request.Headers.Add("X-Title", "GymBrain");
+
+        var response = await httpClient.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -61,5 +79,40 @@ public sealed class OpenRouterProvider(HttpClient httpClient) : ILlmProvider
             .GetProperty("message")
             .GetProperty("content")
             .GetString() ?? throw new InvalidOperationException("OpenRouter returned empty content.");
+    }
+
+    public async Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://openrouter.ai/api/v1/models");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+        var response = await httpClient.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode) return Enumerable.Empty<string>();
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(json);
+        
+        return doc.RootElement.GetProperty("data")
+            .EnumerateArray()
+            .Select(m => m.GetProperty("id").GetString()!)
+            .Where(id => id.EndsWith(":free"))
+            .ToList(); // Materialize before JsonDocument is disposed
+    }
+
+    public async Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default)
+    {
+        try
+        {
+            // Minimal request to verify key and model. 
+            // We set forceJson=false because some free models on OpenRouter 
+            // fail with 400 if response_format is requested but not supported.
+            // Also set maxTokens very low for speed.
+            await ChatCompletionAsync(apiKey, model, "hi", "hi", forceJson: false, maxTokens: 1, ct: ct);
+            return true;
+        }
+        catch (Exception ex) when (ex.Message.Contains("401") || ex.Message.Contains("403") || ex.Message.Contains("429") || ex.Message.Contains("404"))
+        {
+            return false;
+        }
     }
 }

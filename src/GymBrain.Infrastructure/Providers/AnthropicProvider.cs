@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using GymBrain.Application.Common;
 using GymBrain.Application.Common.Interfaces;
 
 namespace GymBrain.Infrastructure.Providers;
@@ -22,12 +23,10 @@ public sealed class AnthropicProvider(HttpClient httpClient) : ILlmProvider
         string model,
         string systemPrompt,
         string userMessage,
+        bool forceJson = true,
+        int maxTokens = 2048,
         CancellationToken ct = default)
     {
-        httpClient.DefaultRequestHeaders.Clear();
-        httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-        httpClient.DefaultRequestHeaders.Add("anthropic-version", Version);
-
         var payload = new
         {
             model = model,
@@ -36,14 +35,20 @@ public sealed class AnthropicProvider(HttpClient httpClient) : ILlmProvider
             {
                 new { role = "user", content = userMessage }
             },
-            max_tokens = 2048,
+            max_tokens = maxTokens,
             temperature = 0.7
         };
 
         var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
 
-        var response = await httpClient.PostAsync(Endpoint, content, ct);
+        request.Headers.Add("x-api-key", apiKey);
+        request.Headers.Add("anthropic-version", Version);
+
+        var response = await httpClient.SendAsync(request, ct);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -58,5 +63,21 @@ public sealed class AnthropicProvider(HttpClient httpClient) : ILlmProvider
             .GetProperty("content")[0]
             .GetProperty("text")
             .GetString() ?? throw new InvalidOperationException("Anthropic returned empty content.");
+    }
+
+    public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)
+    {
+        // Anthropic models are stable and don't change often
+        return Task.FromResult(LlmModelCatalog.GetByProvider("anthropic").Select(m => m.ModelId));
+    }
+
+    public async Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default)
+    {
+        try
+        {
+            await ChatCompletionAsync(apiKey, model, "hi", "hi", forceJson: false, maxTokens: 1, ct: ct);
+            return true;
+        }
+        catch { return false; }
     }
 }

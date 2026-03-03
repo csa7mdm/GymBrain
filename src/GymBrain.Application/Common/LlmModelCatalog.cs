@@ -28,17 +28,17 @@ public static class LlmModelCatalog
         new("groq", "mixtral-8x7b-32768", "Mixtral 8x7B", 
             "Strong reasoning · 32k context", IsFree: true, SuitabilityRank: 4),
 
-        // ── OpenRouter (FREE models — :free suffix) ─
+        // ── OpenRouter (FREE models — 2026 Updated) ─
         new("openrouter", "meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B (Free)", 
-            "Best free on OpenRouter · Structured output", IsFree: true, SuitabilityRank: 3),
-        new("openrouter", "google/gemma-2-9b-it:free", "Gemma 2 9B (Free)", 
-            "Google · Fast · Good for JSON tasks", IsFree: true, SuitabilityRank: 7),
-        new("openrouter", "mistralai/mistral-7b-instruct:free", "Mistral 7B (Free)", 
-            "Reliable instruction follower", IsFree: true, SuitabilityRank: 8),
-        new("openrouter", "qwen/qwen-2.5-7b-instruct:free", "Qwen 2.5 7B (Free)", 
-            "Strong multilingual · Good JSON output", IsFree: true, SuitabilityRank: 9),
-        new("openrouter", "deepseek/deepseek-r1:free", "DeepSeek R1 (Free)", 
-            "Chain-of-thought reasoning · Slower", IsFree: true, SuitabilityRank: 10),
+            "Best free logic · Highly rate limited", IsFree: true, SuitabilityRank: 3),
+        new("openrouter", "google/gemma-3-27b-it:free", "Gemma 3 27B (Free)", 
+            "Latest Google Model · Excellent JSON", IsFree: true, SuitabilityRank: 4),
+        new("openrouter", "deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 (Free)", 
+            "Fast · Strong instruction following", IsFree: true, SuitabilityRank: 5),
+        new("openrouter", "qwen/qwen3-next-80b-a3b-instruct:free", "Qwen 3 Next (Free)", 
+            "Powerful multilingual logic", IsFree: true, SuitabilityRank: 6),
+        new("openrouter", "mistralai/mistral-small-3.1-24b-instruct:free", "Mistral Small (Free)", 
+            "Reliable and fast", IsFree: true, SuitabilityRank: 8),
 
         // ── Anthropic ───────────────────────────
         new("anthropic", "claude-sonnet-4-20250514", "Claude Sonnet 4", 
