@@ -71,6 +71,10 @@ graph TB
         ORCH["Orchestrator<br/>SystemPromptFactory<br/>SafetyGate"]
     end
 
+    subgraph "Infrastructure Layer"
+        JWT["JWT Service"]
+        BCRYPT["BCrypt Hasher"]
+        AES["VaultService<br/>AES-256-CBC"]
         EF["EF Core<br/>DbContext"]
         REDIS["Redis Cache"]
         FACT["LLM Factory"]
