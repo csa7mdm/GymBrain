@@ -4,7 +4,7 @@
   It provides a machine-readable, continuously updated snapshot of 
   the project's current state, architecture, and progress.
   
-  LAST UPDATED: 2026-03-03T06:15:00+02:00
+  LAST UPDATED: 2026-03-03T19:35:00+02:00
   UPDATED BY: Antigravity AI Agent
 -->
 
@@ -89,6 +89,11 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 - **Rationale:** Faster iteration cycle, validates backend API contract before mobile investment
 - **Impact:** Flutter deferred to next phase
 
+### ADR-006: Pre-flight Health Check & Model Fallback
+- **Decision:** Validate API key + model via minimal LLM call (maxTokens=1) before vaulting
+- **Rationale:** Prevents broken keys from being stored; auto-falls back to other free models if preferred is unavailable
+- **Impact:** Zero broken keys in production; seamless user experience with auto-switching
+
 ---
 
 ## API Contract
@@ -105,7 +110,12 @@ Response: { "userId": "guid", "token": "jwt-string" }
 
 POST /api/auth/vault-key [Authorized]
 Body: { "provider": "openai|groq|openrouter|anthropic", "apiKey": "string", "model": "string?" }
-Response: { "message": "API key securely vaulted for groq (llama-3.3-70b-versatile)." }
+Response: { "message": "API key verified and vaulted for groq (llama-3.3-70b-versatile)." }
+
+NOTE: The vault-key endpoint now performs a health check before vaulting.
+It sends a minimal request (maxTokens=1, forceJson=false) to verify the key and model.
+If the preferred model fails, it auto-falls back to other free models.
+The response message indicates which model was ultimately used.
 
 GET /api/auth/models
 Response: Array of LlmModelInfo { provider, modelId, displayName, description, isFree, suitabilityRank }

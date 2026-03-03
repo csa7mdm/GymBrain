@@ -366,13 +366,15 @@ The React demo app is a web-based client that demonstrates the full GymBrain wor
 
 | Strategy | Impact |
 |----------|--------|
-| **gpt-4o-mini** | Cheapest capable model ($0.15/1M input, $0.60/1M output) |
+| **Multi-Provider (Groq/OpenRouter free)** | $0.00 per session with free-tier models |
+| **Health Check (maxTokens=1)** | Near-zero cost API key validation before vaulting |
 | **Token compression** | `ID\|Name` format reduces prompt tokens ~70% |
 | **2048 max_tokens** | Hard cap on response size |
 | **Redis caching (2hr)** | Eliminates redundant LLM calls on reload |
 | **SafetyGate** | No re-prompting — fixes output in C# |
+| **Auto-Fallback** | Tries all free models if preferred model is rate-limited |
 
-**Target: ≤ $0.05 per session**
+**Target: $0.00 with free models, ≤ $0.05 per session with paid models**
 
 ---
 
@@ -422,7 +424,7 @@ GymBrain/
 │   ├── 📂 GymBrain.Infrastructure/# Implementations
 │   │   ├── Security/              # VaultService, JwtTokenService, BcryptPasswordHasher
 │   │   ├── Persistence/           # DbContext, ExerciseSeeder, Configurations
-│   │   ├── Providers/             # OpenAiProvider (gpt-4o-mini)
+│   │   ├── Providers/             # OpenAI, Groq, OpenRouter, Anthropic (w/ health checks)
 │   │   └── Services/              # RedisCacheService
 │   │
 │   └── 📂 GymBrain.Api/           # Entry point
@@ -468,7 +470,7 @@ This project was built with the assistance of **[Antigravity IDE](https://antigr
 - [x] **Epic 2:** API Vault (AES-256 encryption)
 - [x] **Epic 3:** LLM Orchestrator (SystemPromptFactory + SafetyGate)
 - [x] **Epic 4:** React Demo App (Phase 1 UI Ready)
-- [x] **Epic 5:** Multi-LLM Orchestration (Groq, OpenRouter, Anthropic)
+- [x] **Epic 5:** Multi-LLM Orchestration (Groq, OpenRouter, Anthropic) + Health Check & Model Fallback
 - [ ] **Epic 6:** ExerciseDB API integration (RapidAPI + dual-layer caching)
 - [ ] **Epic 7:** Flutter Mobile App (SDUI + Hive offline)
 - [ ] **Epic 8:** Gamification (Shield/Sword/Scroll progression)
