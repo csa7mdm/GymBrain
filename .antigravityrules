@@ -1,0 +1,95 @@
+# ============================================================
+# GymBrain — Antigravity AI Agent Instructions
+# ============================================================
+# This file provides context and rules for AI coding agents
+# (Antigravity, Copilot, Cursor, etc.) working on this project.
+# ============================================================
+
+# PROJECT IDENTITY
+project_name: GymBrain
+project_type: AI-Powered Fitness Coaching Platform
+version: "1.0.0-alpha"
+language: C# (.NET 9), TypeScript (React), Dart (Flutter — future)
+
+# ARCHITECTURE
+architecture: Clean Architecture (Domain → Application → Infrastructure → API)
+api_style: Minimal APIs (NO MVC Controllers)
+cqrs_framework: MediatR
+validation: FluentValidation
+orm: Entity Framework Core 9 (PostgreSQL)
+caching: Redis via IDistributedCache
+auth: JWT Bearer (HMAC-SHA256) + BCrypt (work factor 12)
+encryption: AES-256-CBC (unique IV per operation)
+api_docs: Scalar.AspNetCore (NO Swashbuckle/Swagger)
+test_framework: xUnit + FluentAssertions
+
+# DEPENDENCY RULE (STRICT)
+# API → Application → Domain
+# Infrastructure → Application → Domain
+# Domain has ZERO external dependencies (except MediatR.Contracts)
+# Application NEVER references Infrastructure
+# Infrastructure implements Application interfaces
+
+# LLM / TOKEN CONSTRAINTS
+llm_model: gpt-4o-mini (cheapest capable model)
+max_tokens_per_request: 2048
+session_cost_ceiling: $0.05 USD
+prompt_compression: Exercises compressed to "ID|Name" format only
+cache_ttl: 2 hours (Redis — prevents redundant LLM calls on reload)
+safety_gate: C# deterministic JSON sanitizer (no re-prompting)
+
+# SAFETY RULES
+beginner_max_weight_kg: 40
+intermediate_max_weight_kg: 100
+advanced_max_weight_kg: 200
+exercise_id_validation: Must exist in seeded catalog (anti-hallucination)
+
+# SECURITY (Egypt Law 151 Compliance)
+secrets_storage: User Secrets or Environment Variables ONLY
+secrets_in_appsettings: NEVER (Jwt:Secret, Vault:EncryptionKey are absent from appsettings.json)
+password_hashing: BCrypt with work factor 12
+api_key_storage: AES-256 encrypted in database (EncryptedApiKey column)
+api_key_logging: NEVER log API keys or decrypted secrets
+pii_handling: Encrypted data must not be human-readable
+
+# DATABASE
+database: PostgreSQL 16 (via Docker)
+cache: Redis 7 (via Docker)
+seeded_exercises: 15 core exercises with deterministic GUIDs
+migrations: EF Core Code-First (auto-migrate on startup in dev)
+
+# FRONTEND (React Demo)
+react_framework: Vite + React + TypeScript
+styling: Vanilla CSS with modern design (glassmorphism, gradients, animations)
+design_theme: Dark OLED (#000000 background, #121212 surfaces)
+typography: Inter (UI text) + Roboto Mono (numbers/timers)
+api_base_url: Configurable via environment variable (never hardcoded)
+
+# FRONTEND (Flutter — FUTURE)
+flutter_ui: Server-Driven UI (SDUI) via JSON Mega-Payloads
+offline_storage: Hive NoSQL
+min_hit_test_area: 56.0 (Sweaty-Finger Rule)
+video_player: video_player package
+image_caching: CachedNetworkImage
+
+# CODING CONVENTIONS
+nullable: enabled
+implicit_usings: enabled
+warnings_as_errors: true (except CS1591)
+naming: PascalCase for public, camelCase for private, _prefix for fields
+records: Use records for DTOs and commands
+primary_constructors: Use C# 12 primary constructors for DI injection
+file_encoding: UTF-8 (NO PowerShell encoding conversions on .csproj files)
+
+# KNOWN PITFALLS (from previous implementation)
+# 1. NEVER use PowerShell to modify .csproj file encoding (caused corruption)
+# 2. NEVER hardcode secrets in appsettings.json
+# 3. ALWAYS seed exercises (empty table = orchestrator crash)
+# 4. ALWAYS use compressed token maps for LLM prompts (cost control)
+# 5. Result.cs must have proper guard clauses (was previously corrupted)
+# 6. ALWAYS run SafetyGate on LLM output before returning to client
+
+# GIT CONVENTIONS
+branch_strategy: feature branches merged to main
+commit_style: Conventional Commits (feat:, fix:, docs:, refactor:, test:)
+push_frequency: After every completed feature
