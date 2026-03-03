@@ -1,0 +1,16 @@
+# Docker
+**/bin
+**/obj
+**/.vs
+**/.git
+**/.idea
+**/node_modules
+**/build
+**/.dart_tool
+**/docs
+**/Data Room
+**/*.md
+**/*.user
+**/*.suo
+.env
+.env.*
