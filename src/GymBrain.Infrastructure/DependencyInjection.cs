@@ -23,7 +23,8 @@ public static class DependencyInjection
         services.AddDbContext<GymBrainDbContext>(options =>
             options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly(typeof(GymBrainDbContext).Assembly.FullName)));
+                b => b.MigrationsAssembly(typeof(GymBrainDbContext).Assembly.FullName))
+            .ConfigureWarnings(w => w.Log(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<GymBrainDbContext>());
 
@@ -62,7 +63,6 @@ public static class DependencyInjection
                 };
             });
 
-        services.AddAuthorization();
 
         return services;
     }
