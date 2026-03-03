@@ -12,6 +12,8 @@
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Built with](https://img.shields.io/badge/Built_with-Antigravity_IDE-FF6B35?style=for-the-badge)](https://antigravity.google)
+[![AI](https://img.shields.io/badge/AI-Claude_Opus_4.6-8B5CF6?style=for-the-badge)](https://anthropic.com)
 
 ---
 
@@ -433,7 +435,7 @@ GymBrain/
 
 ## 🤖 AI Agent Instructions
 
-This repository includes two files designed for AI/LLM agents:
+This project was built with the assistance of **[Antigravity IDE](https://antigravity.google)** powered by **Claude Opus 4.6** (Anthropic). The repository includes two files designed for AI/LLM agents:
 
 | File | Purpose |
 |------|---------|
@@ -441,6 +443,8 @@ This repository includes two files designed for AI/LLM agents:
 | [`AI_CONTEXT.md`](AI_CONTEXT.md) | Current project state, API contracts, continuation instructions |
 
 **For AI agents resuming work:** Read both files before making any changes.
+
+> ⚠️ **Push Rule:** All documentation (`README.md`, `AI_CONTEXT.md`) must be updated before pushing any feature to GitHub. No code-only pushes.
 
 ---
 
@@ -465,5 +469,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <div align="center">
   <strong>Built with 🧠 by the GymBrain Team</strong><br>
-  <em>Powered by .NET 9 • React • OpenAI • PostgreSQL • Redis</em>
+  <em>Powered by .NET 9 • React • OpenAI • PostgreSQL • Redis</em><br><br>
+  <sub>Developed with <a href="https://antigravity.google">Antigravity IDE</a> + <a href="https://anthropic.com">Claude Opus 4.6</a></sub>
 </div>

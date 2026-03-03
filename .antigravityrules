@@ -89,7 +89,20 @@ file_encoding: UTF-8 (NO PowerShell encoding conversions on .csproj files)
 # 5. Result.cs must have proper guard clauses (was previously corrupted)
 # 6. ALWAYS run SafetyGate on LLM output before returning to client
 
+# DEVELOPMENT TOOLS
+built_with: Antigravity IDE (Google) + Claude Opus 4.6 (Anthropic)
+ai_agent: Claude Opus 4.6 via Antigravity IDE
+
 # GIT CONVENTIONS
 branch_strategy: feature branches merged to main
 commit_style: Conventional Commits (feat:, fix:, docs:, refactor:, test:)
 push_frequency: After every completed feature
+
+# MANDATORY PRE-PUSH CHECKLIST
+# Before EVERY push to GitHub, the following documents MUST be updated:
+# 1. README.md — Update if new features, endpoints, or setup steps were added
+# 2. AI_CONTEXT.md — Update "Current Implementation Status" section
+# 3. AI_CONTEXT.md — Update "File Tree" section if files were added/removed
+# 4. Commit message must describe all changes (Conventional Commits format)
+# 5. All tests must pass (`dotnet test GymBrain.sln`)
+# FAILURE TO UPDATE DOCS BEFORE PUSH IS NOT ACCEPTABLE
