@@ -10,7 +10,9 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
+[![Multi-LLM](https://img.shields.io/badge/LLM-Multi--Provider-FFD700?style=for-the-badge&logo=ai&logoColor=black)](https://gymbrain.ai)
+[![Groq](https://img.shields.io/badge/Groq-Llama_3.3-f39c12?style=for-the-badge)](https://groq.com)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-Free_Models-000000?style=for-the-badge)](https://openrouter.ai)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built_with-Antigravity_IDE-FF6B35?style=for-the-badge)](https://antigravity.google)
 [![AI](https://img.shields.io/badge/AI-Claude_Opus_4.6-8B5CF6?style=for-the-badge)](https://anthropic.com)
@@ -19,7 +21,7 @@
 
 <p align="center">
   <strong>Generate intelligent, safety-gated workout plans in under 3 seconds</strong><br>
-  <em>BYO-API Key model • $0.05/session cost ceiling • Egypt Law 151 compliant</em>
+  <em>BYO-API Key model • Multi-Provider (Groq, OpenRouter, OpenAI, Anthropic) • Egypt Law 151 compliant</em>
 </p>
 
 [Getting Started](#-getting-started) •
@@ -36,11 +38,12 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🤖 **AI Workout Generation** | Leverages GPT-4o-mini to generate personalized workout plans in real-time |
-| 🔐 **BYO-API Key Vault** | Users bring their own OpenAI/Anthropic keys, encrypted with AES-256-CBC |
-| 🛡️ **Safety Gate Engine** | Deterministic C# rule engine sanitizes all LLM output — clamps weights, validates exercise IDs |
-| ⚡ **Token-Compressed Prompts** | Exercises compressed to `ID\|Name` format, keeping costs under $0.05/session |
-| 📱 **Server-Driven UI** | Backend generates JSON mega-payloads that drive the entire frontend UI |
+| 🤖 **Multi-LLM Orchestration** | Support for **Groq**, **OpenRouter**, **OpenAI**, and **Anthropic** (Claude) |
+| 🎁 **Free Model Support** | Native optimization for **Llama 3.3 70B** and **DeepSeek R1** to reduce user costs |
+| 🔐 **BYO-API Key Vault** | Users bring their own keys, encrypted with **AES-256-CBC** before storage |
+| 🛡️ **Safety Gate Engine** | Deterministic C# engine sanitizes LLM output — clamps weights, validates exercise IDs |
+| ⚡ **Token-Compressed Prompts** | Exercises compressed to `ID\|Name` format, maximizing efficiency |
+| 📱 **Server-Driven UI** | Backend generates JSON mega-payloads that drive the premium React UI |
 | 💾 **Smart Caching** | Redis caches workout plans for 2 hours — zero LLM calls on app reload |
 | 🏗️ **Clean Architecture** | Domain-driven design with strict dependency rules and CQRS via MediatR |
 | 🔒 **Zero-Trust Security** | JWT auth, BCrypt hashing, AES-256 encryption, no secrets in source code |
@@ -68,19 +71,16 @@ graph TB
         ORCH["Orchestrator<br/>SystemPromptFactory<br/>SafetyGate"]
     end
 
-    subgraph "Infrastructure Layer"
-        JWT["JWT Service"]
-        BCRYPT["BCrypt Hasher"]
-        AES["VaultService<br/>AES-256-CBC"]
         EF["EF Core<br/>DbContext"]
         REDIS["Redis Cache"]
-        LLM["OpenAI Provider<br/>gpt-4o-mini"]
+        FACT["LLM Factory"]
+        LLM["Providers<br/>Groq, OpenRouter, OpenAI"]
     end
 
     subgraph "Data Layer"
         PG[("PostgreSQL 16")]
         RD[("Redis 7")]
-        OAI["OpenAI API"]
+        APIS["External Large Language Models"]
     end
 
     REACT --> API
@@ -88,10 +88,11 @@ graph TB
     API --> AUTH & VAULT & ORCH
     AUTH --> JWT & BCRYPT & EF
     VAULT --> AES & EF
-    ORCH --> AES & LLM & REDIS & EF
+    ORCH --> AES & FACT & REDIS & EF
+    FACT --> LLM
     EF --> PG
     REDIS --> RD
-    LLM --> OAI
+    LLM --> APIS
 
     style REACT fill:#61DAFB,stroke:#333,color:#000
     style FLUTTER fill:#02569B,stroke:#333,color:#fff
@@ -145,6 +146,7 @@ sequenceDiagram
         H->>P: Build token-compressed prompt
         Note over P: Exercises → "ID|Name" format<br/>~70% token reduction
         H->>LLM: Chat completion (JSON mode)
+        Note over LLM: Groq (Llama 3.3)<br/>OpenRouter (DeepSeek)<br/>OpenAI (GPT-4o)
         LLM-->>H: Raw mega-payload JSON
         H->>SG: Validate & sanitize
         Note over SG: ✓ Clamp weights per level<br/>✓ Replace hallucinated IDs<br/>✓ Structural integrity
@@ -276,10 +278,17 @@ Authorization: Bearer <jwt-token>
 Content-Type: application/json
 
 {
-  "provider": "openai",
-  "apiKey": "sk-proj-..."
+  "provider": "openai|groq|openrouter|anthropic",
+  "apiKey": "sk-...",
+  "model": "llama-3.3-70b-versatile"
 }
 ```
+
+#### Get Available Models
+```http
+GET /api/auth/models
+```
+**Response:** Dynamic catalog of ranked AI models.
 
 ### Workout Generation
 
@@ -454,10 +463,11 @@ This project was built with the assistance of **[Antigravity IDE](https://antigr
 - [x] **Epic 1:** Identity & Authentication (JWT + BCrypt)
 - [x] **Epic 2:** API Vault (AES-256 encryption)
 - [x] **Epic 3:** LLM Orchestrator (SystemPromptFactory + SafetyGate)
-- [ ] **Epic 4:** React Demo App
-- [ ] **Epic 5:** ExerciseDB API integration (RapidAPI + dual-layer caching)
-- [ ] **Epic 6:** Flutter Mobile App (SDUI + Hive offline)
-- [ ] **Epic 7:** Gamification (Shield/Sword/Scroll progression)
+- [x] **Epic 4:** React Demo App (Phase 1 UI Ready)
+- [x] **Epic 5:** Multi-LLM Orchestration (Groq, OpenRouter, Anthropic)
+- [ ] **Epic 6:** ExerciseDB API integration (RapidAPI + dual-layer caching)
+- [ ] **Epic 7:** Flutter Mobile App (SDUI + Hive offline)
+- [ ] **Epic 8:** Gamification (Shield/Sword/Scroll progression)
 
 ---
 
