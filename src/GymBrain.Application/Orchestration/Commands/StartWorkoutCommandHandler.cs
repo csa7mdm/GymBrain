@@ -17,7 +17,7 @@ namespace GymBrain.Application.Orchestration.Commands;
 public sealed class StartWorkoutCommandHandler(
     IApplicationDbContext db,
     IVaultService vault,
-    ILlmProvider llmProvider,
+    ILlmProviderFactory llmProviderFactory,
     ICacheService cache)
     : IRequestHandler<StartWorkoutCommand, StartWorkoutResponse>
 {
@@ -50,8 +50,11 @@ public sealed class StartWorkoutCommandHandler(
             ? "Generate a full-body workout for today."
             : $"Generate a workout focused on: {request.WorkoutFocus}";
 
-        // Call LLM
-        var rawJson = await llmProvider.ChatCompletionAsync(apiKey, systemPrompt, userMessage, ct);
+        // Resolve provider and call LLM
+        var provider = llmProviderFactory.GetProvider(user.LlmProvider ?? "openai");
+        var model = user.PreferredModel ?? "gpt-4o-mini";
+
+        var rawJson = await provider.ChatCompletionAsync(apiKey, model, systemPrompt, userMessage, ct);
 
         // Safety Gate: sanitize hallucinated IDs and clamp weights
         var safeJson = SafetyGate.Validate(rawJson, exercises, request.ExperienceLevel);

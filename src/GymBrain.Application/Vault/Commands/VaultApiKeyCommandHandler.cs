@@ -1,3 +1,4 @@
+using GymBrain.Application.Common;
 using GymBrain.Application.Common.Interfaces;
 using GymBrain.Domain.Interfaces;
 using MediatR;
@@ -16,9 +17,10 @@ public sealed class VaultApiKeyCommandHandler(
             ?? throw new InvalidOperationException("User not found.");
 
         var encrypted = vaultService.Encrypt(request.ApiKey);
-        user.VaultApiKey(encrypted);
+        var model = request.Model ?? LlmModelCatalog.GetDefaultModel(request.Provider);
+        user.VaultApiKey(encrypted, request.Provider, model);
 
         await db.SaveChangesAsync(ct);
-        return new VaultApiKeyResponse("API key securely vaulted.");
+        return new VaultApiKeyResponse($"API key securely vaulted for {request.Provider} ({model}).");
     }
 }

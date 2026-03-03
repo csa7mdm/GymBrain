@@ -6,15 +6,15 @@ using GymBrain.Application.Common.Interfaces;
 namespace GymBrain.Infrastructure.Providers;
 
 /// <summary>
-/// OpenAI LLM provider using gpt-4o-mini for token efficiency.
-/// JSON mode enforced to guarantee parseable SDUI mega-payloads.
-/// API key is the user's decrypted BYO key — never logged.
+/// OpenRouter LLM provider. OpenAI-compatible API.
+/// Provides access to various models including free ones.
+/// JSON mode supported via provider-specific flags or model capabilities.
 /// </summary>
-public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
+public sealed class OpenRouterProvider(HttpClient httpClient) : ILlmProvider
 {
-    private const string Endpoint = "https://api.openai.com/v1/chat/completions";
+    private const string Endpoint = "https://openrouter.ai/api/v1/chat/completions";
 
-    public string ProviderName => "openai";
+    public string ProviderName => "openrouter";
 
     public async Task<string> ChatCompletionAsync(
         string apiKey,
@@ -24,6 +24,10 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
         CancellationToken ct = default)
     {
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        
+        // OpenRouter headers
+        httpClient.DefaultRequestHeaders.Add("HTTP-Referer", "https://gymbrain.ai"); 
+        httpClient.DefaultRequestHeaders.Add("X-Title", "GymBrain");
 
         var payload = new
         {
@@ -42,7 +46,12 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await httpClient.PostAsync(Endpoint, content, ct);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"OpenRouter API error: {response.StatusCode} - {error}");
+        }
 
         var responseJson = await response.Content.ReadAsStringAsync(ct);
         using var doc = JsonDocument.Parse(responseJson);
@@ -51,6 +60,6 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
             .GetProperty("choices")[0]
             .GetProperty("message")
             .GetProperty("content")
-            .GetString() ?? throw new InvalidOperationException("LLM returned empty content.");
+            .GetString() ?? throw new InvalidOperationException("OpenRouter returned empty content.");
     }
 }

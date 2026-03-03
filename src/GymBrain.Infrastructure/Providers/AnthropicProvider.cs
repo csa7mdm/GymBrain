@@ -6,15 +6,16 @@ using GymBrain.Application.Common.Interfaces;
 namespace GymBrain.Infrastructure.Providers;
 
 /// <summary>
-/// OpenAI LLM provider using gpt-4o-mini for token efficiency.
-/// JSON mode enforced to guarantee parseable SDUI mega-payloads.
-/// API key is the user's decrypted BYO key — never logged.
+/// Anthropic LLM provider (Claude).
+/// Uses Anthropic-specific API.
+/// Key is the user's decrypted BYO key.
 /// </summary>
-public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
+public sealed class AnthropicProvider(HttpClient httpClient) : ILlmProvider
 {
-    private const string Endpoint = "https://api.openai.com/v1/chat/completions";
+    private const string Endpoint = "https://api.anthropic.com/v1/messages";
+    private const string Version = "2023-06-01";
 
-    public string ProviderName => "openai";
+    public string ProviderName => "anthropic";
 
     public async Task<string> ChatCompletionAsync(
         string apiKey,
@@ -23,15 +24,16 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
         string userMessage,
         CancellationToken ct = default)
     {
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        httpClient.DefaultRequestHeaders.Clear();
+        httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
+        httpClient.DefaultRequestHeaders.Add("anthropic-version", Version);
 
         var payload = new
         {
             model = model,
-            response_format = new { type = "json_object" },
+            system = systemPrompt,
             messages = new[]
             {
-                new { role = "system", content = systemPrompt },
                 new { role = "user", content = userMessage }
             },
             max_tokens = 2048,
@@ -42,15 +44,19 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await httpClient.PostAsync(Endpoint, content, ct);
-        response.EnsureSuccessStatusCode();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"Anthropic API error: {response.StatusCode} - {error}");
+        }
 
         var responseJson = await response.Content.ReadAsStringAsync(ct);
         using var doc = JsonDocument.Parse(responseJson);
 
         return doc.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString() ?? throw new InvalidOperationException("LLM returned empty content.");
+            .GetProperty("content")[0]
+            .GetProperty("text")
+            .GetString() ?? throw new InvalidOperationException("Anthropic returned empty content.");
     }
 }

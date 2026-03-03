@@ -34,13 +34,17 @@ public static class AuthEndpoints
                 ?? user.FindFirstValue("sub")
                 ?? throw new UnauthorizedAccessException("Invalid token."));
 
-            var command = new VaultApiKeyCommand(userId, request.Provider, request.ApiKey);
+            var command = new VaultApiKeyCommand(userId, request.Provider, request.ApiKey, request.Model);
             var result = await sender.Send(command);
             return Results.Ok(result);
         })
         .WithName("VaultApiKey")
         .RequireAuthorization();
+
+        group.MapGet("/models", () => Results.Ok(GymBrain.Application.Common.LlmModelCatalog.AllModels))
+        .WithName("GetLlmModels")
+        .AllowAnonymous();
     }
 }
 
-public record VaultApiKeyRequest(string Provider, string ApiKey);
+public record VaultApiKeyRequest(string Provider, string ApiKey, string? Model = null);

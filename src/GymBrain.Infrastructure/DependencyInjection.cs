@@ -41,8 +41,14 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 
-        // LLM provider (HttpClient managed by factory)
+        // LLM Infrastructure
+        services.AddScoped<ILlmProviderFactory, LlmProviderFactory>();
+        
+        // Register each provider with its own HttpClient
         services.AddHttpClient<ILlmProvider, OpenAiProvider>();
+        services.AddHttpClient<ILlmProvider, GroqProvider>();
+        services.AddHttpClient<ILlmProvider, OpenRouterProvider>();
+        services.AddHttpClient<ILlmProvider, AnthropicProvider>();
 
         // JWT Authentication
         var jwtSecret = configuration["Jwt:Secret"]

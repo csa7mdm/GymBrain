@@ -6,15 +6,15 @@ using GymBrain.Application.Common.Interfaces;
 namespace GymBrain.Infrastructure.Providers;
 
 /// <summary>
-/// OpenAI LLM provider using gpt-4o-mini for token efficiency.
-/// JSON mode enforced to guarantee parseable SDUI mega-payloads.
-/// API key is the user's decrypted BYO key — never logged.
+/// Groq LLM provider. OpenAI-compatible API.
+/// Best for fast, free inference using Llama models.
+/// JSON mode supported. Key is the user's decrypted BYO key.
 /// </summary>
-public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
+public sealed class GroqProvider(HttpClient httpClient) : ILlmProvider
 {
-    private const string Endpoint = "https://api.openai.com/v1/chat/completions";
+    private const string Endpoint = "https://api.groq.com/openai/v1/chat/completions";
 
-    public string ProviderName => "openai";
+    public string ProviderName => "groq";
 
     public async Task<string> ChatCompletionAsync(
         string apiKey,
@@ -42,7 +42,12 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await httpClient.PostAsync(Endpoint, content, ct);
-        response.EnsureSuccessStatusCode();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"Groq API error: {response.StatusCode} - {error}");
+        }
 
         var responseJson = await response.Content.ReadAsStringAsync(ct);
         using var doc = JsonDocument.Parse(responseJson);
@@ -51,6 +56,6 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
             .GetProperty("choices")[0]
             .GetProperty("message")
             .GetProperty("content")
-            .GetString() ?? throw new InvalidOperationException("LLM returned empty content.");
+            .GetString() ?? throw new InvalidOperationException("Groq returned empty content.");
     }
 }

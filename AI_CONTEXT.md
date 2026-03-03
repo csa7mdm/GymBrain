@@ -17,8 +17,8 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 - **Frontend (Demo):** React + TypeScript + Vite
 - **Frontend (Production):** Flutter (planned, not yet built)
 - **Database:** PostgreSQL 16 + Redis 7 (Docker)
-- **AI Engine:** OpenAI gpt-4o-mini with JSON mode
-- **Cost Target:** $0.05 USD per session
+- **AI Engine:** Multi-Provider (OpenAI, Groq, OpenRouter, Anthropic)
+- **Cost Target:** $0.01 - $0.05 USD per session (Free tier support via Groq/OpenRouter)
 
 ---
 
@@ -29,8 +29,8 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 | Layer | Status | Key Files |
 |-------|--------|-----------|
 | **Domain** | ✅ Complete | `BaseEntity.cs`, `Result.cs`, `ValueObject.cs`, `User.cs`, `Exercise.cs`, `IVaultService.cs` |
-| **Application** | ✅ Complete | Auth (Register/Login), Vault, Orchestration (SystemPromptFactory, SafetyGate, StartWorkout) |
-| **Infrastructure** | ✅ Complete | VaultService (AES-256), JwtTokenService, BcryptPasswordHasher, GymBrainDbContext, ExerciseSeeder, OpenAiProvider, RedisCacheService |
+| **Application** | ✅ Complete | Auth, Vault, Orchestration, `LlmModelCatalog.cs` |
+| **Infrastructure** | ✅ Complete | VaultService, JwtTokenService, BcryptPasswordHasher, DbContext, Providers (OpenAI, Groq, OpenRouter, Anthropic), `LlmProviderFactory` |
 | **API** | ✅ Complete | AuthEndpoints, WorkoutEndpoints, Program.cs with Scalar docs |
 | **Tests** | ✅ 22/22 passing | Result, SafetyGate, SystemPromptFactory, VaultService tests |
 
@@ -41,7 +41,7 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 | Project scaffolding | ✅ Complete | Vite + React + TypeScript |
 | Design system | ✅ Complete | Dark OLED theme, glassmorphism, Inter/Roboto Mono |
 | Auth screens | ✅ Complete | Register, Login with tone persona selection |
-| Vault screen | ✅ Complete | BYO-API key with AES-256 info, Law 151 badge |
+| Vault screen | ✅ Complete | Multi-provider selector (Groq, OpenRouter, etc.) + model catalog dropdown |
 | Workout screen | ✅ Complete | SDUI renderer (tone_card, set_tracker, fallback) |
 | API service | ✅ Complete | Configurable base URL, JWT injection, typed responses |
 
@@ -104,8 +104,11 @@ Body: { "email": "string", "password": "string" }
 Response: { "userId": "guid", "token": "jwt-string" }
 
 POST /api/auth/vault-key [Authorized]
-Body: { "provider": "openai|anthropic", "apiKey": "string" }
-Response: { "message": "API key securely vaulted." }
+Body: { "provider": "openai|groq|openrouter|anthropic", "apiKey": "string", "model": "string?" }
+Response: { "message": "API key securely vaulted for groq (llama-3.3-70b-versatile)." }
+
+GET /api/auth/models
+Response: Array of LlmModelInfo { provider, modelId, displayName, description, isFree, suitabilityRank }
 ```
 
 ### Workout

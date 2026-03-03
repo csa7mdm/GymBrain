@@ -21,12 +21,16 @@ public class User : BaseEntity
     public string Email { get; private set; } = null!;
     public string PasswordHash { get; private set; } = null!;
     public string? EncryptedApiKey { get; private set; }
+    public string? LlmProvider { get; private set; }
+    public string? PreferredModel { get; private set; }
     public string TonePersona { get; private set; } = "Motivational Coach";
     public ExperienceLevel ExperienceLevel { get; private set; } = ExperienceLevel.Beginner;
 
-    public void VaultApiKey(string encryptedKey)
+    public void VaultApiKey(string encryptedKey, string provider, string? model = null)
     {
         EncryptedApiKey = encryptedKey ?? throw new ArgumentNullException(nameof(encryptedKey));
+        LlmProvider = provider ?? throw new ArgumentNullException(nameof(provider));
+        PreferredModel = model;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

@@ -10,7 +10,7 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('gymbrain_token');
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -66,10 +66,23 @@ export interface VaultResponse {
   message: string;
 }
 
-export function vaultApiKey(provider: string, apiKey: string) {
+export interface ILlmModel {
+  provider: string;
+  modelId: string;
+  displayName: string;
+  description: string;
+  isFree: boolean;
+  suitabilityRank: number;
+}
+
+export function getLlmModels() {
+  return request<ILlmModel[]>('/api/auth/models');
+}
+
+export function vaultApiKey(provider: string, apiKey: string, model?: string) {
   return request<VaultResponse>('/api/auth/vault-key', {
     method: 'POST',
-    body: JSON.stringify({ provider, apiKey }),
+    body: JSON.stringify({ provider, apiKey, model }),
   });
 }
 

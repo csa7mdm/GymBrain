@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { vaultApiKey } from '../services/api';
+import { useState, useEffect } from 'react';
+import { vaultApiKey, getLlmModels } from '../services/api';
+import type { ILlmModel } from '../services/api';
 
 interface VaultPageProps {
     onComplete: () => void;
@@ -7,11 +8,32 @@ interface VaultPageProps {
 }
 
 export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
+    const [models, setModels] = useState<ILlmModel[]>([]);
     const [provider, setProvider] = useState('openai');
+    const [model, setModel] = useState('');
     const [apiKey, setApiKey] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchModels = async () => {
+            const result = await getLlmModels();
+            if (result.data) {
+                setModels(result.data);
+                // Default to first model for openai
+                const defaultModel = result.data.find(m => m.provider === 'openai')?.modelId;
+                if (defaultModel) setModel(defaultModel);
+            }
+        };
+        fetchModels();
+    }, []);
+
+    const handleProviderChange = (newProvider: string) => {
+        setProvider(newProvider);
+        const firstModel = models.find(m => m.provider === newProvider)?.modelId;
+        if (firstModel) setModel(firstModel);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -19,7 +41,7 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
         setSuccess('');
         setLoading(true);
 
-        const result = await vaultApiKey(provider, apiKey);
+        const result = await vaultApiKey(provider, apiKey, model);
         setLoading(false);
 
         if (result.error) {
@@ -27,10 +49,13 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
             return;
         }
 
-        setSuccess('API key securely vaulted with AES-256 encryption! 🔐');
+        setSuccess(`API key securely vaulted! Preferred: ${model} 🔐`);
         setApiKey('');
         setTimeout(onComplete, 1500);
     };
+
+    const uniqueProviders = Array.from(new Set(models.map(m => m.provider)));
+    const filteredModels = models.filter(m => m.provider === provider);
 
     return (
         <div className="page">
@@ -44,19 +69,45 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
                 <form className="form-stack" onSubmit={handleSubmit}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
                         Your API key is encrypted with <strong style={{ color: 'var(--accent-secondary)' }}>AES-256-CBC</strong> before
-                        storage. We never see, log, or transmit your key in plaintext.
+                        storage. Supports <strong style={{ color: 'var(--accent-primary)' }}>Groq & OpenRouter</strong> Free models.
                     </p>
 
                     <div className="input-group">
-                        <label htmlFor="provider">Provider</label>
+                        <label htmlFor="provider">LLM Provider</label>
                         <select
                             id="provider"
                             className="input"
                             value={provider}
-                            onChange={(e) => setProvider(e.target.value)}
+                            onChange={(e) => handleProviderChange(e.target.value)}
                         >
-                            <option value="openai">OpenAI</option>
-                            <option value="anthropic">Anthropic</option>
+                            {uniqueProviders.length > 0 ? (
+                                uniqueProviders.map(p => (
+                                    <option key={p} value={p}>{p.toUpperCase()}</option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="openai">OPENAI</option>
+                                    <option value="groq">GROQ (Free)</option>
+                                    <option value="openrouter">OPENROUTER (Free)</option>
+                                    <option value="anthropic">ANTHROPIC</option>
+                                </>
+                            )}
+                        </select>
+                    </div>
+
+                    <div className="input-group">
+                        <label htmlFor="model">Model (Free models available)</label>
+                        <select
+                            id="model"
+                            className="input"
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                        >
+                            {filteredModels.map(m => (
+                                <option key={m.modelId} value={m.modelId}>
+                                    {m.isFree ? '🎁 ' : ''}{m.displayName} — {m.description.split(' · ')[0]}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -66,7 +117,7 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
                             id="apikey"
                             className="input"
                             type="password"
-                            placeholder="sk-proj-..."
+                            placeholder={provider === 'openai' ? 'sk-proj-...' : 'sk-groq-...' || 'sk-...'}
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
                             required
