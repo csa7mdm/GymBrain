@@ -13,6 +13,8 @@
 [![Multi-LLM](https://img.shields.io/badge/LLM-Multi--Provider-FFD700?style=for-the-badge&logo=ai&logoColor=black)](https://gymbrain.ai)
 [![Groq](https://img.shields.io/badge/Groq-Llama_3.3-f39c12?style=for-the-badge)](https://groq.com)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-Free_Models-000000?style=for-the-badge)](https://openrouter.ai)
+[![Material 3](https://img.shields.io/badge/Material_3-Dark_Theme-1a1a2e?style=for-the-badge&logo=materialdesign&logoColor=white)](https://m3.material.io/)
+[![Playwright](https://img.shields.io/badge/Playwright-E2E_Tests-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Built with](https://img.shields.io/badge/Built_with-Antigravity_IDE-FF6B35?style=for-the-badge)](https://antigravity.google)
 [![AI](https://img.shields.io/badge/AI-Claude_Opus_4.6-8B5CF6?style=for-the-badge)](https://anthropic.com)
@@ -47,6 +49,13 @@
 | 💾 **Smart Caching** | Redis caches workout plans for 2 hours — zero LLM calls on app reload |
 | 🏗️ **Clean Architecture** | Domain-driven design with strict dependency rules and CQRS via MediatR |
 | 🔒 **Zero-Trust Security** | JWT auth, BCrypt hashing, AES-256 encryption, no secrets in source code |
+| 🎨 **Material 3 Design System** | Dark theme with M3 color tokens, elevation, shape, motion, and typography |
+| 🧭 **Tabbed Navigation** | 4-tab bottom nav: Home Dashboard, Training, Plans, Profile |
+| 👤 **User Profile & Preferences** | Body data, fitness goals, equipment, dietary restrictions, BMI calculator |
+| 📋 **Training Plans** | Save workouts, create custom training cycles, workout history |
+| 🎬 **ExerciseDB GIFs** | Animated exercise illustrations from ExerciseDB API with fuzzy matching |
+| 🎯 **Set-by-Set Tracking** | Interactive tap-to-complete circles with rest timer and progress bar |
+| 🧪 **E2E Test Suite** | 5 Playwright tests covering full user journey (register → workout → sign out) |
 
 ---
 
@@ -319,25 +328,40 @@ Content-Type: application/json
 
 ---
 
-## 🎨 React Demo App
+## 🎨 React App — Material 3 Design
 
-The React demo app is a web-based client that demonstrates the full GymBrain workflow:
+The React app provides a full-featured fitness coaching experience with Material 3 design:
 
-1. **Register/Login** — Create an account and authenticate
-2. **Vault API Key** — Securely store your OpenAI API key (AES-256 encrypted)
-3. **Generate Workout** — Get AI-powered workout plans rendered as SDUI components
-4. **Interactive Tracking** — Track sets, reps, and rest timers
+### App Tabs
+
+| Tab | Icon | Features |
+|-----|------|----------|
+| **Home** | 🏠 | Dashboard, stats, motivational quotes, quick start |
+| **Train** | 💪 | AI workout generation, exercise cards with GIFs, set tracking, rest timer |
+| **Plans** | 📋 | Saved workouts, custom training cycles, workout history |
+| **Profile** | 👤 | Body data, fitness goals, equipment, diet, BMI calculator |
+
+### Workout Flow
+
+1. **Register/Login** — Create an account with tone persona selection
+2. **Vault API Key** — Store your LLM API key (AES-256 encrypted)
+3. **Generate Workout** — AI-powered workout plans with SDUI rendering
+4. **Interactive Tracking** — Tap-to-complete sets, live rest timer, progress bar
+5. **Save Workout** — Persist completed workouts to Plans tab
+6. **Profile Setup** — Enter body data > preferences for personalized training
 
 ### Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
-| Vite | Build tool & dev server |
+| Vite 7 | Build tool & dev server |
 | React 19 | UI framework |
 | TypeScript | Type safety |
-| Vanilla CSS | Custom styling (dark OLED theme) |
+| Material 3 CSS | Custom design system (dark theme, elevation, motion) |
+| ExerciseDB API | Exercise GIF illustrations |
+| Playwright | E2E testing (5 tests, full journey) |
 
-> 📱 **Flutter mobile app** is planned for the next phase. The React demo validates the backend API contract first.
+> 📱 **Flutter mobile app** is planned for the next phase. The React app validates the backend API contract first.
 
 ---
 
@@ -380,6 +404,8 @@ The React demo app is a web-based client that demonstrates the full GymBrain wor
 
 ## 🧪 Testing
 
+### Backend Tests
+
 ```bash
 dotnet test GymBrain.sln --verbosity normal
 ```
@@ -391,6 +417,22 @@ dotnet test GymBrain.sln --verbosity normal
 | `GymBrain.Infrastructure.Tests` | 5 | VaultService (round-trip, unique IV, tamper detection, Law 151) |
 | `GymBrain.Api.Tests` | 4 | Scaffold tests |
 | **Total** | **22** | **All passing ✅** |
+
+### E2E Tests (Playwright)
+
+```bash
+cd client
+npx playwright test --project=chromium
+```
+
+| Test | Duration | Validates |
+|------|----------|-----------|
+| 1️⃣ Register a new user account | ~2s | Auth flow, form validation, redirect to vault |
+| 2️⃣ Vault Groq API key with health check | ~5s | Key encryption, LLM health check, vault storage |
+| 3️⃣ Generate AI workout and verify exercise cards | ~5s | LLM orchestration, SDUI rendering, exercise cards |
+| 4️⃣ Reset workout and return to ready state | ~3s | State management, UI reset |
+| 5️⃣ Sign out returns to login screen | ~4s | Auth teardown, tab navigation |
+| **Total** | **~22s** | **5/5 passing ✅** |
 
 ---
 
@@ -437,12 +479,14 @@ GymBrain/
 │   ├── GymBrain.Infrastructure.Tests/
 │   └── GymBrain.Api.Tests/
 │
-└── 📂 client/                     # React demo app (Vite + TypeScript)
+└── 📂 client/                     # React app (Vite + TypeScript + Material 3)
     ├── src/
-    │   ├── components/
-    │   ├── pages/
-    │   ├── services/
-    │   └── theme/
+    │   ├── context/               # AuthContext (JWT state management)
+    │   ├── pages/                 # HomePage, WorkoutPage, PlansPage, ProfilePage
+    │   ├── services/              # api.ts (backend), exerciseDb.ts (GIFs)
+    │   ├── App.tsx                # Tab router + BottomNav component
+    │   └── index.css              # Material 3 design system (~900 lines)
+    ├── e2e/                       # Playwright E2E tests (5 tests)
     └── package.json
 ```
 
@@ -471,9 +515,13 @@ This project was built with the assistance of **[Antigravity IDE](https://antigr
 - [x] **Epic 3:** LLM Orchestrator (SystemPromptFactory + SafetyGate)
 - [x] **Epic 4:** React Demo App (Phase 1 UI Ready)
 - [x] **Epic 5:** Multi-LLM Orchestration (Groq, OpenRouter, Anthropic) + Health Check & Model Fallback
-- [ ] **Epic 6:** ExerciseDB API integration (RapidAPI + dual-layer caching)
-- [ ] **Epic 7:** Flutter Mobile App (SDUI + Hive offline)
-- [ ] **Epic 8:** Gamification (Shield/Sword/Scroll progression)
+- [x] **Epic 6:** ExerciseDB API integration (GIF illustrations + fuzzy matching)
+- [x] **Epic 7:** Material 3 Redesign (tabbed nav, profile, plans, save workouts, E2E tests)
+- [ ] **Epic 8:** Backend persistence (save workouts/profiles to API)
+- [ ] **Epic 9:** AI Nutrition Plans (Groq-powered meal plans from profile)
+- [ ] **Epic 10:** Progress Analytics (charts, volume trends, PRs)
+- [ ] **Epic 11:** Flutter Mobile App (SDUI + Hive offline)
+- [ ] **Epic 12:** Gamification (Shield/Sword/Scroll progression)
 
 ---
 
@@ -485,6 +533,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <div align="center">
   <strong>Built with 🧠 by the GymBrain Team</strong><br>
-  <em>Powered by .NET 9 • React • OpenAI • PostgreSQL • Redis</em><br><br>
+  <em>Powered by .NET 9 • React 19 • Material 3 • Multi-LLM • ExerciseDB • PostgreSQL • Redis</em><br><br>
   <sub>Developed with <a href="https://antigravity.google">Antigravity IDE</a> + <a href="https://anthropic.com">Claude Opus 4.6</a></sub>
 </div>
