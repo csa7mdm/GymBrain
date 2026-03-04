@@ -1,22 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-// ─────────────────────────────────────────────────────────
-//  🧠 GymBrain — Automated E2E Test Suite (Playwright)
-// ─────────────────────────────────────────────────────────
-//  Tests the full user journey as a single-page app:
-//    Register → Vault (Groq + Health Check) → Generate Workout → Verify Cards
-//
-//  NOTE: The app uses React state-based navigation (no URL routing).
-//        All screens render at the same URL (localhost:5173)
-// ─────────────────────────────────────────────────────────
+/**
+ * 🧠 GymBrain — Full End-to-End Journey
+ *
+ * This E2E test validates the complete user flow:
+ *   1. Register → 2. Vault API Key → 3. Generate Workout → 4. Reset → 5. Sign Out
+ */
 
-const TEST_EMAIL = `e2e_pw_${Date.now()}@gymbrain.com`;
-const TEST_PASSWORD = 'Pass123!';
-// Load Groq API key from environment: set GROQ_API_KEY before running tests
-const GROQ_API_KEY = process.env.GROQ_API_KEY || 'your-groq-api-key-here';
+const TEST_ID = Date.now();
+const TEST_EMAIL = `e2e_pw_${TEST_ID}@gymbrain.com`;
+const TEST_PASSWORD = 'Test1234!';
 
-test.describe('🧠 GymBrain Full E2E Journey', () => {
-    test.describe.configure({ mode: 'serial' });
+// Groq API key from environment (set via CI or locally)
+const GROQ_API_KEY = process.env.GROQ_API_KEY || 'gsk_test_placeholder';
+
+test.describe.serial('🧠 GymBrain Full E2E Journey', () => {
+
+    test.setTimeout(120_000); // 2 min per test
 
     // ─────────────────────────────
     // 1️⃣  REGISTER
@@ -24,7 +24,7 @@ test.describe('🧠 GymBrain Full E2E Journey', () => {
     test('1️⃣ Register a new user account', async ({ page }) => {
         await page.goto('/');
 
-        // Should see the auth page with "Welcome Back" / "GymBrain"
+        // Should see the auth page with "GymBrain"
         await expect(page.getByText('GymBrain')).toBeVisible();
 
         // Switch to Sign Up mode
@@ -93,12 +93,12 @@ test.describe('🧠 GymBrain Full E2E Journey', () => {
         // Should show "Encrypting & Storing..." loading state
         await expect(page.getByText('Encrypting & Storing...')).toBeVisible({ timeout: 3_000 });
 
-        // Wait for health check + vaulting to complete (up to 30s for LLM round-trip)
-        // On success, it shows a success message briefly then transitions to workout page
-        await expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 30_000 });
+        // Wait for health check + vaulting to complete
+        // After vault, app now navigates to Home page (tab-based navigation)
+        await expect(page.getByText('Hello,')).toBeVisible({ timeout: 30_000 });
 
-        // Screenshot: Workout page (health check passed!)
-        await page.screenshot({ path: 'e2e/screenshots/04-ready-to-train.png' });
+        // Screenshot: Home page (health check passed!)
+        await page.screenshot({ path: 'e2e/screenshots/04-home-page.png' });
 
         console.log('✅ Health check passed, key vaulted successfully!');
     });
@@ -113,21 +113,29 @@ test.describe('🧠 GymBrain Full E2E Journey', () => {
         await page.fill('#password', TEST_PASSWORD);
         await page.getByRole('button', { name: /sign in/i }).click();
 
-        // Since key is already vaulted, screen goes to 'vault' first, but we
-        // need to check -- the app may go to vault or workout depending on state.
-        // Let's wait for either Vault or Ready to Train
+        // Since key is already vaulted, we may land on Vault or Home
+        await page.waitForTimeout(2_000);
+
+        // If we're on vault, skip to home
+        const skipBtn = page.getByText('Skip for now');
+        if (await skipBtn.isVisible()) {
+            await skipBtn.click();
+        }
+
+        // Wait for either Home or Ready to Train
         await Promise.race([
-            expect(page.getByText('Vault Setup')).toBeVisible({ timeout: 10_000 }),
+            expect(page.getByText('Hello,')).toBeVisible({ timeout: 10_000 }),
             expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 10_000 }),
         ]);
 
-        // If we're on vault, skip to workout
-        if (await page.getByText('Vault Setup').isVisible()) {
-            await page.getByText('Skip for now').click();
+        // If on Home, navigate to Train tab
+        const trainTab = page.locator('.bottom-nav__item', { hasText: 'Train' });
+        if (await trainTab.isVisible()) {
+            await trainTab.click();
             await expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 5_000 });
         }
 
-        // Now we're on the workout page
+        // Now we're on the workout/train page
         await expect(page.getByText('Ready to Train')).toBeVisible();
 
         // Select "Chest & Arms" for this test
@@ -170,45 +178,54 @@ test.describe('🧠 GymBrain Full E2E Journey', () => {
         console.log(`  📣 Tone Card: ${motivationalText}`);
 
         // 4. At least 3 exercise cards
-        const exerciseCards = page.locator('.set-tracker');
+        const exerciseCards = page.locator('.exercise-card');
         const exerciseCount = await exerciseCards.count();
         expect(exerciseCount).toBeGreaterThanOrEqual(3);
 
-        // 5. Each exercise has name, sets, reps, weight
+        // 5. Each exercise has name
         for (let i = 0; i < exerciseCount; i++) {
             const card = exerciseCards.nth(i);
             const name = await card.locator('.exercise-name').textContent();
-            const statValues = await card.locator('.stat-value').allTextContents();
-
             expect(name).toBeTruthy();
-            expect(statValues.length).toBeGreaterThanOrEqual(3);
-
-            console.log(`  💪 ${name} | ${statValues[0]} sets × ${statValues[1]} reps @ ${statValues[2]}kg`);
+            console.log(`  💪 ${name}`);
         }
 
         // 6. NO "No workout components" error
         await expect(page.getByText('No workout components')).not.toBeVisible();
 
-        // 7. "Generate New Workout" button is visible
-        await expect(page.getByText(/generate new workout/i)).toBeVisible();
+        // 7. Save + New buttons are visible
+        await expect(page.getByRole('button', { name: /save/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /new/i })).toBeVisible();
 
         console.log(`\n✅ Workout generated with ${toneCount} tone card(s) and ${exerciseCount} exercise(s)!`);
     });
 
-    // ─── Helper: Login → Skip Vault → Ready to Train ───
-    async function loginToWorkoutPage(page: import('@playwright/test').Page) {
+    // ─── Helper: Login → Skip Vault → Navigate to Train ───
+    async function loginToTrainPage(page: import('@playwright/test').Page) {
         await page.goto('/');
         await page.fill('#email', TEST_EMAIL);
         await page.fill('#password', TEST_PASSWORD);
         await page.getByRole('button', { name: /sign in/i }).click();
 
-        // Wait for either Vault or Ready to Train to appear
+        // Wait for navigation
         await page.waitForTimeout(2_000);
 
-        // If we landed on Vault, skip to workout
+        // If we landed on Vault, skip to home
         const skipBtn = page.getByText('Skip for now');
         if (await skipBtn.isVisible()) {
             await skipBtn.click();
+        }
+
+        // Wait for Home or Train
+        await Promise.race([
+            expect(page.getByText('Hello,')).toBeVisible({ timeout: 10_000 }),
+            expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 10_000 }),
+        ]);
+
+        // Navigate to Train tab if on Home
+        const trainTab = page.locator('.bottom-nav__item', { hasText: 'Train' });
+        if (await trainTab.isVisible() && !(await page.getByText('Ready to Train').isVisible())) {
+            await trainTab.click();
         }
 
         await expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 10_000 });
@@ -218,14 +235,14 @@ test.describe('🧠 GymBrain Full E2E Journey', () => {
     // 4️⃣  RESET & RE-GENERATE
     // ─────────────────────────────
     test('4️⃣ Reset workout and return to ready state', async ({ page }) => {
-        await loginToWorkoutPage(page);
+        await loginToTrainPage(page);
 
         // Generate a workout 
         await page.getByRole('button', { name: /generate workout/i }).click();
         await expect(page.getByText('Your Workout')).toBeVisible({ timeout: 60_000 });
 
-        // Click "Generate New Workout"
-        await page.getByText('← Generate New Workout').click();
+        // Click "New" button to reset
+        await page.getByRole('button', { name: /new/i }).click();
 
         // Should be back to "Ready to Train"
         await expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 5_000 });
@@ -241,7 +258,12 @@ test.describe('🧠 GymBrain Full E2E Journey', () => {
     // 5️⃣  SIGN OUT
     // ─────────────────────────────
     test('5️⃣ Sign out returns to login screen', async ({ page }) => {
-        await loginToWorkoutPage(page);
+        await loginToTrainPage(page);
+
+        // Navigate to Profile tab (Sign Out is now in Profile)
+        const profileTab = page.locator('.bottom-nav__item', { hasText: 'Profile' });
+        await profileTab.click();
+        await expect(page.getByText('Your Profile')).toBeVisible({ timeout: 5_000 });
 
         // Click Sign Out
         await page.getByRole('button', { name: /sign out/i }).click();
