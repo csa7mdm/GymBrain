@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { startWorkout } from '../services/api';
+import { startWorkout, saveWorkout } from '../services/api';
 import { searchExercise, type ExerciseDbItem } from '../services/exerciseDb';
-import { useAuth } from '../context/AuthContext';
+
 
 interface SduiPayload {
     message?: string; persona?: string; exercise_id?: string; exercise_name?: string;
@@ -31,7 +31,6 @@ function useRestTimer() {
 }
 
 export default function WorkoutPage() {
-    const { user } = useAuth();
     const [focus, setFocus] = useState('');
     const [payload, setPayload] = useState<MegaPayload | null>(null);
     const [loading, setLoading] = useState(false);
@@ -147,7 +146,7 @@ export default function WorkoutPage() {
                         <h3 className="exercise-name">{comp.payload.exercise_name || 'Exercise'}</h3>
                         <div className="exercise-card__meta">
                             {comp.payload.target_muscle && <span className="exercise-card__muscle-tag">{comp.payload.target_muscle as string}</span>}
-                            {exInfo?.equipments?.[0] && <span className="exercise-card__equipment-tag">{exInfo.equipments[0]}</span>}
+                            {exInfo?.equipment && <span className="exercise-card__equipment-tag">{exInfo.equipment}</span>}
                         </div>
                         {allDone && <span className="exercise-card__done-badge">✅ Complete</span>}
                     </div>
@@ -193,7 +192,7 @@ export default function WorkoutPage() {
         );
     };
 
-    const saveWorkout = () => {
+    const handleSaveWorkout = async () => {
         if (!payload?.components) return;
         const exercises = payload.components.filter(c => c.type === 'set_tracker').map(c => ({
             name: c.payload.exercise_name || 'Exercise',
@@ -213,17 +212,40 @@ export default function WorkoutPage() {
         const saved = JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]');
         saved.push(workout);
         localStorage.setItem('gymbrain_workouts', JSON.stringify(saved));
-        alert('✅ Workout saved!');
+
+        try {
+            const apiResult = await saveWorkout(JSON.stringify(payload));
+            if (apiResult.error) {
+                alert(`⚠️ Saved locally, but cloud sync failed: ${apiResult.error}`);
+            } else {
+                alert('✅ Workout saved to cloud and locally!');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('✅ Workout saved locally (offline mode)');
+        }
     };
 
     if (loading) return (<div className="app-content"><div className="m3-spinner-container"><div className="m3-spinner" /><p className="md-body-lg">Generating your workout with AI...</p><p className="md-body-sm text-muted">SafetyGate validating output</p></div></div>);
+    const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+    const profileContext = profile.name
+        ? `${profile.level || 'Intermediate'} | ${profile.goal || 'muscle'} | ${profile.equipment?.join(', ') || 'Bodyweight'}`
+        : null;
+
     if (!payload) return (
         <div className="app-content">
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 4 }}>⚡</div>
                 <h2 className="md-headline-sm" style={{ color: 'var(--md-primary)' }}>Ready to Train</h2>
-                <p className="md-body-sm text-muted">{user?.email}</p>
+                {profileContext && <p className="md-body-sm text-muted">{profileContext}</p>}
             </div>
+            {profileContext && (
+                <div className="m3-card mb-md" style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                    <div><div className="md-label-sm text-muted">Level</div><div className="md-body-md">{profile.level}</div></div>
+                    <div><div className="md-label-sm text-muted">Goal</div><div className="md-body-md">{profile.goal}</div></div>
+                    <div><div className="md-label-sm text-muted">Days</div><div className="md-body-md">{profile.daysPerWeek}x/wk</div></div>
+                </div>
+            )}
             <div className="m3-card">
                 <div className="m3-field"><label className="m3-field__label" htmlFor="focus">Workout Focus</label>
                     <select id="focus" className="m3-select" value={focus} onChange={e => setFocus(e.target.value)}><option value="">Full Body</option><option value="upper body strength">Upper Body Strength</option><option value="lower body power">Lower Body Power</option><option value="chest and arms">Chest &amp; Arms</option><option value="back and shoulders">Back &amp; Shoulders</option><option value="core and abs">Core &amp; Abs</option></select>
@@ -231,7 +253,11 @@ export default function WorkoutPage() {
                 {error && <div className="m3-error-banner">{error}</div>}
                 <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg" onClick={handleStart}>🚀 Generate Workout</button>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}><span className="chip chip-success">✓ AI Ready</span><span className="chip chip-info">BYO Key Active</span></div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span className="chip chip-success">✓ AI Ready</span>
+                {profile.equipment?.length > 0 && <span className="chip chip-info">{profile.equipment.length} Equipment</span>}
+                {profile.focusAreas?.length > 0 && <span className="chip chip-warning">{profile.focusAreas.join(', ')}</span>}
+            </div>
         </div>
     );
 
@@ -257,7 +283,7 @@ export default function WorkoutPage() {
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.reduce((s, c) => s + ((c.payload.sets || 3) as number) * ((c.payload.reps || 10) as number), 0)}</span><span>Total Reps</span></div>
             </div></div>)}
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button className="m3-btn m3-btn--tonal" style={{ flex: 1 }} onClick={saveWorkout}>💾 Save</button>
+                <button className="m3-btn m3-btn--tonal" style={{ flex: 1 }} onClick={handleSaveWorkout}>💾 Save</button>
                 <button className="m3-btn m3-btn--outlined" style={{ flex: 1 }} onClick={() => { setPayload(null); setExerciseImages(new Map()); setSetProgress(new Map()); setExpandedCard(null); restTimer.stop(); }}>🔄 New</button>
             </div>
         </div>

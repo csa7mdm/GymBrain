@@ -4,7 +4,7 @@
   It provides a machine-readable, continuously updated snapshot of 
   the project's current state, architecture, and progress.
   
-  LAST UPDATED: 2026-03-03T19:35:00+02:00
+  LAST UPDATED: 2026-03-04T05:45:00+02:00
   UPDATED BY: Antigravity AI Agent
 -->
 
@@ -29,9 +29,9 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 | Layer | Status | Key Files |
 |-------|--------|-----------|
 | **Domain** | ✅ Complete | `BaseEntity.cs`, `Result.cs`, `ValueObject.cs`, `User.cs`, `Exercise.cs`, `IVaultService.cs` |
-| **Application** | ✅ Complete | Auth, Vault, Orchestration, `LlmModelCatalog.cs` |
+| **Application** | ✅ Complete | Auth, Vault, Orchestration, `LlmModelCatalog.cs`, Nutrition generation |
 | **Infrastructure** | ✅ Complete | VaultService, JwtTokenService, BcryptPasswordHasher, DbContext, Providers (OpenAI, Groq, OpenRouter, Anthropic), `LlmProviderFactory` |
-| **API** | ✅ Complete | AuthEndpoints, WorkoutEndpoints, Program.cs with Scalar docs |
+| **API** | ✅ Complete | AuthEndpoints, WorkoutEndpoints (Save/Start), NutritionEndpoints, Program.cs with Scalar docs |
 | **Tests** | ✅ 22/22 passing | Result, SafetyGate, SystemPromptFactory, VaultService tests |
 
 ### Frontend (React Demo) — ✅ COMPLETE
@@ -42,7 +42,9 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 | Design system | ✅ Complete | Dark OLED theme, glassmorphism, Inter/Roboto Mono |
 | Auth screens | ✅ Complete | Register, Login with tone persona selection |
 | Vault screen | ✅ Complete | Multi-provider selector (Groq, OpenRouter, etc.) + model catalog dropdown |
-| Workout screen | ✅ Complete | SDUI renderer (tone_card, set_tracker, fallback) |
+| Workout screen | ✅ Complete | SDUI renderer (tone_card, set_tracker, fallback) + Local save offline/sync |
+| Nutrition / Profile | ✅ Complete | Dietary preferences form, Goal selection, AI Meal Plan generation UI |
+| Analytics / Plans | ✅ Complete | Health Pillars (streak/completion), Cycle Progression visualizer |
 | API service | ✅ Complete | Configurable base URL, JWT injection, typed responses |
 
 ### Flutter (Production) — ⏳ DEFERRED
@@ -126,6 +128,17 @@ Response: Array of LlmModelInfo { provider, modelId, displayName, description, i
 POST /api/workout/start [Authorized]
 Body: { "workoutFocus": "string?" }
 Response: { "megaPayloadJson": "SDUI JSON string" }
+
+POST /api/workout/save [Authorized]
+Body: { "payloadJson": "SDUI JSON string" }
+Response: { "workoutSessionId": "guid" }
+```
+
+### Nutrition
+```
+POST /api/nutrition/generate [Authorized]
+Body: { "diet": "string", "calories": "int", "goal": "string" }
+Response: { "payloadJson": "SDUI JSON string" }
 ```
 
 ### Health
@@ -198,6 +211,7 @@ Response: { "status": "healthy", "timestamp": "datetime" }
 ```
 d:\workspace\
 ├── .antigravityrules              ← AI agent instructions
+├── .gymbrain_knowledge.md         ← Living log of faults & lessons learned
 ├── AI_CONTEXT.md                  ← THIS FILE (LLM-friendly project state)
 ├── README.md                      ← Human-readable documentation
 ├── GymBrain.sln

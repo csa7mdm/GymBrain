@@ -1,0 +1,12 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  GymBrain.Domain -> D:\workspace\src\GymBrain.Domain\bin\Debug\net9.0\GymBrain.Domain.dll
+D:\workspace\src\GymBrain.Application\Orchestration\Commands\GenerateNutritionPlanCommandHandler.cs(9,5): error CS0246: The type or namespace name 'IVaultService' could not be found (are you missing a using directive or an assembly reference?) [D:\workspace\src\GymBrain.Application\GymBrain.Application.csproj]
+
+Build FAILED.
+
+D:\workspace\src\GymBrain.Application\Orchestration\Commands\GenerateNutritionPlanCommandHandler.cs(9,5): error CS0246: The type or namespace name 'IVaultService' could not be found (are you missing a using directive or an assembly reference?) [D:\workspace\src\GymBrain.Application\GymBrain.Application.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.36

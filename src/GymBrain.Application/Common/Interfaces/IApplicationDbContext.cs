@@ -10,5 +10,6 @@ public interface IApplicationDbContext
 {
     DbSet<User> Users { get; }
     DbSet<Exercise> Exercises { get; }
+    DbSet<WorkoutSession> WorkoutSessions { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

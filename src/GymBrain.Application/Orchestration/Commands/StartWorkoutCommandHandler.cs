@@ -47,9 +47,12 @@ public sealed class StartWorkoutCommandHandler(
             throw new InvalidOperationException("No exercises available in the domain. Seed data may be missing.");
 
         var systemPrompt = SystemPromptFactory.Build(user.TonePersona, exercises);
-        var userMessage = string.IsNullOrWhiteSpace(request.WorkoutFocus)
-            ? "Generate a full-body workout for today."
-            : $"Generate a workout focused on: {request.WorkoutFocus}";
+        
+        // Token-optimized user message with profile context
+        var focusPart = string.IsNullOrWhiteSpace(request.WorkoutFocus) 
+            ? "full-body" : request.WorkoutFocus;
+        var levelStr = request.ExperienceLevel.ToString().ToLowerInvariant();
+        var userMessage = $"Workout: {focusPart} | Level: {levelStr}";
 
         // Resolve provider and call LLM with fallback support for free models
         var provider = llmProviderFactory.GetProvider(user.LlmProvider ?? "openai");

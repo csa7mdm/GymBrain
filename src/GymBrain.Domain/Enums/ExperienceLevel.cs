@@ -8,5 +8,6 @@ public enum ExperienceLevel
 {
     Beginner = 0,
     Intermediate = 1,
-    Advanced = 2
+    Advanced = 2,
+    Athlete = 3
 }

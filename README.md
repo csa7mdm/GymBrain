@@ -499,6 +499,7 @@ This project was built with the assistance of **[Antigravity IDE](https://antigr
 | File | Purpose |
 |------|---------|
 | [`.antigravityrules`](.antigravityrules) | Coding conventions, architecture rules, known pitfalls |
+| [`.gymbrain_knowledge.md`](.gymbrain_knowledge.md) | Living log of faults, solutions, and lessons learned (append-only) |
 | [`AI_CONTEXT.md`](AI_CONTEXT.md) | Current project state, API contracts, continuation instructions |
 
 **For AI agents resuming work:** Read both files before making any changes.
@@ -517,9 +518,9 @@ This project was built with the assistance of **[Antigravity IDE](https://antigr
 - [x] **Epic 5:** Multi-LLM Orchestration (Groq, OpenRouter, Anthropic) + Health Check & Model Fallback
 - [x] **Epic 6:** ExerciseDB API integration (GIF illustrations + fuzzy matching)
 - [x] **Epic 7:** Material 3 Redesign (tabbed nav, profile, plans, save workouts, E2E tests)
-- [ ] **Epic 8:** Backend persistence (save workouts/profiles to API)
-- [ ] **Epic 9:** AI Nutrition Plans (Groq-powered meal plans from profile)
-- [ ] **Epic 10:** Progress Analytics (charts, volume trends, PRs)
+- [x] **Epic 8:** Backend persistence (save workouts/profiles to API)
+- [x] **Epic 9:** AI Nutrition Plans (Groq-powered meal plans from profile)
+- [x] **Epic 10:** Progress Analytics (Health Pillars, Cycle Progression)
 - [ ] **Epic 11:** Flutter Mobile App (SDUI + Hive offline)
 - [ ] **Epic 12:** Gamification (Shield/Sword/Scroll progression)
 

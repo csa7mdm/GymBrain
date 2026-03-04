@@ -1,80 +1,195 @@
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react';
 
 const QUOTES = [
+  { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
   { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
-  { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
   { text: "Strength does not come from the body. It comes from the will.", author: "Gandhi" },
+  { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
   { text: "Your body can stand almost anything. It's your mind you have to convince.", author: "Unknown" },
-  { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Arnold" },
+  { text: "Success isn't always about greatness. It's about consistency.", author: "Dwayne Johnson" },
+  { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
 ];
 
-export default function HomePage({ onNavigate }: { onNavigate: (tab: string) => void }) {
-  const { user } = useAuth();
-  const saved = JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]');
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+interface HomePageProps {
+  onNavigate: (tab: string) => void;
+}
+
+interface SavedWorkout {
+  id: string; date: string; focus: string;
+  exercises: { name: string; sets: number; reps: number; weight: number }[];
+  completedSets: number; totalSets: number;
+}
+
+export default function HomePage({ onNavigate }: HomePageProps) {
+  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+
   const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
-  const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const workouts: SavedWorkout[] = JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]');
+  const name = profile.name || 'Athlete';
+
+  // Calculate stats
+  const totalWorkouts = workouts.length;
+  const totalExercises = workouts.reduce((s, w) => s + (w.exercises?.length || 0), 0);
+  const bmi = profile.height && profile.weight
+    ? (profile.weight / ((profile.height / 100) ** 2)).toFixed(1)
+    : null;
+
+  // Weekly view
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const workoutDates = workouts.map(w => new Date(w.date).toDateString());
+  const weekDays = DAY_NAMES.map((name, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - dayOfWeek + i);
+    const isDone = workoutDates.includes(date.toDateString());
+    const isToday = i === dayOfWeek;
+    return { name, isDone, isToday };
+  });
+
+  // Streak (consecutive days with workouts ending today)
+  const [streak, setStreak] = useState(0);
+  useEffect(() => {
+    let s = 0;
+    const d = new Date();
+    while (true) {
+      if (workoutDates.includes(d.toDateString())) { s++; d.setDate(d.getDate() - 1); }
+      else break;
+    }
+    setStreak(s);
+  }, []);
+
+  const goalLabels: Record<string, string> = {
+    'muscle': '💪 Build Muscle', 'fat-loss': '🔥 Lose Fat', 'strength': '🏋️ Get Strong',
+    'endurance': '🏃 Endurance', 'health': '❤️ Stay Healthy',
+  };
+
+  const hasProfile = !!profile.name;
 
   return (
-    <div className="app-content">
-      <div className="home-hero">
-        <p className="home-hero__greeting">Hello, <span>{profile.name || user?.email?.split('@')[0] || 'Athlete'}</span> 👋</p>
-        <p className="home-hero__date">{today}</p>
+    <div className="app-content fade-in">
+      {/* Greeting */}
+      <div className="home-greeting">
+        <div className="home-greeting__hello">Hello,</div>
+        <div className="home-greeting__name">{name} 👋</div>
+        {streak > 0 && (
+          <div className="home-greeting__streak">🔥 {streak} day streak</div>
+        )}
       </div>
 
+      {/* Stats */}
       <div className="home-stats">
         <div className="home-stat">
-          <span className="home-stat__val">{saved.length}</span>
+          <span className="home-stat__value">{totalWorkouts}</span>
           <span className="home-stat__label">Workouts</span>
         </div>
         <div className="home-stat">
-          <span className="home-stat__val">{saved.reduce((s: number, w: any) => s + (w.exercises?.length || 0), 0)}</span>
+          <span className="home-stat__value">{totalExercises}</span>
           <span className="home-stat__label">Exercises</span>
         </div>
         <div className="home-stat">
-          <span className="home-stat__val">{profile.weight || '—'}</span>
-          <span className="home-stat__label">kg</span>
+          <span className="home-stat__value">{bmi || '—'}</span>
+          <span className="home-stat__label">BMI</span>
         </div>
       </div>
 
-      <div className="home-quote">
-        <p className="home-quote__text">"{q.text}"</p>
-        <p className="home-quote__author">— {q.author}</p>
+      {/* Weekly Calendar */}
+      <div className="home-week">
+        {weekDays.map((d, i) => (
+          <div key={i} className={`home-week__day ${d.isDone ? 'home-week__day--done' : ''} ${d.isToday ? 'home-week__day--today' : ''}`}>
+            <span>{d.name}</span>
+            <span>{d.isDone ? '✓' : '·'}</span>
+          </div>
+        ))}
       </div>
 
-      <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg" onClick={() => onNavigate('train')}>
-        💪 Start Training
-      </button>
-
-      {saved.length === 0 && (
-        <div className="m3-card m3-card--outlined" style={{ marginTop: 16, textAlign: 'center' }}>
-          <p className="md-body-md text-muted">No saved workouts yet</p>
-          <p className="md-body-sm text-muted" style={{ marginTop: 4 }}>Generate your first AI workout to get started!</p>
+      {/* Goal + Level */}
+      {hasProfile && (
+        <div className="m3-card mb-md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div className="md-label-md text-muted">Goal</div>
+            <div className="md-body-lg">{goalLabels[profile.goal] || profile.goal}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="md-label-md text-muted">Level</div>
+            <div className="md-body-lg">{profile.level}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="md-label-md text-muted">Plan</div>
+            <div className="md-body-lg">{profile.daysPerWeek}x/wk</div>
+          </div>
         </div>
       )}
 
-      {saved.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span className="md-title-sm">Recent Workouts</span>
-            <button className="m3-btn m3-btn--text" style={{ padding: '4px 8px', minHeight: 'auto', fontSize: '0.75rem' }} onClick={() => onNavigate('plans')}>See All →</button>
+      {/* Quote */}
+      <div className="home-quote">
+        <div className="home-quote__text">"{quote.text}"</div>
+        <div className="home-quote__author">— {quote.author}</div>
+      </div>
+
+      {/* AI Analytics: Health Pillars */}
+      {workouts.length > 0 && (
+        <>
+          <div className="section-header mt-lg" style={{ marginBottom: 16 }}>
+            <span className="section-header__icon">🧬</span>
+            <span className="section-header__title">Health Pillars</span>
           </div>
-          {saved.slice(-2).reverse().map((w: any, i: number) => (
-            <div key={i} className="plan-item">
-              <div className="plan-item__icon">💪</div>
-              <div className="plan-item__body">
-                <div className="plan-item__name">{w.focus || 'Full Body'} Workout</div>
-                <div className="plan-item__meta">{w.exercises?.length || 0} exercises • {new Date(w.date).toLocaleDateString()}</div>
+          <div className="m3-card mb-lg">
+            <div className="md-body-sm text-muted mb-sm">Consistency (Streak)</div>
+            <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ height: '100%', width: `${Math.min(streak * 10, 100)}%`, background: 'var(--md-primary)' }} />
+            </div>
+
+            <div className="md-body-sm text-muted mb-sm">Overall Completion Rate</div>
+            <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ height: '100%', width: `${totalWorkouts ? Math.round((workouts.reduce((s, w) => s + w.completedSets, 0) / Math.max(workouts.reduce((s, w) => s + w.totalSets, 0), 1)) * 100) : 0}%`, background: 'var(--md-tertiary)' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--md-on-surface-variant)' }}>
+              <span>Total Sets Completed: {workouts.reduce((s, w) => s + w.completedSets, 0)}</span>
+              <span>Avg Sets/Workout: {totalWorkouts ? Math.round(workouts.reduce((s, w) => s + w.completedSets, 0) / totalWorkouts) : 0}</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Recent Workouts */}
+      {workouts.length > 0 && (
+        <>
+          <div className="section-header">
+            <span className="section-header__icon">📋</span>
+            <span className="section-header__title">Recent Workouts</span>
+          </div>
+          {workouts.slice(-2).reverse().map(w => (
+            <div key={w.id} className="saved-workout">
+              <div className="saved-workout__icon">💪</div>
+              <div className="saved-workout__info">
+                <div className="saved-workout__name">{w.focus}</div>
+                <div className="saved-workout__meta">
+                  {w.exercises?.length || 0} exercises · {w.completedSets}/{w.totalSets} sets
+                </div>
               </div>
             </div>
           ))}
-        </div>
+        </>
       )}
 
-      {!profile.name && (
-        <div className="m3-card m3-card--filled" style={{ marginTop: 16, textAlign: 'center' }}>
-          <p className="md-body-md" style={{ marginBottom: 8 }}>📊 Set up your profile for personalized workouts</p>
-          <button className="m3-btn m3-btn--tonal" onClick={() => onNavigate('profile')}>Complete Profile →</button>
+      {/* CTA */}
+      <div className="mt-lg">
+        <button className="m3-fab m3-fab--full" onClick={() => onNavigate('train')}>
+          <span className="m3-fab__icon">💪</span>
+          Start Training
+        </button>
+      </div>
+
+      {/* Profile CTA (if incomplete) */}
+      {!hasProfile && (
+        <div className="m3-card--outlined m3-card mt-md" style={{ textAlign: 'center' }}>
+          <p className="md-body-md text-muted mb-sm">Complete your profile for personalized workouts</p>
+          <button className="m3-btn m3-btn--tonal m3-btn--sm" onClick={() => onNavigate('profile')}>
+            Setup Profile →
+          </button>
         </div>
       )}
     </div>

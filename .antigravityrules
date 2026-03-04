@@ -57,6 +57,7 @@ database: PostgreSQL 16 (via Docker)
 cache: Redis 7 (via Docker)
 seeded_exercises: 15 core exercises with deterministic GUIDs
 migrations: EF Core Code-First (auto-migrate on startup in dev)
+resource_management: Dispose of all resources and stop Docker (docker-compose down) after each run.
 
 # FRONTEND (React Demo)
 react_framework: Vite + React + TypeScript
@@ -81,13 +82,12 @@ records: Use records for DTOs and commands
 primary_constructors: Use C# 12 primary constructors for DI injection
 file_encoding: UTF-8 (NO PowerShell encoding conversions on .csproj files)
 
-# KNOWN PITFALLS (from previous implementation)
-# 1. NEVER use PowerShell to modify .csproj file encoding (caused corruption)
-# 2. NEVER hardcode secrets in appsettings.json
-# 3. ALWAYS seed exercises (empty table = orchestrator crash)
-# 4. ALWAYS use compressed token maps for LLM prompts (cost control)
-# 5. Result.cs must have proper guard clauses (was previously corrupted)
-# 6. ALWAYS run SafetyGate on LLM output before returning to client
+# KNOWLEDGE LOGGING & LESSONS LEARNED
+knowledge_file: .gymbrain_knowledge.md
+knowledge_rule: After each feature implementation or deep debugging session, ALWAYS document the fault and the lesson learned inside .gymbrain_knowledge.md. Modify and append to the file; do NOT restructure it from scratch.
+
+# END-TO-END DEMO RITUAL
+e2e_testing_ritual: After implementing a feature, you MUST execute an E2E UI Demo using the browser_subagent targeting `http://localhost:5173/`. This validates front-to-back functionality.
 
 # DEVELOPMENT TOOLS
 built_with: Antigravity IDE (Google) + Claude Opus 4.6 (Anthropic)

@@ -30,7 +30,21 @@ public static class WorkoutEndpoints
             return Results.Ok(result);
         })
         .WithName("StartWorkout");
+
+        group.MapPost("/save", async (SaveWorkoutRequest request, ISender sender, ClaimsPrincipal user) =>
+        {
+            var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? user.FindFirstValue("sub")
+                ?? throw new UnauthorizedAccessException("Invalid token."));
+
+            var command = new SaveWorkoutCommand(userId, request.PayloadJson);
+            var result = await sender.Send(command);
+
+            return Results.Ok(result);
+        })
+        .WithName("SaveWorkout");
     }
 }
 
 public record StartWorkoutRequest(string? WorkoutFocus);
+public record SaveWorkoutRequest(string PayloadJson);

@@ -117,7 +117,7 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
                             id="apikey"
                             className="input"
                             type="password"
-                            placeholder={provider === 'openai' ? 'sk-proj-...' : 'sk-groq-...' || 'sk-...'}
+                            placeholder={provider === 'openai' ? 'sk-proj-...' : provider === 'groq' ? 'gsk_...' : 'sk-...'}
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
                             required

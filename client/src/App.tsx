@@ -1,17 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
-import VaultPage from './pages/VaultPage';
+import OnboardingPage from './pages/OnboardingPage';
 import HomePage from './pages/HomePage';
 import WorkoutPage from './pages/WorkoutPage';
 import PlansPage from './pages/PlansPage';
 import ProfilePage from './pages/ProfilePage';
-import './index.css';
 
-type Screen = 'auth' | 'vault' | 'home' | 'train' | 'plans' | 'profile';
+type Tab = 'home' | 'train' | 'plans' | 'profile';
 
-function BottomNav({ active, onChange }: { active: string; onChange: (t: string) => void }) {
-  const tabs = [
+function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  const items: { id: Tab; icon: string; label: string }[] = [
     { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'train', icon: '💪', label: 'Train' },
     { id: 'plans', icon: '📋', label: 'Plans' },
@@ -19,12 +18,12 @@ function BottomNav({ active, onChange }: { active: string; onChange: (t: string)
   ];
   return (
     <nav className="bottom-nav">
-      {tabs.map(t => (
-        <button key={t.id}
-          className={`bottom-nav__item ${active === t.id ? 'bottom-nav__item--active' : ''}`}
-          onClick={() => onChange(t.id)}>
-          <span className="bottom-nav__icon">{t.icon}</span>
-          <span>{t.label}</span>
+      {items.map(i => (
+        <button key={i.id}
+          className={`bottom-nav__item ${tab === i.id ? 'bottom-nav__item--active' : ''}`}
+          onClick={() => setTab(i.id)}>
+          <span className="bottom-nav__icon">{i.icon}</span>
+          {i.label}
         </button>
       ))}
     </nav>
@@ -32,42 +31,59 @@ function BottomNav({ active, onChange }: { active: string; onChange: (t: string)
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
-  const [screen, setScreen] = useState<Screen>('auth');
+  const { user, isAuthenticated } = useAuth();
+  const [tab, setTab] = useState<Tab>('home');
+  const [needsOnboarding, setNeedsOnboarding] = useState(() => {
+    const profile = localStorage.getItem('gymbrain_profile');
+    try {
+      return !profile || !JSON.parse(profile).name;
+    } catch {
+      return true;
+    }
+  });
 
-  if (!isAuthenticated) {
-    return <AuthPage onSuccess={() => setScreen('vault')} />;
-  }
+  useEffect(() => {
+    if (user) {
+      const profile = localStorage.getItem('gymbrain_profile');
+      try {
+        if (!profile || !JSON.parse(profile).name) {
+          setNeedsOnboarding(true);
+        } else {
+          setNeedsOnboarding(false);
+        }
+      } catch {
+        setNeedsOnboarding(true);
+      }
+    }
+  }, [user]);
 
-  if (screen === 'vault' || screen === 'auth') {
+
+  if (!isAuthenticated) return <AuthPage />;
+
+  if (needsOnboarding) {
     return (
-      <VaultPage
-        onComplete={() => setScreen('home')}
-        onSkip={() => setScreen('home')}
-      />
+      <OnboardingPage onComplete={() => {
+        setNeedsOnboarding(false);
+        setTab('home');
+      }} />
     );
   }
 
-  const activeTab = screen;
-  const navigate = (tab: string) => setScreen(tab as Screen);
-
   return (
     <div className="app-shell">
-      {activeTab === 'home' && <HomePage onNavigate={navigate} />}
-      {activeTab === 'train' && <WorkoutPage />}
-      {activeTab === 'plans' && <PlansPage onNavigate={navigate} />}
-      {activeTab === 'profile' && <ProfilePage />}
-      <BottomNav active={activeTab} onChange={navigate} />
+      {tab === 'home' && <HomePage onNavigate={(t) => setTab(t as Tab)} />}
+      {tab === 'train' && <WorkoutPage />}
+      {tab === 'plans' && <PlansPage />}
+      {tab === 'profile' && <ProfilePage />}
+      <BottomNav tab={tab} setTab={setTab} />
     </div>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
 }
-
-export default App;

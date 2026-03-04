@@ -98,6 +98,29 @@ export function startWorkout(workoutFocus?: string) {
   });
 }
 
+export interface SaveWorkoutResponse {
+  workoutSessionId: string;
+}
+
+export function saveWorkout(payloadJson: string) {
+  return request<SaveWorkoutResponse>('/api/workout/save', {
+    method: 'POST',
+    body: JSON.stringify({ payloadJson }),
+  });
+}
+
+// Nutrition
+export interface NutritionResponse {
+  payloadJson: string;
+}
+
+export function generateNutritionPlan(diet: string, calories: number, goal: string) {
+  return request<NutritionResponse>('/api/nutrition/generate', {
+    method: 'POST',
+    body: JSON.stringify({ diet, calories, goal }),
+  });
+}
+
 // Health
 export function healthCheck() {
   return request<string>('/');
