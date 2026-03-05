@@ -125,3 +125,24 @@ export function generateNutritionPlan(diet: string, calories: number, goal: stri
 export function healthCheck() {
   return request<string>('/');
 }
+
+// Profile
+export interface ProfileData {
+  goal: string;
+  equipmentJson: string;
+  injuries: string;
+  daysPerWeek: number;
+  dietaryPreference: string;
+  dailyCalories: number;
+}
+
+export function getProfile() {
+  return request<ProfileData>('/api/profile');
+}
+
+export function saveProfile(profile: ProfileData) {
+  return request<void>('/api/profile/save', {
+    method: 'POST',
+    body: JSON.stringify(profile),
+  });
+}

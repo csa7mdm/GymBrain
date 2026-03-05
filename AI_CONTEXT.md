@@ -4,7 +4,7 @@
   It provides a machine-readable, continuously updated snapshot of 
   the project's current state, architecture, and progress.
   
-  LAST UPDATED: 2026-03-05T02:15:00+02:00
+  LAST UPDATED: 2026-03-05T04:30:00+02:00
   UPDATED BY: Antigravity AI Agent
 -->
 
@@ -82,9 +82,9 @@ real-time workout plans using LLM orchestration with a Server-Driven UI architec
 - **Impact:** All secrets via User Secrets (dev) or env vars (production)
 
 ### ADR-004: Exercise Seeding
-- **Decision:** Seed 15 exercises in EF Core OnModelCreating with deterministic GUIDs
-- **Rationale:** Previous implementation had empty exercise table, causing orchestrator crash
-- **Impact:** Backend is functional immediately after migration
+- **Decision:** Seed 65 exercises in EF Core OnModelCreating with deterministic GUIDs
+- **Rationale:** Expanded from 15 → 65 to ensure full muscle group coverage and equipment-based filtering.
+- **Impact:** Backend supports full auditing remediation immediately after migration.
 
 ### ADR-005: React Demo First, Flutter Later
 - **Decision:** Build React web demo app before Flutter mobile app

@@ -28,7 +28,7 @@ test.describe.serial('🧠 GymBrain Full E2E Journey', () => {
         await expect(page.getByText('GymBrain')).toBeVisible();
 
         // Switch to Sign Up mode
-        const signUpBtn = page.getByText("Don't have an account? Sign up");
+        const signUpBtn = page.getByRole('button', { name: /sign up/i });
         if (await signUpBtn.isVisible()) {
             await signUpBtn.click();
         }
@@ -101,6 +101,44 @@ test.describe.serial('🧠 GymBrain Full E2E Journey', () => {
         await page.screenshot({ path: 'e2e/screenshots/04-home-page.png' });
 
         console.log('✅ Health check passed, key vaulted successfully!');
+    });
+
+    // ─────────────────────────────
+    // 2.5️⃣  SETUP PROFILE
+    // ─────────────────────────────
+    test('2.5️⃣ Setup user profile and verify persistence', async ({ page }) => {
+        // Login
+        await page.goto('/');
+        await page.fill('#email', TEST_EMAIL);
+        await page.fill('#password', TEST_PASSWORD);
+        await page.getByRole('button', { name: /sign in/i }).click();
+
+        // Navigate to Profile tab
+        const profileTab = page.locator('.bottom-nav__item', { hasText: 'Profile' });
+        await profileTab.click();
+        await expect(page.getByText('Your Profile')).toBeVisible({ timeout: 5_000 });
+
+        // Fill Profile fields
+        await page.fill('#goal', 'Build maximum muscle mass');
+        await page.fill('#injuries', 'None');
+        await page.locator('#daysPerWeek').selectOption('4');
+        await page.locator('#experienceLevel').selectOption('intermediate');
+
+        // Screenshot: Profile form filled
+        await page.screenshot({ path: 'e2e/screenshots/04.5-profile-filled.png' });
+
+        // Save Profile
+        await page.getByRole('button', { name: /save profile/i }).click();
+
+        // Wait for success message or indicator
+        await expect(page.getByText(/Profile saved/i)).toBeVisible({ timeout: 5_000 });
+
+        // Refresh to verify persistence
+        await page.reload();
+        await expect(page.locator('#goal')).toHaveValue('Build maximum muscle mass');
+        await expect(page.locator('#experienceLevel')).toHaveValue('intermediate');
+
+        console.log('✅ Profile setup and persistence verified!');
     });
 
     // ─────────────────────────────

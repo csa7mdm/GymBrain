@@ -55,8 +55,8 @@
 | 📋 **Training Plans** | Save workouts, create custom training cycles, workout history |
 | 🎬 **ExerciseDB GIFs** | Animated exercise illustrations from ExerciseDB API with fuzzy matching |
 | 🎯 **Set-by-Set Tracking** | Interactive tap-to-complete circles with rest timer and progress bar |
-| 🧪 **E2E Test Suite** | 5 Playwright tests covering full user journey (register → workout → sign out) |
-| 🏋️ **65 Exercise Catalog** | Seeded exercises across chest, back, legs, arms, core, calves with equipment tags |
+| 🧪 **E2E Test Suite** | 6 Playwright test scenarios covering full journey (register → profile → vault → generate → sign out) |
+| 🏋️ **65 Exercise Catalog** | Seeded exercises across all major muscle groups with equipment tags |
 
 ---
 

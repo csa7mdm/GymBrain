@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GymBrain.Infrastructure.Migrations
 {
     [DbContext(typeof(GymBrainDbContext))]
-    [Migration("20260305004440_ExpandExerciseCatalogAndEquipment")]
-    partial class ExpandExerciseCatalogAndEquipment
+    [Migration("20260305020343_AuditRemediationFull")]
+    partial class AuditRemediationFull
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -73,92 +73,12 @@ namespace GymBrain.Infrastructure.Migrations
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
                             Equipment = "barbell",
-                            Name = "Barbell Bench Press",
-                            TargetMuscle = "Chest"
+                            Name = "Barbell Squat",
+                            TargetMuscle = "Quadriceps"
                         },
                         new
                         {
                             Id = new Guid("10000001-0000-0000-0000-000000000002"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 20.0,
-                            Equipment = "barbell",
-                            Name = "Incline Barbell Bench Press",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000003"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "dumbbell",
-                            Name = "Dumbbell Bench Press",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000004"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 8.0,
-                            Equipment = "dumbbell",
-                            Name = "Incline Dumbbell Press",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000005"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "cable",
-                            Name = "Cable Fly",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000006"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 15.0,
-                            Equipment = "machine",
-                            Name = "Pec Deck",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000007"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 0.0,
-                            Equipment = "bodyweight",
-                            Name = "Push-Up",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000008"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 20.0,
-                            Equipment = "machine",
-                            Name = "Smith Machine Flat Press",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000009"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 15.0,
-                            Equipment = "machine",
-                            Name = "Smith Machine Incline Press",
-                            TargetMuscle = "Chest"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000010"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
@@ -168,97 +88,17 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000011"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000003"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
                             Equipment = "barbell",
-                            Name = "Barbell Row",
-                            TargetMuscle = "Back"
+                            Name = "Barbell Bench Press",
+                            TargetMuscle = "Chest"
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000012"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 0.0,
-                            Equipment = "bodyweight",
-                            Name = "Pull-Up",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000013"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 25.0,
-                            Equipment = "cable",
-                            Name = "Lat Pulldown",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000014"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 20.0,
-                            Equipment = "cable",
-                            Name = "Seated Cable Row",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000015"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "dumbbell",
-                            Name = "Dumbbell Row",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000016"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 20.0,
-                            Equipment = "barbell",
-                            Name = "T-Bar Row",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000017"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "cable",
-                            Name = "Straight-Arm Pulldown",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000018"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 0.0,
-                            Equipment = "bodyweight",
-                            Name = "Back Extension",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000019"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 0.0,
-                            Equipment = "bodyweight",
-                            Name = "Chin-Up",
-                            TargetMuscle = "Back"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000020"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000004"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -268,137 +108,27 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000021"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 8.0,
-                            Equipment = "dumbbell",
-                            Name = "Dumbbell Shoulder Press",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000022"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 5.0,
-                            Equipment = "dumbbell",
-                            Name = "Lateral Raise",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000023"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 5.0,
-                            Equipment = "cable",
-                            Name = "Cable Lateral Raise",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000024"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "cable",
-                            Name = "Face Pull",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000025"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 5.0,
-                            Equipment = "dumbbell",
-                            Name = "Front Raise",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000026"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "machine",
-                            Name = "Reverse Pec Deck",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000027"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 8.0,
-                            Equipment = "dumbbell",
-                            Name = "Arnold Press",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000028"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 20.0,
-                            Equipment = "cable",
-                            Name = "Cable Shrug",
-                            TargetMuscle = "Shoulders"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000029"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000005"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
                             Equipment = "barbell",
-                            Name = "Barbell Squat",
-                            TargetMuscle = "Quadriceps"
+                            Name = "Barbell Row",
+                            TargetMuscle = "Back"
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000030"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000006"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 40.0,
-                            Equipment = "machine",
-                            Name = "Leg Press",
-                            TargetMuscle = "Quadriceps"
+                            DefaultBeginnerWeightKg = 0.0,
+                            Equipment = "bodyweight",
+                            Name = "Pull-Up",
+                            TargetMuscle = "Back"
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000031"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 15.0,
-                            Equipment = "machine",
-                            Name = "Leg Extension",
-                            TargetMuscle = "Quadriceps"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000032"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 20.0,
-                            Equipment = "machine",
-                            Name = "Hack Squat",
-                            TargetMuscle = "Quadriceps"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000033"),
-                            Category = "Compound",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "dumbbell",
-                            Name = "Goblet Squat",
-                            TargetMuscle = "Quadriceps"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000034"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000007"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 10.0,
@@ -408,17 +138,67 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000035"),
-                            Category = "Compound",
+                            Id = new Guid("10000001-0000-0000-0000-000000000008"),
+                            Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 8.0,
                             Equipment = "dumbbell",
-                            Name = "Bulgarian Split Squat",
+                            Name = "Dumbbell Curl",
+                            TargetMuscle = "Biceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000009"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "cable",
+                            Name = "Tricep Pushdown",
+                            TargetMuscle = "Triceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000010"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 40.0,
+                            Equipment = "machine",
+                            Name = "Leg Press",
                             TargetMuscle = "Quadriceps"
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000036"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000011"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 25.0,
+                            Equipment = "cable",
+                            Name = "Lat Pulldown",
+                            TargetMuscle = "Back"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000012"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "cable",
+                            Name = "Cable Fly",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000013"),
+                            Category = "Bodyweight",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 0.0,
+                            Equipment = "bodyweight",
+                            Name = "Plank",
+                            TargetMuscle = "Core"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000014"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
@@ -428,7 +208,237 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
+                            Id = new Guid("10000001-0000-0000-0000-000000000015"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 5.0,
+                            Equipment = "dumbbell",
+                            Name = "Lateral Raise",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000016"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 20.0,
+                            Equipment = "barbell",
+                            Name = "Incline Barbell Bench Press",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000017"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "dumbbell",
+                            Name = "Dumbbell Bench Press",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000018"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 8.0,
+                            Equipment = "dumbbell",
+                            Name = "Incline Dumbbell Press",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000019"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 15.0,
+                            Equipment = "machine",
+                            Name = "Pec Deck",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000020"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 20.0,
+                            Equipment = "machine",
+                            Name = "Smith Machine Flat Press",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000021"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 15.0,
+                            Equipment = "machine",
+                            Name = "Smith Machine Incline Press",
+                            TargetMuscle = "Chest"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000022"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 20.0,
+                            Equipment = "cable",
+                            Name = "Seated Cable Row",
+                            TargetMuscle = "Back"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000023"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 20.0,
+                            Equipment = "barbell",
+                            Name = "T-Bar Row",
+                            TargetMuscle = "Back"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000024"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "cable",
+                            Name = "Straight-Arm Pulldown",
+                            TargetMuscle = "Back"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000025"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 0.0,
+                            Equipment = "bodyweight",
+                            Name = "Back Extension",
+                            TargetMuscle = "Back"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000026"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 0.0,
+                            Equipment = "bodyweight",
+                            Name = "Chin-Up",
+                            TargetMuscle = "Back"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000027"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 8.0,
+                            Equipment = "dumbbell",
+                            Name = "Dumbbell Shoulder Press",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000028"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 5.0,
+                            Equipment = "cable",
+                            Name = "Cable Lateral Raise",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000029"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "cable",
+                            Name = "Face Pull",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000030"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 5.0,
+                            Equipment = "dumbbell",
+                            Name = "Front Raise",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000031"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "machine",
+                            Name = "Reverse Pec Deck",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000032"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 8.0,
+                            Equipment = "dumbbell",
+                            Name = "Arnold Press",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000033"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 20.0,
+                            Equipment = "cable",
+                            Name = "Cable Shrug",
+                            TargetMuscle = "Shoulders"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000034"),
+                            Category = "Isolation",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 15.0,
+                            Equipment = "machine",
+                            Name = "Leg Extension",
+                            TargetMuscle = "Quadriceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000035"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 20.0,
+                            Equipment = "machine",
+                            Name = "Hack Squat",
+                            TargetMuscle = "Quadriceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000036"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 10.0,
+                            Equipment = "dumbbell",
+                            Name = "Goblet Squat",
+                            TargetMuscle = "Quadriceps"
+                        },
+                        new
+                        {
                             Id = new Guid("10000001-0000-0000-0000-000000000037"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 8.0,
+                            Equipment = "dumbbell",
+                            Name = "Bulgarian Split Squat",
+                            TargetMuscle = "Quadriceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000038"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -438,7 +448,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000038"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000039"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
@@ -448,7 +458,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000039"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000040"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 0.0,
@@ -458,7 +468,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000040"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000041"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -468,22 +478,12 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000041"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000042"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 10.0,
                             Equipment = "barbell",
                             Name = "Barbell Curl",
-                            TargetMuscle = "Biceps"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000042"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 8.0,
-                            Equipment = "dumbbell",
-                            Name = "Dumbbell Curl",
                             TargetMuscle = "Biceps"
                         },
                         new
@@ -532,23 +532,13 @@ namespace GymBrain.Infrastructure.Migrations
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 10.0,
-                            Equipment = "cable",
-                            Name = "Tricep Pushdown",
-                            TargetMuscle = "Triceps"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000048"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 10.0,
                             Equipment = "barbell",
                             Name = "Skull Crushers",
                             TargetMuscle = "Triceps"
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000049"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000048"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 10.0,
@@ -558,7 +548,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000050"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000049"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 5.0,
@@ -568,7 +558,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000051"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000050"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -578,7 +568,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000052"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000051"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 0.0,
@@ -588,27 +578,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000053"),
-                            Category = "Bodyweight",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 0.0,
-                            Equipment = "bodyweight",
-                            Name = "Plank",
-                            TargetMuscle = "Core"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000054"),
-                            Category = "Isolation",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DefaultBeginnerWeightKg = 15.0,
-                            Equipment = "cable",
-                            Name = "Cable Crunch",
-                            TargetMuscle = "Core"
-                        },
-                        new
-                        {
-                            Id = new Guid("10000001-0000-0000-0000-000000000055"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000052"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 0.0,
@@ -618,7 +588,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000056"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000053"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 0.0,
@@ -628,7 +598,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000057"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000054"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 5.0,
@@ -638,7 +608,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000058"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000055"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
@@ -648,7 +618,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000059"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000056"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -658,7 +628,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000060"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000057"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 20.0,
@@ -668,7 +638,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000061"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000058"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -678,7 +648,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000062"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000059"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 5.0,
@@ -688,7 +658,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000063"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000060"),
                             Category = "Isolation",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 3.0,
@@ -698,7 +668,7 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000064"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000061"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 15.0,
@@ -708,12 +678,42 @@ namespace GymBrain.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("10000001-0000-0000-0000-000000000065"),
+                            Id = new Guid("10000001-0000-0000-0000-000000000062"),
                             Category = "Compound",
                             CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBeginnerWeightKg = 0.0,
                             Equipment = "bodyweight",
                             Name = "Burpees",
+                            TargetMuscle = "Full Body"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000063"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 0.0,
+                            Equipment = "bodyweight",
+                            Name = "Diamond Push-Up",
+                            TargetMuscle = "Triceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000064"),
+                            Category = "Plyometric",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 0.0,
+                            Equipment = "bodyweight",
+                            Name = "Box Jump",
+                            TargetMuscle = "Quadriceps"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000001-0000-0000-0000-000000000065"),
+                            Category = "Compound",
+                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultBeginnerWeightKg = 5.0,
+                            Equipment = "bodyweight",
+                            Name = "Medicine Ball Slam",
                             TargetMuscle = "Full Body"
                         });
                 });
@@ -727,6 +727,15 @@ namespace GymBrain.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DailyCalories")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DaysPerWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DietaryPreference")
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -737,8 +746,17 @@ namespace GymBrain.Infrastructure.Migrations
                         .HasColumnType("character varying(2048)")
                         .HasColumnName("encrypted_api_key");
 
+                    b.Property<string>("EquipmentJson")
+                        .HasColumnType("text");
+
                     b.Property<int>("ExperienceLevel")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Goal")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Injuries")
+                        .HasColumnType("text");
 
                     b.Property<string>("LlmProvider")
                         .HasColumnType("text");

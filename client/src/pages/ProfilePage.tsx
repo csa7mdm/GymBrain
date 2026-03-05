@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { generateNutritionPlan } from '../services/api';
+import { generateNutritionPlan, getProfile, saveProfile, type ProfileData } from '../services/api';
 
 const GOALS = [
   { id: 'muscle', icon: '💪', label: 'Build Muscle' },
@@ -29,28 +29,63 @@ export default function ProfilePage() {
   const [diet, setDiet] = useState('Standard');
   const [calories, setCalories] = useState(2500);
   const [saved, setSaved] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
-    const p = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
-    if (p.name) setName(p.name);
-    if (p.age) setAge(p.age);
-    if (p.height) setHeight(p.height);
-    if (p.weight) setWeight(p.weight);
-    if (p.goal) setGoal(p.goal);
-    if (p.level) setLevel(p.level);
-    if (p.daysPerWeek) setDaysPerWeek(p.daysPerWeek);
-    if (p.equipment) setEquipment(p.equipment);
-    if (p.focusAreas) setFocusAreas(p.focusAreas);
-    if (p.diet) setDiet(p.diet);
-    if (p.calories) setCalories(p.calories);
+    const fetchProfile = async () => {
+      const res = await getProfile();
+      if (res.data) {
+        setGoal(res.data.goal);
+        setDaysPerWeek(res.data.daysPerWeek);
+        setDiet(res.data.dietaryPreference);
+        setCalories(res.data.dailyCalories);
+        setInjuries(res.data.injuries || 'None');
+        try {
+          const eq = JSON.parse(res.data.equipmentJson || '[]');
+          setEquipment(eq);
+        } catch {
+          setEquipment(['Bodyweight']);
+        }
+      }
+
+      // Load other non-persisted fields from localstorage for now
+      const p = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+      if (p.name) setName(p.name);
+      if (p.age) setAge(p.age);
+      if (p.height) setHeight(p.height);
+      if (p.weight) setWeight(p.weight);
+      if (p.level) setLevel(p.level);
+      if (p.focusAreas) setFocusAreas(p.focusAreas);
+
+      setLoadingProfile(false);
+    };
+    fetchProfile();
   }, []);
 
-  const handleSave = () => {
+  const [injuries, setInjuries] = useState('None');
+
+  const handleSave = async () => {
+    const profile: ProfileData = {
+      goal,
+      daysPerWeek,
+      dietaryPreference: diet,
+      dailyCalories: calories,
+      injuries,
+      equipmentJson: JSON.stringify(equipment)
+    };
+
+    const res = await saveProfile(profile);
+    if (!res.error) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } else {
+      alert('Failed to save profile to server: ' + res.error);
+    }
+
+    // Save metadata to localstorage
     const existing = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
     const updated = { ...existing, name, age, height, weight, goal, level, daysPerWeek, equipment, focusAreas, diet, calories };
     localStorage.setItem('gymbrain_profile', JSON.stringify(updated));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   const [generatingNutrition, setGeneratingNutrition] = useState(false);
@@ -84,6 +119,15 @@ export default function ProfilePage() {
 
   const bmi = height && weight ? (weight / ((height / 100) ** 2)).toFixed(1) : null;
   const initials = name ? name.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || '?');
+
+  if (loadingProfile) {
+    return (
+      <div className="app-content flex-center" style={{ height: '100vh' }}>
+        <div className="m3-loader"></div>
+        <p className="md-label-lg mt-md">Loading Profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-content fade-in">
