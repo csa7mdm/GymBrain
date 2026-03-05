@@ -51,11 +51,12 @@
 | 🔒 **Zero-Trust Security** | JWT auth, BCrypt hashing, AES-256 encryption, no secrets in source code |
 | 🎨 **Material 3 Design System** | Dark theme with M3 color tokens, elevation, shape, motion, and typography |
 | 🧭 **Tabbed Navigation** | 4-tab bottom nav: Home Dashboard, Training, Plans, Profile |
-| 👤 **User Profile & Preferences** | Body data, fitness goals, equipment, dietary restrictions, BMI calculator |
+| 👤 **User Profile & Preferences** | Body data, fitness goals, equipment, dietary restrictions, BMI calculator — persisted to PostgreSQL |
 | 📋 **Training Plans** | Save workouts, create custom training cycles, workout history |
 | 🎬 **ExerciseDB GIFs** | Animated exercise illustrations from ExerciseDB API with fuzzy matching |
 | 🎯 **Set-by-Set Tracking** | Interactive tap-to-complete circles with rest timer and progress bar |
 | 🧪 **E2E Test Suite** | 5 Playwright tests covering full user journey (register → workout → sign out) |
+| 🏋️ **65 Exercise Catalog** | Seeded exercises across chest, back, legs, arms, core, calves with equipment tags |
 
 ---
 
@@ -413,10 +414,10 @@ dotnet test GymBrain.sln --verbosity normal
 | Suite | Tests | Coverage |
 |-------|-------|----------|
 | `GymBrain.Domain.Tests` | 5 | Result monad (success, failure, generics, implicit conversion) |
-| `GymBrain.Application.Tests` | 8 | SafetyGate (weight clamping, ID validation), SystemPromptFactory (compression, persona) |
+| `GymBrain.Application.Tests` | 12 | SafetyGate (weight/reps/rest/sets clamping, ID validation), SystemPromptFactory (compression, persona) |
 | `GymBrain.Infrastructure.Tests` | 5 | VaultService (round-trip, unique IV, tamper detection, Law 151) |
 | `GymBrain.Api.Tests` | 4 | Scaffold tests |
-| **Total** | **22** | **All passing ✅** |
+| **Total** | **26** | **All passing ✅** |
 
 ### E2E Tests (Playwright)
 

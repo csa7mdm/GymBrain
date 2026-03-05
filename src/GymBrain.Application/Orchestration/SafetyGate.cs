@@ -75,7 +75,28 @@ public static class SafetyGate
                              && prop.Value.ValueKind == JsonValueKind.Number)
                     {
                         var weight = prop.Value.GetDouble();
-                        writer.WriteNumberValue(Math.Min(weight, maxWeight));
+                        writer.WriteNumberValue(Math.Min(Math.Max(weight, 0), maxWeight));
+                    }
+                    // Clamp reps to 1-30 range
+                    else if (prop.Name.Equals("reps", StringComparison.OrdinalIgnoreCase)
+                             && prop.Value.ValueKind == JsonValueKind.Number)
+                    {
+                        var reps = (int)prop.Value.GetDouble();
+                        writer.WriteNumberValue(Math.Clamp(reps, 1, 30));
+                    }
+                    // Clamp rest_seconds to 30-300 range
+                    else if (prop.Name.Equals("rest_seconds", StringComparison.OrdinalIgnoreCase)
+                             && prop.Value.ValueKind == JsonValueKind.Number)
+                    {
+                        var rest = (int)prop.Value.GetDouble();
+                        writer.WriteNumberValue(Math.Clamp(rest, 30, 300));
+                    }
+                    // Clamp sets to 1-10 range
+                    else if (prop.Name.Equals("sets", StringComparison.OrdinalIgnoreCase)
+                             && prop.Value.ValueKind == JsonValueKind.Number)
+                    {
+                        var sets = (int)prop.Value.GetDouble();
+                        writer.WriteNumberValue(Math.Clamp(sets, 1, 10));
                     }
                     else
                     {

@@ -19,11 +19,17 @@ public static class NutritionPromptFactory
             Return EXACTLY this JSON structure. No extra keys. No markdown blocks.
             {
               "message_from_coach": "string",
+              "total_calories": "integer (sum of all meal calories)",
+              "macros": {
+                "protein_g": "integer (total for the day)",
+                "carbs_g": "integer (total for the day)",
+                "fat_g": "integer (total for the day)"
+              },
               "meals": [
                 {
                   "type": "string (Breakfast, Lunch, Dinner, Snack)",
                   "name": "string (Name of the dish)",
-                  "calories": "integer",
+                  "calories": "integer (must be 50-2000 per meal)",
                   "protein_g": "integer",
                   "carbs_g": "integer",
                   "fat_g": "integer",
@@ -31,6 +37,12 @@ public static class NutritionPromptFactory
                 }
               ]
             }
+
+            RULES:
+            - meals array MUST have exactly 4 entries (Breakfast, Lunch, Dinner, Snack)
+            - total_calories MUST roughly equal sum of individual meal calories (±50)
+            - All calorie values must be positive integers
+            - Output raw JSON only. No markdown fences, no backticks.
             """;
     }
 }

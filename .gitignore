@@ -40,3 +40,9 @@ appsettings.*.local.json
 
 ## Misc
 *.log
+
+## Debug artifacts (must not be committed)
+build_err.txt
+error.txt
+out.json
+audit_extracted.txt

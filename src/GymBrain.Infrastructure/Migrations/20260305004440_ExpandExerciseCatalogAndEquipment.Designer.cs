@@ -3,6 +3,7 @@ using System;
 using GymBrain.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GymBrain.Infrastructure.Migrations
 {
     [DbContext(typeof(GymBrainDbContext))]
-    partial class GymBrainDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260305004440_ExpandExerciseCatalogAndEquipment")]
+    partial class ExpandExerciseCatalogAndEquipment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -724,15 +727,6 @@ namespace GymBrain.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("DailyCalories")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DaysPerWeek")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("DietaryPreference")
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -743,17 +737,8 @@ namespace GymBrain.Infrastructure.Migrations
                         .HasColumnType("character varying(2048)")
                         .HasColumnName("encrypted_api_key");
 
-                    b.Property<string>("EquipmentJson")
-                        .HasColumnType("text");
-
                     b.Property<int>("ExperienceLevel")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Goal")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Injuries")
-                        .HasColumnType("text");
 
                     b.Property<string>("LlmProvider")
                         .HasColumnType("text");

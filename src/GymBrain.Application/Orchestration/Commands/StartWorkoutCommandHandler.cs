@@ -53,6 +53,14 @@ public sealed class StartWorkoutCommandHandler(
             ? "full-body" : request.WorkoutFocus;
         var levelStr = request.ExperienceLevel.ToString().ToLowerInvariant();
         var userMessage = $"Workout: {focusPart} | Level: {levelStr}";
+        
+        // Enrich with profile context if available
+        if (!string.IsNullOrEmpty(user.Goal))
+            userMessage += $" | Goal: {user.Goal}";
+        if (!string.IsNullOrEmpty(user.EquipmentJson))
+            userMessage += $" | Equipment: {user.EquipmentJson}";
+        if (!string.IsNullOrEmpty(user.Injuries))
+            userMessage += $" | Restrictions: {user.Injuries}";
 
         // Resolve provider and call LLM with fallback support for free models
         var provider = llmProviderFactory.GetProvider(user.LlmProvider ?? "openai");

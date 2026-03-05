@@ -34,8 +34,8 @@ public class SystemPromptFactoryTests
     public void Build_Should_Include_Anti_Hallucination_Rules()
     {
         var prompt = SystemPromptFactory.Build("Coach", Exercises);
-        prompt.Should().Contain("ONLY use exercise IDs from the list above");
-        prompt.Should().Contain("Never invent IDs");
+        prompt.Should().Contain("MUST match an entry from the EXERCISES list");
+        prompt.Should().Contain("Never invent");
     }
 
     [Fact]

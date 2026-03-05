@@ -45,4 +45,38 @@ public class SafetyGateTests
         var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Advanced);
         result.Should().Contain("150");
     }
+
+    [Fact]
+    public void Should_Clamp_Excessive_Reps()
+    {
+        var json = """{"exercise_id": "10000001-0000-0000-0000-000000000001", "reps": 100}""";
+        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        result.Should().Contain("\"reps\": 30");
+    }
+
+    [Fact]
+    public void Should_Clamp_Low_Rest_Seconds()
+    {
+        var json = """{"exercise_id": "10000001-0000-0000-0000-000000000001", "rest_seconds": 5}""";
+        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        result.Should().Contain("30");
+    }
+
+    [Fact]
+    public void Should_Clamp_High_Rest_Seconds()
+    {
+        var json = """{"exercise_id": "10000001-0000-0000-0000-000000000001", "rest_seconds": 600}""";
+        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        result.Should().Contain("300");
+        result.Should().NotContain("600");
+    }
+
+    [Fact]
+    public void Should_Clamp_Excessive_Sets()
+    {
+        var json = """{"exercise_id": "10000001-0000-0000-0000-000000000001", "sets": 20}""";
+        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        result.Should().Contain("10");
+        result.Should().NotContain("20");
+    }
 }

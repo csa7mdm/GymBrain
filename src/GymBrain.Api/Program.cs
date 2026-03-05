@@ -1,4 +1,5 @@
 using GymBrain.Api.Endpoints;
+using GymBrain.API.Endpoints;
 using GymBrain.Application;
 using GymBrain.Infrastructure;
 using GymBrain.Infrastructure.Persistence;
@@ -54,5 +55,6 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapWorkoutEndpoints();
 app.MapNutritionEndpoints();
+app.MapProfileEndpoints();
 
 app.Run();

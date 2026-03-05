@@ -48,4 +48,27 @@ public class User : BaseEntity
         ExperienceLevel = level;
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    // === Profile persistence fields ===
+    public string? Goal { get; private set; }
+    public string? EquipmentJson { get; private set; }  // JSON array of available equipment
+    public string? Injuries { get; private set; }
+    public int DaysPerWeek { get; private set; } = 3;
+    public string? DietaryPreference { get; private set; }
+    public int DailyCalories { get; private set; }
+
+    public void UpdateProfile(
+        string? goal, string? equipmentJson, string? injuries,
+        int daysPerWeek, string? dietaryPreference, int dailyCalories,
+        ExperienceLevel experienceLevel)
+    {
+        Goal = goal;
+        EquipmentJson = equipmentJson;
+        Injuries = injuries;
+        DaysPerWeek = Math.Clamp(daysPerWeek, 1, 7);
+        DietaryPreference = dietaryPreference;
+        DailyCalories = Math.Clamp(dailyCalories, 0, 10000);
+        ExperienceLevel = experienceLevel;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 }
