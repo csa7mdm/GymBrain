@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 namespace GymBrain.Infrastructure.Persistence;
 
 /// <summary>
-/// Seeds 65 exercises covering all major muscle groups and equipment types.
+/// Seeds 70 exercises covering all major muscle groups and equipment types.
 /// IDs are deterministic GUIDs and the first 15 are preserved to maintain
 /// database migration and testing consistency.
+/// Exercises with Category="Warmup" (IDs ...000066-000070) are excluded from
+/// main workout generation and substitute mappings.
 /// </summary>
 public static class ExerciseSeeder
 {
@@ -95,7 +97,14 @@ public static class ExerciseSeeder
             Create("10000001-0000-0000-0000-000000000062", "Burpees", "Full Body", "Compound", 0.0, "bodyweight"),
             Create("10000001-0000-0000-0000-000000000063", "Diamond Push-Up", "Triceps", "Compound", 0.0, "bodyweight"),
             Create("10000001-0000-0000-0000-000000000064", "Box Jump", "Quadriceps", "Plyometric", 0.0, "bodyweight"),
-            Create("10000001-0000-0000-0000-000000000065", "Medicine Ball Slam", "Full Body", "Compound", 5.0, "bodyweight")
+            Create("10000001-0000-0000-0000-000000000065", "Medicine Ball Slam", "Full Body", "Compound", 5.0, "bodyweight"),
+
+            // === WARM-UP EXERCISES (Category="Warmup" — excluded from main workout LLM catalog) ===
+            Create("10000001-0000-0000-0000-000000000066", "Treadmill Walk", "Full Body", "Warmup", 0.0, "cardio"),
+            Create("10000001-0000-0000-0000-000000000067", "Stationary Bike", "Full Body", "Warmup", 0.0, "cardio"),
+            Create("10000001-0000-0000-0000-000000000068", "Jumping Jacks", "Full Body", "Warmup", 0.0, "bodyweight"),
+            Create("10000001-0000-0000-0000-000000000069", "Arm Circles", "Shoulders", "Warmup", 0.0, "bodyweight"),
+            Create("10000001-0000-0000-0000-000000000070", "Bodyweight Air Squats", "Legs", "Warmup", 0.0, "bodyweight")
         );
     }
 

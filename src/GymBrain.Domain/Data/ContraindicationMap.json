@@ -1,0 +1,168 @@
+{
+    "contraindications": [
+        {
+            "injury_group": "lower_back",
+            "keywords": [
+                "lower back",
+                "back pain",
+                "herniated disc",
+                "sciatica",
+                "lumbar",
+                "disc"
+            ],
+            "excluded_exercise_ids": [
+                "10000001-0000-0000-0000-000000000001",
+                "10000001-0000-0000-0000-000000000002",
+                "10000001-0000-0000-0000-000000000004",
+                "10000001-0000-0000-0000-000000000005",
+                "10000001-0000-0000-0000-000000000014",
+                "10000001-0000-0000-0000-000000000016",
+                "10000001-0000-0000-0000-000000000020",
+                "10000001-0000-0000-0000-000000000021",
+                "10000001-0000-0000-0000-000000000023",
+                "10000001-0000-0000-0000-000000000035",
+                "10000001-0000-0000-0000-000000000039",
+                "10000001-0000-0000-0000-000000000047",
+                "10000001-0000-0000-0000-000000000050",
+                "10000001-0000-0000-0000-000000000057",
+                "10000001-0000-0000-0000-000000000058",
+                "10000001-0000-0000-0000-000000000061",
+                "10000001-0000-0000-0000-000000000063",
+                "10000001-0000-0000-0000-000000000064"
+            ],
+            "comment": "Excludes: Barbell Squat, Barbell Deadlift, Overhead Press, Barbell Row, Romanian Deadlift, Incline Barbell Bench Press, Smith Machine Flat/Incline Press, T-Bar Row, Hack Squat, Hip Thrust, Skull Crushers, Close-Grip Bench Press, Barbell/Dumbbell Shrug, Clean and Press, Diamond Push-Up, Box Jump"
+        },
+        {
+            "injury_group": "knee",
+            "keywords": [
+                "knee",
+                "knee pain",
+                "acl",
+                "meniscus",
+                "patella",
+                "patellar",
+                "bad knees",
+                "knee injury"
+            ],
+            "excluded_exercise_ids": [
+                "10000001-0000-0000-0000-000000000001",
+                "10000001-0000-0000-0000-000000000007",
+                "10000001-0000-0000-0000-000000000010",
+                "10000001-0000-0000-0000-000000000034",
+                "10000001-0000-0000-0000-000000000035",
+                "10000001-0000-0000-0000-000000000036",
+                "10000001-0000-0000-0000-000000000037",
+                "10000001-0000-0000-0000-000000000051",
+                "10000001-0000-0000-0000-000000000061",
+                "10000001-0000-0000-0000-000000000062",
+                "10000001-0000-0000-0000-000000000064",
+                "10000001-0000-0000-0000-000000000066"
+            ],
+            "comment": "Excludes: Barbell Squat, Dumbbell Lunges, Leg Press, Leg Extension, Hack Squat, Goblet Squat, Bulgarian Split Squat, Dips (knee bend), Clean and Press, Burpees, Box Jump, Bodyweight Air Squats (warmup)"
+        },
+        {
+            "injury_group": "shoulder",
+            "keywords": [
+                "shoulder",
+                "shoulder pain",
+                "rotator cuff",
+                "impingement",
+                "labrum",
+                "ac joint"
+            ],
+            "excluded_exercise_ids": [
+                "10000001-0000-0000-0000-000000000004",
+                "10000001-0000-0000-0000-000000000013",
+                "10000001-0000-0000-0000-000000000015",
+                "10000001-0000-0000-0000-000000000016",
+                "10000001-0000-0000-0000-000000000018",
+                "10000001-0000-0000-0000-000000000021",
+                "10000001-0000-0000-0000-000000000024",
+                "10000001-0000-0000-0000-000000000027",
+                "10000001-0000-0000-0000-000000000028",
+                "10000001-0000-0000-0000-000000000029",
+                "10000001-0000-0000-0000-000000000030",
+                "10000001-0000-0000-0000-000000000032",
+                "10000001-0000-0000-0000-000000000033",
+                "10000001-0000-0000-0000-000000000048",
+                "10000001-0000-0000-0000-000000000050",
+                "10000001-0000-0000-0000-000000000051",
+                "10000001-0000-0000-0000-000000000057",
+                "10000001-0000-0000-0000-000000000058",
+                "10000001-0000-0000-0000-000000000061",
+                "10000001-0000-0000-0000-000000000063",
+                "10000001-0000-0000-0000-000000000067",
+                "10000001-0000-0000-0000-000000000068"
+            ],
+            "comment": "Excludes: Overhead Press, Lateral Raise, Incline Barbell/Dumbbell Press, Smith Machine Incline, Straight-Arm Pulldown, Dumbbell Shoulder Press, Cable Lateral Raise, Face Pull, Front Raise, Arnold Press, Cable Shrug, Cable Overhead Tricep Extension, Close-Grip Bench, Dips, Barbell/Dumbbell Shrug, Clean and Press, Diamond Push-Up, Arm Circles (warmup), Jumping Jacks (warmup)"
+        },
+        {
+            "injury_group": "wrist",
+            "keywords": [
+                "wrist",
+                "wrist pain",
+                "carpal tunnel",
+                "wrist injury"
+            ],
+            "excluded_exercise_ids": [
+                "10000001-0000-0000-0000-000000000003",
+                "10000001-0000-0000-0000-000000000004",
+                "10000001-0000-0000-0000-000000000017",
+                "10000001-0000-0000-0000-000000000018",
+                "10000001-0000-0000-0000-000000000027",
+                "10000001-0000-0000-0000-000000000032",
+                "10000001-0000-0000-0000-000000000047",
+                "10000001-0000-0000-0000-000000000050",
+                "10000001-0000-0000-0000-000000000059",
+                "10000001-0000-0000-0000-000000000060",
+                "10000001-0000-0000-0000-000000000061",
+                "10000001-0000-0000-0000-000000000063"
+            ],
+            "comment": "Excludes: Barbell Bench Press, Overhead Press, Dumbbell Bench Press, Incline Dumbbell Press, Dumbbell Shoulder Press, Arnold Press, Skull Crushers, Close-Grip Bench, Wrist Curl, Reverse Wrist Curl, Clean and Press, Diamond Push-Up"
+        },
+        {
+            "injury_group": "neck",
+            "keywords": [
+                "neck",
+                "neck pain",
+                "cervical",
+                "whiplash",
+                "neck injury"
+            ],
+            "excluded_exercise_ids": [
+                "10000001-0000-0000-0000-000000000004",
+                "10000001-0000-0000-0000-000000000027",
+                "10000001-0000-0000-0000-000000000032",
+                "10000001-0000-0000-0000-000000000033",
+                "10000001-0000-0000-0000-000000000057",
+                "10000001-0000-0000-0000-000000000058",
+                "10000001-0000-0000-0000-000000000061"
+            ],
+            "comment": "Excludes: Overhead Press, Dumbbell Shoulder Press, Arnold Press, Cable Shrug, Barbell/Dumbbell Shrug, Clean and Press"
+        },
+        {
+            "injury_group": "elbow",
+            "keywords": [
+                "elbow",
+                "tennis elbow",
+                "golfer's elbow",
+                "elbow pain"
+            ],
+            "excluded_exercise_ids": [
+                "10000001-0000-0000-0000-000000000008",
+                "10000001-0000-0000-0000-000000000009",
+                "10000001-0000-0000-0000-000000000042",
+                "10000001-0000-0000-0000-000000000043",
+                "10000001-0000-0000-0000-000000000044",
+                "10000001-0000-0000-0000-000000000045",
+                "10000001-0000-0000-0000-000000000046",
+                "10000001-0000-0000-0000-000000000047",
+                "10000001-0000-0000-0000-000000000048",
+                "10000001-0000-0000-0000-000000000049",
+                "10000001-0000-0000-0000-000000000059",
+                "10000001-0000-0000-0000-000000000060"
+            ],
+            "comment": "Excludes: Dumbbell Curl, Tricep Pushdown, Barbell Curl, Incline Dumbbell Curl, Hammer Curl, Cable Curl, Preacher Curl, Skull Crushers, Cable Overhead Tricep Extension, Dumbbell Kickback, Wrist Curl, Reverse Wrist Curl"
+        }
+    ]
+}

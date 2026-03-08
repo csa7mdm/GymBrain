@@ -1,0 +1,1629 @@
+{
+    "substitutes": {
+        "10000001-0000-0000-0000-000000000001": {
+            "name": "Barbell Squat",
+            "primary_muscle": "Quadriceps",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Same quad activation pattern with a dumbbell, beginner-friendly, no spotter needed."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000010",
+                    "name": "Leg Press",
+                    "equipment": "machine",
+                    "reason": "Heavy quad loading without spinal compression, great barbell squat alternative."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000064",
+                    "name": "Box Jump",
+                    "equipment": "bodyweight",
+                    "reason": "Zero-equipment quad and glute power builder when racks are occupied."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000002": {
+            "name": "Barbell Deadlift",
+            "primary_muscle": "Back",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000014",
+                    "name": "Romanian Deadlift",
+                    "equipment": "barbell",
+                    "reason": "Same posterior chain, lighter load, easier form for beginners."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Trains back muscles without floor-level barbell setup."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000025",
+                    "name": "Back Extension",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight erector spinae work — no equipment needed."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000003": {
+            "name": "Barbell Bench Press",
+            "primary_muscle": "Chest",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000017",
+                    "name": "Dumbbell Bench Press",
+                    "equipment": "dumbbell",
+                    "reason": "Same movement pattern, greater range of motion, no spotter required."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000012",
+                    "name": "Cable Fly",
+                    "equipment": "cable",
+                    "reason": "Chest isolation when flat bench is occupied, constant tension."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000019",
+                    "name": "Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Guided chest fly, ideal when free weights are busy."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000004": {
+            "name": "Overhead Press",
+            "primary_muscle": "Shoulders",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000027",
+                    "name": "Dumbbell Shoulder Press",
+                    "equipment": "dumbbell",
+                    "reason": "Identical pressing motion with dumbbells — no rack required."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Deltoid isolation, zero spinal load, safe for shoulder beginners."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000028",
+                    "name": "Cable Lateral Raise",
+                    "equipment": "cable",
+                    "reason": "Constant tension lateral deltoid work when dumbbells are taken."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000005": {
+            "name": "Barbell Row",
+            "primary_muscle": "Back",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Same horizontal pulling pattern, controlled cable keeps form honest."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000011",
+                    "name": "Lat Pulldown",
+                    "equipment": "cable",
+                    "reason": "Vertical pulling hits lats effectively when rows are unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000026",
+                    "name": "Chin-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight row alternative that also hits biceps."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000006": {
+            "name": "Pull-Up",
+            "primary_muscle": "Back",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000011",
+                    "name": "Lat Pulldown",
+                    "equipment": "cable",
+                    "reason": "Mimics pull-up mechanics with adjustable weight for beginners."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Horizontal pull works the same back muscles with cable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000026",
+                    "name": "Chin-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Underhand grip variation easier for most beginners."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000007": {
+            "name": "Dumbbell Lunges",
+            "primary_muscle": "Quadriceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000037",
+                    "name": "Bulgarian Split Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Single-leg quad work with more stability from rear foot elevation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Same muscles, bilateral movement reduces coordination demand."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000010",
+                    "name": "Leg Press",
+                    "equipment": "machine",
+                    "reason": "Machine-guided leg press removes balance requirement entirely."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000008": {
+            "name": "Dumbbell Curl",
+            "primary_muscle": "Biceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000045",
+                    "name": "Cable Curl",
+                    "equipment": "cable",
+                    "reason": "Constant cable tension peaks at full contraction unlike free weight."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000042",
+                    "name": "Barbell Curl",
+                    "equipment": "barbell",
+                    "reason": "Barbell allows heavier bilateral loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000044",
+                    "name": "Hammer Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Neutral grip targets brachialis for fuller arm look."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000009": {
+            "name": "Tricep Pushdown",
+            "primary_muscle": "Triceps",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000049",
+                    "name": "Dumbbell Tricep Kickback",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell kickback isolates the long head of the tricep."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000051",
+                    "name": "Dips",
+                    "equipment": "bodyweight",
+                    "reason": "Compound bodyweight tricep move — any parallel bars or bench."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000063",
+                    "name": "Diamond Push-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Tricep-dominant push-up requiring zero equipment."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000010": {
+            "name": "Leg Press",
+            "primary_muscle": "Quadriceps",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "No machine needed — goblet squat is closest quad-dominant substitute."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000001",
+                    "name": "Barbell Squat",
+                    "equipment": "barbell",
+                    "reason": "Free weight quad compound when the leg press machine is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000035",
+                    "name": "Hack Squat",
+                    "equipment": "machine",
+                    "reason": "Adjacent machine targets same muscles with guided movement."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000011": {
+            "name": "Lat Pulldown",
+            "primary_muscle": "Back",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000006",
+                    "name": "Pull-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight version of same vertical pull pattern."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000026",
+                    "name": "Chin-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Underhand pull-up hits lats and biceps."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Horizontal cable pull when lat pulldown station is taken."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000012": {
+            "name": "Cable Fly",
+            "primary_muscle": "Chest",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000019",
+                    "name": "Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Machine fly replaces cable fly with same isolation mechanics."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000017",
+                    "name": "Dumbbell Bench Press",
+                    "equipment": "dumbbell",
+                    "reason": "Chest compound when cable stations are occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000003",
+                    "name": "Barbell Bench Press",
+                    "equipment": "barbell",
+                    "reason": "Heavy chest loading alternative with barbell."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000013": {
+            "name": "Plank",
+            "primary_muscle": "Core",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000052",
+                    "name": "Hanging Leg Raise",
+                    "equipment": "bodyweight",
+                    "reason": "Pull-up bar core work when floor space is crowded."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000054",
+                    "name": "Russian Twist",
+                    "equipment": "dumbbell",
+                    "reason": "Rotational core exercise, seated position on any bench."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000053",
+                    "name": "Ab Wheel Rollout",
+                    "equipment": "bodyweight",
+                    "reason": "Harder plank variation using an ab wheel."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000014": {
+            "name": "Romanian Deadlift",
+            "primary_muscle": "Hamstrings",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000038",
+                    "name": "Leg Curl",
+                    "equipment": "machine",
+                    "reason": "Direct hamstring isolation when barbell is unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000039",
+                    "name": "Hip Thrust",
+                    "equipment": "barbell",
+                    "reason": "Glute-hamstring posterior chain when standing RDL feels crowded."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Zero-equipment bodyweight posterior chain."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000015": {
+            "name": "Lateral Raise",
+            "primary_muscle": "Shoulders",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000028",
+                    "name": "Cable Lateral Raise",
+                    "equipment": "cable",
+                    "reason": "Constant tension lateral raise — cable is easier to control."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Rear delt + rotator cuff work when lateral raise dumbbells are taken."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000031",
+                    "name": "Reverse Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Machine rear delt fly — same posterior deltoid recruitment."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000016": {
+            "name": "Incline Barbell Bench Press",
+            "primary_muscle": "Chest",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000018",
+                    "name": "Incline Dumbbell Press",
+                    "equipment": "dumbbell",
+                    "reason": "Same upper chest angle with dumbbells, no rack needed."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000021",
+                    "name": "Smith Machine Incline Press",
+                    "equipment": "machine",
+                    "reason": "Guided incline press on Smith Machine when barbell bench is full."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000012",
+                    "name": "Cable Fly",
+                    "equipment": "cable",
+                    "reason": "High cable fly mimics incline chest angle effectively."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000017": {
+            "name": "Dumbbell Bench Press",
+            "primary_muscle": "Chest",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000003",
+                    "name": "Barbell Bench Press",
+                    "equipment": "barbell",
+                    "reason": "Barbell version allows heavier loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000020",
+                    "name": "Smith Machine Flat Press",
+                    "equipment": "machine",
+                    "reason": "Guided flat press when dumbbells are all in use."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000019",
+                    "name": "Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Machine chest isolation as a finishing alternative."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000018": {
+            "name": "Incline Dumbbell Press",
+            "primary_muscle": "Chest",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000016",
+                    "name": "Incline Barbell Bench Press",
+                    "equipment": "barbell",
+                    "reason": "Barbell incline press targets same upper chest muscle fibers."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000021",
+                    "name": "Smith Machine Incline Press",
+                    "equipment": "machine",
+                    "reason": "Guided incline press when free weights are unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000012",
+                    "name": "Cable Fly",
+                    "equipment": "cable",
+                    "reason": "High cable fly targets upper chest from similar angle."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000019": {
+            "name": "Pec Deck",
+            "primary_muscle": "Chest",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000012",
+                    "name": "Cable Fly",
+                    "equipment": "cable",
+                    "reason": "Cable fly replicates pec deck motion with greater range."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000017",
+                    "name": "Dumbbell Bench Press",
+                    "equipment": "dumbbell",
+                    "reason": "Chest compound when isolation machine is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000031",
+                    "name": "Reverse Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Flip to rear delt work on the same machine if it has both positions."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000020": {
+            "name": "Smith Machine Flat Press",
+            "primary_muscle": "Chest",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000003",
+                    "name": "Barbell Bench Press",
+                    "equipment": "barbell",
+                    "reason": "Free barbell flat press when Smith rack is busy."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000017",
+                    "name": "Dumbbell Bench Press",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell press on any flat bench — no machine required."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000019",
+                    "name": "Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Alternative chest machine for isolation work."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000021": {
+            "name": "Smith Machine Incline Press",
+            "primary_muscle": "Chest",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000018",
+                    "name": "Incline Dumbbell Press",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell incline on any adjustable bench."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000016",
+                    "name": "Incline Barbell Bench Press",
+                    "equipment": "barbell",
+                    "reason": "Free bar incline when Smith is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000012",
+                    "name": "Cable Fly",
+                    "equipment": "cable",
+                    "reason": "High cable fly for upper chest when all benches are taken."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000022": {
+            "name": "Seated Cable Row",
+            "primary_muscle": "Back",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000005",
+                    "name": "Barbell Row",
+                    "equipment": "barbell",
+                    "reason": "Heaviest horizontal pulling alternative."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000023",
+                    "name": "T-Bar Row",
+                    "equipment": "barbell",
+                    "reason": "Supported row variation for maximum back thickness."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000026",
+                    "name": "Chin-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight vertical pull when cable row station is busy."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000023": {
+            "name": "T-Bar Row",
+            "primary_muscle": "Back",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Cable row with same horizontal pull mechanics."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000005",
+                    "name": "Barbell Row",
+                    "equipment": "barbell",
+                    "reason": "Standing barbell row when T-bar station is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000011",
+                    "name": "Lat Pulldown",
+                    "equipment": "cable",
+                    "reason": "Vertical cable pull when horizontal options are taken."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000024": {
+            "name": "Straight-Arm Pulldown",
+            "primary_muscle": "Back",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000011",
+                    "name": "Lat Pulldown",
+                    "equipment": "cable",
+                    "reason": "Standard lat pulldown on same cable station."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000006",
+                    "name": "Pull-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight lat activation when cable is busy."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Cable row on different station for lat width."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000025": {
+            "name": "Back Extension",
+            "primary_muscle": "Back",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight posterior chain work from floor."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000041",
+                    "name": "Cable Pull-Through",
+                    "equipment": "cable",
+                    "reason": "Cable version of hip extension for erectors and glutes."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000014",
+                    "name": "Romanian Deadlift",
+                    "equipment": "barbell",
+                    "reason": "Loaded hip hinge works same erector and hamstring muscles."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000026": {
+            "name": "Chin-Up",
+            "primary_muscle": "Back",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000006",
+                    "name": "Pull-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Overhand grip variation for wider lat activation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000011",
+                    "name": "Lat Pulldown",
+                    "equipment": "cable",
+                    "reason": "Cable version with adjustable weight for any strength level."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000008",
+                    "name": "Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Trains biceps if grip work is the limiting factor."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000027": {
+            "name": "Dumbbell Shoulder Press",
+            "primary_muscle": "Shoulders",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000004",
+                    "name": "Overhead Press",
+                    "equipment": "barbell",
+                    "reason": "Barbell overhead press for heavier loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Lateral deltoid isolation when pressing isn't possible."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Rear delt and rotator cuff work as an injury-safe alternative."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000028": {
+            "name": "Cable Lateral Raise",
+            "primary_muscle": "Shoulders",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell lateral raise when cable is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Another cable shoulder exercise on same machine."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000031",
+                    "name": "Reverse Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Machine isolation for rear delts when cables are busy."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000029": {
+            "name": "Face Pull",
+            "primary_muscle": "Shoulders",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000031",
+                    "name": "Reverse Pec Deck",
+                    "equipment": "machine",
+                    "reason": "Machine version of rear delt fly, same muscles."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell shoulder work when cable is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000032",
+                    "name": "Arnold Press",
+                    "equipment": "dumbbell",
+                    "reason": "Full deltoid press covering front and lateral heads."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000030": {
+            "name": "Front Raise",
+            "primary_muscle": "Shoulders",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000028",
+                    "name": "Cable Lateral Raise",
+                    "equipment": "cable",
+                    "reason": "Cable front raise on low pulley targets same anterior delt."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Same dumbbells, lateral head emphasis for balance."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Rear delt + rotator cuff for shoulder health balance."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000031": {
+            "name": "Reverse Pec Deck",
+            "primary_muscle": "Shoulders",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Cable face pull targets same rear delt and rotator cuff."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell shoulder isolation when machine is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000030",
+                    "name": "Front Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Anterior delt focus for full shoulder development."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000032": {
+            "name": "Arnold Press",
+            "primary_muscle": "Shoulders",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000027",
+                    "name": "Dumbbell Shoulder Press",
+                    "equipment": "dumbbell",
+                    "reason": "Standard dumbbell press without the rotation component."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000015",
+                    "name": "Lateral Raise",
+                    "equipment": "dumbbell",
+                    "reason": "Same dumbbells, lateral head isolation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Rear delt work when pressing is shoulder-fatigued."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000033": {
+            "name": "Cable Shrug",
+            "primary_muscle": "Shoulders",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000057",
+                    "name": "Barbell Shrug",
+                    "equipment": "barbell",
+                    "reason": "Heavy barbell shrug for maximum trap loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000058",
+                    "name": "Dumbbell Shrug",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell shrug with greater shoulder joint freedom."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Upper trap and rear delt work on cable machine."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000034": {
+            "name": "Leg Extension",
+            "primary_muscle": "Quadriceps",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell squat when leg extension machine is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000001",
+                    "name": "Barbell Squat",
+                    "equipment": "barbell",
+                    "reason": "Heavy quad compound as an alternative to isolation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000064",
+                    "name": "Box Jump",
+                    "equipment": "bodyweight",
+                    "reason": "Plyometric quad power builder requiring no machine."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000035": {
+            "name": "Hack Squat",
+            "primary_muscle": "Quadriceps",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000010",
+                    "name": "Leg Press",
+                    "equipment": "machine",
+                    "reason": "Same machine section, angled leg press targets quads."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell squat when all leg machines are occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000001",
+                    "name": "Barbell Squat",
+                    "equipment": "barbell",
+                    "reason": "Free barbell squat for loaded leg work without machine."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000036": {
+            "name": "Goblet Squat",
+            "primary_muscle": "Quadriceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000001",
+                    "name": "Barbell Squat",
+                    "equipment": "barbell",
+                    "reason": "Barbell version for heavier loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000010",
+                    "name": "Leg Press",
+                    "equipment": "machine",
+                    "reason": "Machine alternative when dumbbells are taken."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000037",
+                    "name": "Bulgarian Split Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Single-leg progression with same dumbbells."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000037": {
+            "name": "Bulgarian Split Squat",
+            "primary_muscle": "Quadriceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000007",
+                    "name": "Dumbbell Lunges",
+                    "equipment": "dumbbell",
+                    "reason": "Walking lunge with same dumbbells — no elevated surface needed."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Both feet on ground, bilateral modification."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000010",
+                    "name": "Leg Press",
+                    "equipment": "machine",
+                    "reason": "Machine quad alternative with lower balance demand."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000038": {
+            "name": "Leg Curl",
+            "primary_muscle": "Hamstrings",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000014",
+                    "name": "Romanian Deadlift",
+                    "equipment": "barbell",
+                    "reason": "Hip hinge hamstring work when leg curl machine is busy."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight posterior chain with hamstring involvement."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000041",
+                    "name": "Cable Pull-Through",
+                    "equipment": "cable",
+                    "reason": "Cable hip hinge for hamstrings and glutes."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000039": {
+            "name": "Hip Thrust",
+            "primary_muscle": "Glutes",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Floor-level glute bridge — no barbell or bench required."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000041",
+                    "name": "Cable Pull-Through",
+                    "equipment": "cable",
+                    "reason": "Standing hip extension on cable machine."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000014",
+                    "name": "Romanian Deadlift",
+                    "equipment": "barbell",
+                    "reason": "Hip hinge glute loading with lighter barbell."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000040": {
+            "name": "Glute Bridge",
+            "primary_muscle": "Glutes",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000039",
+                    "name": "Hip Thrust",
+                    "equipment": "barbell",
+                    "reason": "Loaded barbell progression of glute bridge."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000041",
+                    "name": "Cable Pull-Through",
+                    "equipment": "cable",
+                    "reason": "Standing cable alternative for glutes."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000014",
+                    "name": "Romanian Deadlift",
+                    "equipment": "barbell",
+                    "reason": "Hip hinge pattern for loading the same posterior chain."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000041": {
+            "name": "Cable Pull-Through",
+            "primary_muscle": "Glutes",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight glute bridge requires no cable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000039",
+                    "name": "Hip Thrust",
+                    "equipment": "barbell",
+                    "reason": "Heavy loaded glute work when cable is busy."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000014",
+                    "name": "Romanian Deadlift",
+                    "equipment": "barbell",
+                    "reason": "Hip hinge alternative for the posterior chain."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000042": {
+            "name": "Barbell Curl",
+            "primary_muscle": "Biceps",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000008",
+                    "name": "Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell version allows independent arm work."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000045",
+                    "name": "Cable Curl",
+                    "equipment": "cable",
+                    "reason": "Cable curl maintains tension at full extension."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000044",
+                    "name": "Hammer Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Neutral grip targets brachialis for fuller arm."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000043": {
+            "name": "Incline Dumbbell Curl",
+            "primary_muscle": "Biceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000046",
+                    "name": "Preacher Curl",
+                    "equipment": "barbell",
+                    "reason": "Preacher bench stretches the long head of biceps similarly."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000008",
+                    "name": "Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Standing dumbbell curl when incline bench is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000045",
+                    "name": "Cable Curl",
+                    "equipment": "cable",
+                    "reason": "Cable curl from low pulley stretches long head."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000044": {
+            "name": "Hammer Curl",
+            "primary_muscle": "Biceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000008",
+                    "name": "Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Standard supinated curl with same dumbbells."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000045",
+                    "name": "Cable Curl",
+                    "equipment": "cable",
+                    "reason": "Cable rope curl can replicate neutral grip."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000042",
+                    "name": "Barbell Curl",
+                    "equipment": "barbell",
+                    "reason": "Bilateral barbell curl for heavier bicep loading."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000045": {
+            "name": "Cable Curl",
+            "primary_muscle": "Biceps",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000008",
+                    "name": "Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell curl when all cable machines are busy."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000042",
+                    "name": "Barbell Curl",
+                    "equipment": "barbell",
+                    "reason": "Barbell for heavier bilateral bicep loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000044",
+                    "name": "Hammer Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Neutral grip curl builds brachialis alongside biceps."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000046": {
+            "name": "Preacher Curl",
+            "primary_muscle": "Biceps",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000043",
+                    "name": "Incline Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Incline bench dumbbell curl stretches long head similarly."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000045",
+                    "name": "Cable Curl",
+                    "equipment": "cable",
+                    "reason": "Low pulley cable curl mimics preacher stretch."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000008",
+                    "name": "Dumbbell Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Standard curl when preacher bench is occupied."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000047": {
+            "name": "Skull Crushers",
+            "primary_muscle": "Triceps",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000048",
+                    "name": "Cable Overhead Tricep Extension",
+                    "equipment": "cable",
+                    "reason": "Cable tricep extension with similar long head stretch."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000049",
+                    "name": "Dumbbell Tricep Kickback",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell isolation for triceps without lying on bench."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000009",
+                    "name": "Tricep Pushdown",
+                    "equipment": "cable",
+                    "reason": "Cable pushdown for lateral and medial tricep head."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000048": {
+            "name": "Cable Overhead Tricep Extension",
+            "primary_muscle": "Triceps",
+            "equipment": "cable",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000009",
+                    "name": "Tricep Pushdown",
+                    "equipment": "cable",
+                    "reason": "Same cable, different attachment — pushdown for all heads."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000049",
+                    "name": "Dumbbell Tricep Kickback",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell alternative when cable is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000051",
+                    "name": "Dips",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight compound tricep movement."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000049": {
+            "name": "Dumbbell Tricep Kickback",
+            "primary_muscle": "Triceps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000009",
+                    "name": "Tricep Pushdown",
+                    "equipment": "cable",
+                    "reason": "Cable pushdown for tricep isolation with more resistance options."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000063",
+                    "name": "Diamond Push-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight tricep finisher requiring zero equipment."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000051",
+                    "name": "Dips",
+                    "equipment": "bodyweight",
+                    "reason": "Compound bodyweight tricep movement on dip bars or bench."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000050": {
+            "name": "Close-Grip Bench Press",
+            "primary_muscle": "Triceps",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000009",
+                    "name": "Tricep Pushdown",
+                    "equipment": "cable",
+                    "reason": "Cable pushdown when bench is unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000047",
+                    "name": "Skull Crushers",
+                    "equipment": "barbell",
+                    "reason": "Same barbell, different tricep isolation on flat bench."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000063",
+                    "name": "Diamond Push-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight close grip press alternative."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000051": {
+            "name": "Dips",
+            "primary_muscle": "Triceps",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000009",
+                    "name": "Tricep Pushdown",
+                    "equipment": "cable",
+                    "reason": "Cable isolation when dip bars are occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000063",
+                    "name": "Diamond Push-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Floor-based tricep push requiring no bar or bench."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000050",
+                    "name": "Close-Grip Bench Press",
+                    "equipment": "barbell",
+                    "reason": "Barbell tricep press when dip station is occupied."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000052": {
+            "name": "Hanging Leg Raise",
+            "primary_muscle": "Core",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000013",
+                    "name": "Plank",
+                    "equipment": "bodyweight",
+                    "reason": "Floor plank when pull-up bar is crowded."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000053",
+                    "name": "Ab Wheel Rollout",
+                    "equipment": "bodyweight",
+                    "reason": "Ab wheel challenges core in full extension."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000054",
+                    "name": "Russian Twist",
+                    "equipment": "dumbbell",
+                    "reason": "Seated rotational core work on any bench or floor."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000053": {
+            "name": "Ab Wheel Rollout",
+            "primary_muscle": "Core",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000013",
+                    "name": "Plank",
+                    "equipment": "bodyweight",
+                    "reason": "Static core hold if ab wheel unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000052",
+                    "name": "Hanging Leg Raise",
+                    "equipment": "bodyweight",
+                    "reason": "Dynamic core exercise on pull-up bar."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000054",
+                    "name": "Russian Twist",
+                    "equipment": "dumbbell",
+                    "reason": "Rotational core alternative."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000054": {
+            "name": "Russian Twist",
+            "primary_muscle": "Core",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000013",
+                    "name": "Plank",
+                    "equipment": "bodyweight",
+                    "reason": "Anti-rotation core stability."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000052",
+                    "name": "Hanging Leg Raise",
+                    "equipment": "bodyweight",
+                    "reason": "Flexion-focused core on pull-up bar."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000053",
+                    "name": "Ab Wheel Rollout",
+                    "equipment": "bodyweight",
+                    "reason": "Extension-focused core challenge."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000055": {
+            "name": "Standing Calf Raise",
+            "primary_muscle": "Calves",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000056",
+                    "name": "Seated Calf Raise",
+                    "equipment": "machine",
+                    "reason": "Seated version targets soleus; adjacent machine."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000007",
+                    "name": "Dumbbell Lunges",
+                    "equipment": "dumbbell",
+                    "reason": "Compound leg movement with incidental calf activation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight leg work when calf machines are occupied."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000056": {
+            "name": "Seated Calf Raise",
+            "primary_muscle": "Calves",
+            "equipment": "machine",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000055",
+                    "name": "Standing Calf Raise",
+                    "equipment": "machine",
+                    "reason": "Standing version adds gastrocnemius emphasis."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Compound leg movement when calf machine is occupied."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000040",
+                    "name": "Glute Bridge",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight posterior chain when machine section is full."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000057": {
+            "name": "Barbell Shrug",
+            "primary_muscle": "Traps",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000058",
+                    "name": "Dumbbell Shrug",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell shrug allows greater shoulder rotation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000033",
+                    "name": "Cable Shrug",
+                    "equipment": "cable",
+                    "reason": "Cable version maintains tension at full elevation."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000022",
+                    "name": "Seated Cable Row",
+                    "equipment": "cable",
+                    "reason": "Upper back compound with trap activation."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000058": {
+            "name": "Dumbbell Shrug",
+            "primary_muscle": "Traps",
+            "equipment": "dumbbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000057",
+                    "name": "Barbell Shrug",
+                    "equipment": "barbell",
+                    "reason": "Barbell version for heavier trap loading."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000033",
+                    "name": "Cable Shrug",
+                    "equipment": "cable",
+                    "reason": "Cable constant tension when dumbbells are taken."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000029",
+                    "name": "Face Pull",
+                    "equipment": "cable",
+                    "reason": "Rear delt and upper trap cable work."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000059": {
+            "name": "Wrist Curl",
+            "primary_muscle": "Forearms",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000060",
+                    "name": "Reverse Wrist Curl",
+                    "equipment": "barbell",
+                    "reason": "Extensor side of forearm for balanced development."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000006",
+                    "name": "Pull-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Grip and forearm work through compound pulling."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000042",
+                    "name": "Barbell Curl",
+                    "equipment": "barbell",
+                    "reason": "Incidental forearm flexor work during bicep curls."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000060": {
+            "name": "Reverse Wrist Curl",
+            "primary_muscle": "Forearms",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000059",
+                    "name": "Wrist Curl",
+                    "equipment": "barbell",
+                    "reason": "Flexor side of forearm for complementary development."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000006",
+                    "name": "Pull-Up",
+                    "equipment": "bodyweight",
+                    "reason": "Grip strength through compound pulling."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000044",
+                    "name": "Hammer Curl",
+                    "equipment": "dumbbell",
+                    "reason": "Neutral grip curl strongly activates brachioradialis."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000061": {
+            "name": "Clean and Press",
+            "primary_muscle": "Full Body",
+            "equipment": "barbell",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000062",
+                    "name": "Burpees",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight full-body explosive movement."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000065",
+                    "name": "Medicine Ball Slam",
+                    "equipment": "bodyweight",
+                    "reason": "Power-focused full-body conditioning without a barbell."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000004",
+                    "name": "Overhead Press",
+                    "equipment": "barbell",
+                    "reason": "Upper body portion of the movement without the clean."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000062": {
+            "name": "Burpees",
+            "primary_muscle": "Full Body",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000064",
+                    "name": "Box Jump",
+                    "equipment": "bodyweight",
+                    "reason": "Plyometric lower body power without push-up component."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000065",
+                    "name": "Medicine Ball Slam",
+                    "equipment": "bodyweight",
+                    "reason": "Explosive conditioning with upper body dominance."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000013",
+                    "name": "Plank",
+                    "equipment": "bodyweight",
+                    "reason": "Core stability if impact/jumping is not possible."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000063": {
+            "name": "Diamond Push-Up",
+            "primary_muscle": "Triceps",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000009",
+                    "name": "Tricep Pushdown",
+                    "equipment": "cable",
+                    "reason": "Cable isolation when floor space is unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000051",
+                    "name": "Dips",
+                    "equipment": "bodyweight",
+                    "reason": "Parallel bar dips for greater loading than diamond push-ups."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000049",
+                    "name": "Dumbbell Tricep Kickback",
+                    "equipment": "dumbbell",
+                    "reason": "Isolation alternative with adjustable resistance."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000064": {
+            "name": "Box Jump",
+            "primary_muscle": "Quadriceps",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000001",
+                    "name": "Barbell Squat",
+                    "equipment": "barbell",
+                    "reason": "Loaded squat for explosive leg power without jumping."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000036",
+                    "name": "Goblet Squat",
+                    "equipment": "dumbbell",
+                    "reason": "Dumbbell squat when no plyo box is available."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000062",
+                    "name": "Burpees",
+                    "equipment": "bodyweight",
+                    "reason": "Full body conditioning when box is in use."
+                }
+            ]
+        },
+        "10000001-0000-0000-0000-000000000065": {
+            "name": "Medicine Ball Slam",
+            "primary_muscle": "Full Body",
+            "equipment": "bodyweight",
+            "alternatives": [
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000062",
+                    "name": "Burpees",
+                    "equipment": "bodyweight",
+                    "reason": "Bodyweight conditioning when med ball is unavailable."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000064",
+                    "name": "Box Jump",
+                    "equipment": "bodyweight",
+                    "reason": "Plyometric power alternative requiring only a box."
+                },
+                {
+                    "exercise_id": "10000001-0000-0000-0000-000000000013",
+                    "name": "Plank",
+                    "equipment": "bodyweight",
+                    "reason": "Core stability finisher when power work is complete."
+                }
+            ]
+        }
+    }
+}

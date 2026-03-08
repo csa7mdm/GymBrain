@@ -6,8 +6,9 @@ import HomePage from './pages/HomePage';
 import WorkoutPage from './pages/WorkoutPage';
 import PlansPage from './pages/PlansPage';
 import ProfilePage from './pages/ProfilePage';
+import VaultPage from './pages/VaultPage';
 
-type Tab = 'home' | 'train' | 'plans' | 'profile';
+type Tab = 'home' | 'train' | 'plans' | 'profile' | 'vault';
 
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const items: { id: Tab; icon: string; label: string }[] = [
@@ -15,6 +16,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     { id: 'train', icon: '💪', label: 'Train' },
     { id: 'plans', icon: '📋', label: 'Plans' },
     { id: 'profile', icon: '👤', label: 'Profile' },
+    { id: 'vault', icon: '🔐', label: 'Vault' },
   ];
   return (
     <nav className="bottom-nav">
@@ -75,6 +77,7 @@ function AppContent() {
       {tab === 'train' && <WorkoutPage />}
       {tab === 'plans' && <PlansPage />}
       {tab === 'profile' && <ProfilePage />}
+      {tab === 'vault' && <VaultPage onComplete={() => setTab('home')} onSkip={() => setTab('home')} />}
       <BottomNav tab={tab} setTab={setTab} />
     </div>
   );

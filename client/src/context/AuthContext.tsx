@@ -35,9 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
-        localStorage.removeItem('gymbrain_token');
-        localStorage.removeItem('gymbrain_userId');
-        localStorage.removeItem('gymbrain_email');
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('gymbrain_')) {
+                localStorage.removeItem(key);
+            }
+        });
         setUser(null);
     };
 

@@ -23,6 +23,16 @@ async function request<T>(
     });
 
     if (!res.ok) {
+      if (res.status === 401) {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('gymbrain_')) {
+            localStorage.removeItem(key);
+          }
+        });
+        // Force reload to trigger AuthContext reset
+        window.location.href = '/';
+        return { error: 'Session expired. Please sign in again.' };
+      }
       const text = await res.text();
       let errorMessage: string;
       try {

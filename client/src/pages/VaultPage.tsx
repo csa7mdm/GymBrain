@@ -58,25 +58,25 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
     const filteredModels = models.filter(m => m.provider === provider);
 
     return (
-        <div className="page">
-            <div className="brand-header">
-                <div className="brand-logo">🔐</div>
-                <h1 className="brand-title">Vault Setup</h1>
-                <p className="brand-subtitle">Bring Your Own API Key</p>
+        <div className="app-content app-content--no-pad fade-in">
+            <div style={{ textAlign: 'center', marginBottom: 24, marginTop: 16 }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🔐</div>
+                <h2 className="md-headline-sm" style={{ color: 'var(--md-primary)' }}>Secure Vault</h2>
+                <p className="md-body-md text-muted">Bring Your Own API Key</p>
             </div>
 
-            <div className="glass-card">
-                <form className="form-stack" onSubmit={handleSubmit}>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                        Your API key is encrypted with <strong style={{ color: 'var(--accent-secondary)' }}>AES-256-CBC</strong> before
-                        storage. Supports <strong style={{ color: 'var(--accent-primary)' }}>Groq & OpenRouter</strong> Free models.
+            <div className="m3-card">
+                <form onSubmit={handleSubmit}>
+                    <p className="md-body-sm mb-md" style={{ color: 'var(--md-on-surface-variant)', lineHeight: 1.6 }}>
+                        Your API key is encrypted with <strong className="text-secondary">AES-256-CBC</strong> before
+                        storage. Supports <strong className="text-primary">Groq & OpenRouter</strong> Free models.
                     </p>
 
-                    <div className="input-group">
-                        <label htmlFor="provider">LLM Provider</label>
+                    <div className="m3-field">
+                        <label className="m3-field__label" htmlFor="provider">LLM Provider</label>
                         <select
                             id="provider"
-                            className="input"
+                            className="m3-select"
                             value={provider}
                             onChange={(e) => handleProviderChange(e.target.value)}
                         >
@@ -95,27 +95,27 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
                         </select>
                     </div>
 
-                    <div className="input-group">
-                        <label htmlFor="model">Model (Free models available)</label>
+                    <div className="m3-field">
+                        <label className="m3-field__label" htmlFor="model">Model Preference</label>
                         <select
                             id="model"
-                            className="input"
+                            className="m3-select"
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
                         >
                             {filteredModels.map(m => (
                                 <option key={m.modelId} value={m.modelId}>
-                                    {m.isFree ? '🎁 ' : ''}{m.displayName} — {m.description.split(' · ')[0]}
+                                    {m.isFree ? '🎁 ' : ''}{m.displayName}
                                 </option>
                             ))}
                         </select>
                     </div>
 
-                    <div className="input-group">
-                        <label htmlFor="apikey">API Key</label>
+                    <div className="m3-field">
+                        <label className="m3-field__label" htmlFor="apikey">API Key</label>
                         <input
                             id="apikey"
-                            className="input"
+                            className="m3-input"
                             type="password"
                             placeholder={provider === 'openai' ? 'sk-proj-...' : provider === 'groq' ? 'gsk_...' : 'sk-...'}
                             value={apiKey}
@@ -126,20 +126,20 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
                         />
                     </div>
 
-                    {error && <div className="error-message">{error}</div>}
-                    {success && <div className="success-message">{success}</div>}
+                    {error && <div className="m3-error-banner mb-md">{error}</div>}
+                    {success && <div className="m3-success-banner mb-md" style={{ color: 'var(--md-success)', padding: 12, background: 'var(--md-success-container)', borderRadius: 8 }}>{success}</div>}
 
                     <button
                         type="submit"
-                        className="btn btn-primary btn-full"
+                        className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg"
                         disabled={loading || !apiKey}
                     >
-                        {loading ? 'Encrypting & Storing...' : '🔒 Vault My Key'}
+                        {loading ? '🔐 Encrypting...' : '🔒 Vault My Key'}
                     </button>
 
                     <button
                         type="button"
-                        className="btn btn-ghost btn-full"
+                        className="m3-btn m3-btn--text m3-btn--full mt-sm"
                         onClick={onSkip}
                     >
                         Skip for now →
@@ -147,12 +147,12 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
                 </form>
             </div>
 
-            <div className="glass-card" style={{ marginTop: 16, padding: 16 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <div className="m3-card mt-md" style={{ background: 'var(--md-surface-container-low)' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '1.2rem' }}>🛡️</span>
                     <div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                            <strong style={{ color: 'var(--text-primary)' }}>Egypt Law 151 Compliant</strong><br />
+                        <p className="md-body-sm" style={{ color: 'var(--md-on-surface-variant)', lineHeight: 1.5 }}>
+                            <strong className="text-primary">Egypt Law 151 Compliant</strong><br />
                             Unique IV per encryption • Keys never logged • Tamper detection enabled
                         </p>
                     </div>
