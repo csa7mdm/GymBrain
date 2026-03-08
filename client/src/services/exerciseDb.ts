@@ -17,7 +17,19 @@ const exerciseCache = new Map<string, ExerciseDbItem>();
 
 export async function searchExercise(name: string): Promise<ExerciseDbItem | null> {
   const cacheKey = name.toLowerCase().trim();
+
+  // 1. Check memory cache
   if (exerciseCache.has(cacheKey)) return exerciseCache.get(cacheKey)!;
+
+  // 2. Check localStorage cache
+  try {
+    const local = localStorage.getItem(`gymbrain_exdb_${cacheKey}`);
+    if (local) {
+      const parsed = JSON.parse(local);
+      exerciseCache.set(cacheKey, parsed);
+      return parsed;
+    }
+  } catch { /* ignore parsing errors */ }
 
   try {
     const searchTerm = encodeURIComponent(name.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim());
@@ -51,6 +63,10 @@ export async function searchExercise(name: string): Promise<ExerciseDbItem | nul
     }
 
     exerciseCache.set(cacheKey, best);
+    try {
+      localStorage.setItem(`gymbrain_exdb_${cacheKey}`, JSON.stringify(best));
+    } catch { /* ignore quota errors */ }
+
     return best;
   } catch {
     return null;
