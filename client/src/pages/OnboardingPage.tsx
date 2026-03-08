@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { vaultApiKey, getLlmModels } from '../services/api';
+import { vaultApiKey, getLlmModels, saveProfile } from '../services/api';
 import type { ILlmModel } from '../services/api';
 
 interface OnboardingProps {
@@ -98,6 +98,20 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
             const profileData = JSON.stringify(profile);
             localStorage.setItem('gymbrain_profile', profileData);
             localStorage.getItem('gymbrain_profile'); // Ensure flushed
+
+            try {
+                await saveProfile({
+                    goal,
+                    equipmentJson: JSON.stringify(equipment),
+                    injuries,
+                    daysPerWeek,
+                    dietaryPreference: 'none',
+                    dailyCalories: 2000,
+                });
+            } catch (apiErr) {
+                console.warn('Backend saveProfile failed, frontend profile will continue:', apiErr);
+            }
+
             console.log('Profile saved, completing onboarding...');
 
             setTimeout(() => onComplete(profile), 50);

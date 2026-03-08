@@ -94,6 +94,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </div>
 
+      {/* CTA - moved to top for dominance */}
+      <div className="mt-md mb-md">
+        <button className="m3-fab m3-fab--full" style={{ minHeight: 64, fontSize: '1.2rem', fontWeight: 800, background: 'var(--md-primary)', color: '#000' }} onClick={() => onNavigate('train')}>
+          <span className="m3-fab__icon">💪</span>
+          Start Training
+        </button>
+      </div>
+
       {/* Weekly Calendar */}
       <div className="home-week">
         {weekDays.map((d, i) => (
@@ -175,13 +183,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </>
       )}
 
-      {/* CTA */}
-      <div className="mt-lg">
-        <button className="m3-fab m3-fab--full" onClick={() => onNavigate('train')}>
-          <span className="m3-fab__icon">💪</span>
-          Start Training
-        </button>
-      </div>
+      {/* CTA moved to top */}
 
       {/* Profile CTA (if incomplete) */}
       {!hasProfile && (
