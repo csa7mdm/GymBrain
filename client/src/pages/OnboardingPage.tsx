@@ -10,6 +10,7 @@ export interface UserProfile {
     name: string; age: number; height: number; weight: number;
     goal: string; level: string; daysPerWeek: number;
     equipment: string[]; focusAreas: string[];
+    injuries: string; // free-text for InjuryFilter backend
     provider: string; model: string; apiKey: string;
 }
 
@@ -49,6 +50,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
     const [daysPerWeek, setDaysPerWeek] = useState(4);
     const [equipment, setEquipment] = useState<string[]>(['Dumbbells', 'Bodyweight']);
     const [focusAreas, setFocusAreas] = useState<string[]>(['Full Body']);
+    const [injuries, setInjuries] = useState('');
 
     // Step 3
     const [useFree, setUseFree] = useState(true);
@@ -74,7 +76,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
             const profile: UserProfile = {
                 name: name || 'Athlete',
                 age, height, weight, goal, level, daysPerWeek,
-                equipment, focusAreas,
+                equipment, focusAreas, injuries,
                 provider: useFree ? 'groq' : provider,
                 model: useFree ? 'llama-3.3-70b-versatile' : model,
                 apiKey: useFree ? '' : apiKey,
@@ -104,7 +106,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
             // Force complete even on error
             const fallbackProfile: UserProfile = {
                 name: name || 'Athlete', age, height, weight, goal, level,
-                daysPerWeek, equipment, focusAreas,
+                daysPerWeek, equipment, focusAreas, injuries,
                 provider: 'groq', model: 'llama-3.3-70b-versatile', apiKey: '',
             };
             localStorage.setItem('gymbrain_profile', JSON.stringify(fallbackProfile));
@@ -261,8 +263,29 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Injuries / Conditions — critical for InjuryFilter backend */}
+                        <div className="section-header" style={{ marginTop: 20 }}>
+                            <span className="section-header__icon">🛡️</span>
+                            <span className="section-header__title">Any injuries or limitations?</span>
+                        </div>
+                        <p style={{ color: '#aaa', fontSize: 12, marginBottom: 8, marginLeft: 2 }}>
+                            We'll automatically avoid exercises that could aggravate them.
+                        </p>
+                        <div className="m3-field">
+                            <textarea
+                                id="ob-injuries"
+                                className="m3-input"
+                                placeholder="e.g., bad knees, lower back pain, shoulder impingement — or leave blank if none"
+                                rows={2}
+                                style={{ resize: 'none', fontFamily: 'inherit', fontSize: 14 }}
+                                value={injuries}
+                                onChange={e => setInjuries(e.target.value)}
+                            />
+                        </div>
                     </div>
                 )}
+
 
                 {/* ─── STEP 3: AI Setup ─── */}
                 {step === 3 && (
