@@ -56,5 +56,6 @@ app.MapAuthEndpoints();
 app.MapWorkoutEndpoints();
 app.MapNutritionEndpoints();
 app.MapProfileEndpoints();
+app.MapTelemetryEndpoints();
 
 app.Run();

@@ -11,5 +11,6 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<Exercise> Exercises { get; }
     DbSet<WorkoutSession> WorkoutSessions { get; }
+    DbSet<AnalyticsEvent> AnalyticsEvents { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
