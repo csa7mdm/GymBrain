@@ -119,6 +119,39 @@ export function saveWorkout(payloadJson: string) {
   });
 }
 
+// Substitute (Machine Taken — Phase 2)
+export interface SubstituteOption {
+  exerciseId: string;
+  name: string;
+  equipment: string;
+  reason: string;
+}
+
+export interface SubstituteResponse {
+  originalExerciseId: string;
+  originalExerciseName: string;
+  substitutes: SubstituteOption[];
+  message?: string;
+}
+
+export function getSubstitute(exerciseId: string) {
+  return request<SubstituteResponse>('/api/workout/substitute', {
+    method: 'POST',
+    body: JSON.stringify({ exerciseId }),
+  });
+}
+
+// Events / Telemetry (Phase 6 — fire-and-forget, never blocks user)
+export function trackEvent(eventName: string, metadata?: object): void {
+  const token = localStorage.getItem('gymbrain_token');
+  if (!token) return;
+  fetch(`${API_BASE}/api/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ eventName, metadata }),
+  }).catch(() => { }); // Silent fail — telemetry must never break the app
+}
+
 // Nutrition
 export interface NutritionResponse {
   payloadJson: string;
