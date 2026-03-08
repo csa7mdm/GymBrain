@@ -23,6 +23,12 @@ public class User : BaseEntity
     public string? EncryptedApiKey { get; private set; }
     public string? LlmProvider { get; private set; }
     public string? PreferredModel { get; private set; }
+
+    public void UpdatePassword(string hash)
+    {
+        PasswordHash = hash;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
     public string TonePersona { get; private set; } = "Motivational Coach";
     public ExperienceLevel ExperienceLevel { get; private set; } = ExperienceLevel.Beginner;
 

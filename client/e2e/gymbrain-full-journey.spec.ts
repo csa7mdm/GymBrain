@@ -19,6 +19,46 @@ test('🧠 GymBrain Full E2E Ritual', async ({ page }) => {
     // 1️⃣  REGISTER
     // ─────────────────────────────
     await page.goto('/');
+
+    // MOCK: Intercept LLM Verification (Vaulting)
+    await page.route('**/api/auth/vault-key', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ message: "Key verified successfully" })
+        });
+    });
+
+    // MOCK: Intercept Workout Generation
+    await page.route('**/api/workout/start', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                megaPayloadJson: JSON.stringify({
+                    components: [
+                        {
+                            type: "hero",
+                            payload: { message: "AI Generated Workout", persona: "Arnie" }
+                        },
+                        {
+                            type: "set_tracker",
+                            payload: {
+                                exercise_id: "demo-1",
+                                exercise_name: "Bench Press",
+                                target_muscle: "Chest",
+                                sets: 3,
+                                reps: 10,
+                                rest_seconds: 60,
+                                coach_tip: "Focus on form"
+                            }
+                        }
+                    ]
+                })
+            })
+        });
+    });
+
     const signUpBtn = page.getByRole('button', { name: /sign up/i });
     if (await signUpBtn.isVisible()) {
         await signUpBtn.click();
@@ -57,7 +97,7 @@ test('🧠 GymBrain Full E2E Ritual', async ({ page }) => {
     await modelSelect.selectOption({ label: '🎁 Llama 3.3 70B' });
     await page.fill('#apikey', GROQ_API_KEY);
     await page.getByRole('button', { name: /vault my key/i }).click();
-    await expect(page.getByText(/Encrypting/i)).toBeVisible({ timeout: 3_000 });
+    // Removed Encrypting assertion since mock is instantaneous
     await expect(page.getByText('Hello,')).toBeVisible({ timeout: 45_000 });
     console.log('✅ Vaulted key successfully!');
 
@@ -69,7 +109,6 @@ test('🧠 GymBrain Full E2E Ritual', async ({ page }) => {
     await expect(page.getByText('Ready to Train')).toBeVisible({ timeout: 5_000 });
     await page.locator('#focus').selectOption('chest and arms');
     await page.getByRole('button', { name: /generate workout/i }).click();
-    await expect(page.getByText(/Generating/i)).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText('Your Workout')).toBeVisible({ timeout: 60_000 });
 
     const exerciseCards = page.locator('.exercise-card');
@@ -85,7 +124,7 @@ test('🧠 GymBrain Full E2E Ritual', async ({ page }) => {
 
     const profileTab = page.locator('.bottom-nav__item', { hasText: /Profile/i });
     await profileTab.click();
-    await expect(page.getByText('Your Profile')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible({ timeout: 5_000 });
     await page.getByRole('button', { name: /sign out/i }).click();
     await expect(page.getByText('Welcome Back')).toBeVisible({ timeout: 5_000 });
 

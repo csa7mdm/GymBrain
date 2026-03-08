@@ -11,7 +11,7 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'e2e-report' }],
   ],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'on',
     video: 'on',

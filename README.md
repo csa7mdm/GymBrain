@@ -22,6 +22,7 @@
 ---
 
 <p align="center">
+  <strong>🚀 Try the Live Prototype: <a href="https://gymbrain-pilot-cairo.web.app/">gymbrain-pilot-cairo.web.app</a></strong><br>
   <strong>Generate intelligent, safety-gated workout plans in under 3 seconds</strong><br>
   <em>BYO-API Key model • Multi-Provider (Groq, OpenRouter, OpenAI, Anthropic) • Egypt Law 151 compliant</em>
 </p>

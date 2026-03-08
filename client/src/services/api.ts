@@ -13,6 +13,7 @@ async function request<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
@@ -23,7 +24,7 @@ async function request<T>(
     });
 
     if (!res.ok) {
-      if (res.status === 401) {
+      if (res.status === 401 && !endpoint.includes('/auth/login')) {
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('gymbrain_')) {
             localStorage.removeItem(key);
