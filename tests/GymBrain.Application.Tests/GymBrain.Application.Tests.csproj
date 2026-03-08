@@ -23,4 +23,16 @@
     <ProjectReference Include="..\..\src\GymBrain.Application\GymBrain.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Data files required by InjuryFilter at test runtime -->
+    <Content Include="..\..\src\GymBrain.Domain\Data\ContraindicationMap.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Data\ContraindicationMap.json</TargetPath>
+    </Content>
+    <Content Include="..\..\src\GymBrain.Domain\Data\SubstituteMap.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Data\SubstituteMap.json</TargetPath>
+    </Content>
+  </ItemGroup>
+
 </Project>

@@ -21,4 +21,16 @@
     <ProjectReference Include="..\GymBrain.Infrastructure\GymBrain.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Data files needed at runtime by InjuryFilter and GetSubstituteQueryHandler -->
+    <Content Include="..\GymBrain.Domain\Data\ContraindicationMap.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Data\ContraindicationMap.json</TargetPath>
+    </Content>
+    <Content Include="..\GymBrain.Domain\Data\SubstituteMap.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Data\SubstituteMap.json</TargetPath>
+    </Content>
+  </ItemGroup>
+
 </Project>
