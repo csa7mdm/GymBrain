@@ -17,7 +17,8 @@ public sealed class VaultService : IVaultService
 
     public VaultService(IConfiguration configuration)
     {
-        var keyString = configuration["Vault:EncryptionKey"]
+        var keyString = configuration["VAULT_ENCRYPTION_KEY"]
+            ?? configuration["Vault:EncryptionKey"]
             ?? throw new InvalidOperationException(
                 "Vault:EncryptionKey is not configured. Set via env var or User Secrets.");
 

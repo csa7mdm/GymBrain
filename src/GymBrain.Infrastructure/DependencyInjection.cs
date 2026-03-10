@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 namespace GymBrain.Infrastructure;
 
@@ -28,10 +29,15 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<GymBrainDbContext>());
 
-        // Redis
+        // Support Railway-style flat env vars as well as .NET connection strings.
+        var redisConn = configuration["REDIS_CONNECTION"]
+            ?? configuration.GetConnectionString("Redis")
+            ?? "localhost:6379";
+        services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConn));
+
         services.AddStackExchangeRedisCache(options =>
         {
-            options.Configuration = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+            options.Configuration = redisConn;
             options.InstanceName = "GymBrain:";
         });
         services.AddScoped<ICacheService, RedisCacheService>();
@@ -40,15 +46,18 @@ public static class DependencyInjection
         services.AddScoped<IVaultService, VaultService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddScoped<IRateLimiter, RateLimiter>();
+        services.AddScoped<IMilestoneService, MilestoneService>();
 
         // LLM Infrastructure
         services.AddScoped<ILlmProviderFactory, LlmProviderFactory>();
-        
+
         // Register each provider with its own HttpClient
         services.AddHttpClient<ILlmProvider, OpenAiProvider>();
         services.AddHttpClient<ILlmProvider, GroqProvider>();
         services.AddHttpClient<ILlmProvider, OpenRouterProvider>();
-        services.AddHttpClient<ILlmProvider, AnthropicProvider>();
+        // Exercise Metadata Proxy
+        services.AddHttpClient<IExerciseMetadataService, ExerciseMetadataProvider>();
 
         // JWT Authentication
         var jwtSecret = configuration["Jwt:Secret"]
@@ -64,11 +73,10 @@ public static class DependencyInjection
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = configuration["Jwt:Issuer"] ?? "GymBrain",
-                    ValidAudience = configuration["Jwt:Issuer"] ?? "GymBrain",
+                    ValidAudience = configuration["Jwt:Audience"] ?? "GymBrain",
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                 };
             });
-
 
         return services;
     }

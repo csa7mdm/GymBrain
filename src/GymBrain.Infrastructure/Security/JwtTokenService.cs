@@ -12,6 +12,7 @@ public sealed class JwtTokenService : IJwtTokenService
 {
     private readonly string _secret;
     private readonly string _issuer;
+    private readonly string _audience;
     private readonly int _expiryMinutes;
 
     public JwtTokenService(IConfiguration configuration)
@@ -20,6 +21,7 @@ public sealed class JwtTokenService : IJwtTokenService
             ?? throw new InvalidOperationException(
                 "Jwt:Secret is not configured. Set via env var or User Secrets.");
         _issuer = configuration["Jwt:Issuer"] ?? "GymBrain";
+        _audience = configuration["Jwt:Audience"] ?? "GymBrain";
         _expiryMinutes = int.TryParse(configuration["Jwt:ExpiryMinutes"], out var mins) ? mins : 60;
     }
 
@@ -38,7 +40,7 @@ public sealed class JwtTokenService : IJwtTokenService
 
         var token = new JwtSecurityToken(
             issuer: _issuer,
-            audience: _issuer,
+            audience: _audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_expiryMinutes),
             signingCredentials: credentials);

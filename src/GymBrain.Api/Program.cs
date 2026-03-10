@@ -1,21 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using GymBrain.Infrastructure.Persistence;
 using GymBrain.Api.Endpoints;
-using GymBrain.API.Endpoints;
+using Scalar.AspNetCore;
+using Serilog;
+using GymBrain.Application.Common.Interfaces;
 using GymBrain.Application;
 using GymBrain.Infrastructure;
-using GymBrain.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 📊 Configure Serilog for structured logging
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Layer registration
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// CORS for React dev server and Production frontend
+// CORS for React dev server and production frontend
 builder.Services.AddCors(options =>
 {
-    var frontendUrls = builder.Configuration.GetSection("FrontendUrls").Get<string[]>() 
+    var frontendUrls = builder.Configuration.GetSection("FrontendUrls").Get<string[]>()
         ?? new[] { "http://localhost:5173", "http://localhost:5174", "http://localhost:3000" };
 
     options.AddDefaultPolicy(policy =>
@@ -38,6 +48,17 @@ app.Use(async (context, next) =>
     {
         await next();
     }
+    catch (GymBrain.Application.Common.Exceptions.ManagedCapException ex)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "You've used your 3 free AI workouts for today.",
+            message = "Add your own API key in Profile -> Advanced -> Vault for unlimited workouts, or try again tomorrow.",
+            retryAfterHours = ex.RetryAfterHours
+        });
+    }
     catch (UnauthorizedAccessException ex)
     {
         context.Response.ContentType = "application/json";
@@ -58,31 +79,36 @@ app.Use(async (context, next) =>
     }
 });
 
-// Auto-migrate and seed on startup (dev convenience)
+// Auto-migrate and optionally seed an admin when explicit credentials are configured.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GymBrainDbContext>();
     await db.Database.MigrateAsync();
 
-    var adminEmail = "cs.a7md.m@gmail.com";
-    var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
-    var hasher = scope.ServiceProvider.GetRequiredService<GymBrain.Application.Common.Interfaces.IPasswordHasher>();
-    var hash = hasher.Hash("P@$sW0Rdz9090");
+    var adminEmail = builder.Configuration["SeedAdmin:Email"];
+    var adminPassword = builder.Configuration["SeedAdmin:Password"];
 
-    if (adminUser == null)
+    if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
     {
-        adminUser = new GymBrain.Domain.Entities.User(
-            adminEmail,
-            hash,
-            GymBrain.Domain.Enums.ExperienceLevel.Beginner);
-        db.Users.Add(adminUser);
+        var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var hash = hasher.Hash(adminPassword);
+
+        if (adminUser == null)
+        {
+            adminUser = new GymBrain.Domain.Entities.User(
+                adminEmail,
+                hash,
+                GymBrain.Domain.Enums.ExperienceLevel.Beginner);
+            db.Users.Add(adminUser);
+        }
+        else
+        {
+            adminUser.UpdatePassword(hash);
+        }
+
+        await db.SaveChangesAsync();
     }
-    else
-    {
-        // Force update password to ensure matches requested default
-        adminUser.UpdatePassword(hash);
-    }
-    await db.SaveChangesAsync();
 }
 
 app.MapOpenApi();

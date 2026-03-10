@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface ApiResponse<T> {
   data?: T;
@@ -13,7 +13,6 @@ async function request<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
@@ -24,17 +23,18 @@ async function request<T>(
     });
 
     if (!res.ok) {
+      const text = await res.text();
+
       if (res.status === 401 && !endpoint.includes('/auth/login')) {
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('gymbrain_')) {
             localStorage.removeItem(key);
           }
         });
-        // Force reload to trigger AuthContext reset
         window.location.href = '/';
         return { error: 'Session expired. Please sign in again.' };
       }
-      const text = await res.text();
+
       let errorMessage: string;
       try {
         const parsed = JSON.parse(text);
@@ -52,7 +52,6 @@ async function request<T>(
   }
 }
 
-// Auth
 export interface AuthResponse {
   userId: string;
   token: string;
@@ -72,7 +71,6 @@ export function login(email: string, password: string) {
   });
 }
 
-// Vault
 export interface VaultResponse {
   message: string;
 }
@@ -97,7 +95,6 @@ export function vaultApiKey(provider: string, apiKey: string, model?: string) {
   });
 }
 
-// Workout
 export interface WorkoutResponse {
   megaPayloadJson: string;
 }
@@ -109,8 +106,16 @@ export function startWorkout(workoutFocus?: string) {
   });
 }
 
+export interface Milestone {
+  id: string;
+  name: string;
+  description: string;
+  chapterNumber: number;
+}
+
 export interface SaveWorkoutResponse {
   workoutSessionId: string;
+  unlockedMilestones: Milestone[];
 }
 
 export function saveWorkout(payloadJson: string) {
@@ -120,7 +125,6 @@ export function saveWorkout(payloadJson: string) {
   });
 }
 
-// Substitute (Machine Taken — Phase 2)
 export interface SubstituteOption {
   exerciseId: string;
   name: string;
@@ -142,7 +146,6 @@ export function getSubstitute(exerciseId: string) {
   });
 }
 
-// Events / Telemetry (Phase 6 — fire-and-forget, never blocks user)
 export function trackEvent(eventName: string, metadata?: object): void {
   const token = localStorage.getItem('gymbrain_token');
   if (!token) return;
@@ -150,10 +153,9 @@ export function trackEvent(eventName: string, metadata?: object): void {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ eventName, metadata }),
-  }).catch(() => { }); // Silent fail — telemetry must never break the app
+  }).catch(() => { });
 }
 
-// Nutrition
 export interface NutritionResponse {
   payloadJson: string;
 }
@@ -165,12 +167,10 @@ export function generateNutritionPlan(diet: string, calories: number, goal: stri
   });
 }
 
-// Health
 export function healthCheck() {
   return request<string>('/');
 }
 
-// Profile
 export interface ProfileData {
   goal: string;
   equipmentJson: string;
@@ -178,6 +178,11 @@ export interface ProfileData {
   daysPerWeek: number;
   dietaryPreference: string;
   dailyCalories: number;
+  workoutsCompleted: number;
+  chapterNumber?: number;
+  chapterTitle?: string;
+  chapterSubtitle?: string;
+  chapterUnlockMessage?: string;
 }
 
 export function getProfile() {
@@ -188,5 +193,11 @@ export function saveProfile(profile: ProfileData) {
   return request<void>('/api/profile/save', {
     method: 'POST',
     body: JSON.stringify(profile),
+  });
+}
+
+export function incrementWorkouts() {
+  return request<number>('/api/profile/increment-workouts', {
+    method: 'POST',
   });
 }
