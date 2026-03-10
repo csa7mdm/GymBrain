@@ -3,7 +3,7 @@ using GymBrain.Application.Orchestration.Commands;
 using MediatR;
 using System.Security.Claims;
 
-namespace GymBrain.API.Endpoints;
+namespace GymBrain.Api.Endpoints;
 
 public static class WorkoutEndpoints
 {
@@ -13,7 +13,7 @@ public static class WorkoutEndpoints
             .WithTags("Workout")
             .RequireAuthorization();
 
-        group.MapPost("/start", async (StartWorkoutRequest request, ISender sender, ClaimsPrincipal user, ICacheService cache) =>
+        group.MapPost("/start", async (StartWorkoutRequest request, ISender sender, ClaimsPrincipal user, IRateLimiter rateLimiter) =>
         {
             var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? user.FindFirstValue("sub")
@@ -25,13 +25,9 @@ public static class WorkoutEndpoints
                 : Domain.Enums.ExperienceLevel.Beginner;
 
             // === RATE LIMITING (Task 1D): max 10 workout generations per user per hour ===
-            var hourKey = $"ratelimit:{userId}:workout_start:{DateTime.UtcNow:yyyyMMddHH}";
-            var countStr = await cache.GetAsync(hourKey, default);
-            var count = countStr is not null ? int.Parse(countStr) : 0;
-            if (count >= 10)
-                return Results.StatusCode(429);
-
-            await cache.SetAsync(hourKey, (count + 1).ToString(), TimeSpan.FromHours(1), default);
+            var (isExceeded, retryAfter) = await rateLimiter.CheckLimitAsync(userId.ToString(), "workout_start", 10);
+            if (isExceeded)
+                return Results.Json(new { error = $"Rate limit exceeded. Try again in {retryAfter} minutes.", retryAfterMinutes = retryAfter }, statusCode: 429);
 
             var command = new StartWorkoutCommand(userId, level, request.WorkoutFocus);
             var result = await sender.Send(command);
@@ -52,20 +48,16 @@ public static class WorkoutEndpoints
         .WithName("SaveWorkout");
 
         // === POST /api/workout/substitute (Task 1B — Machine Taken) ===
-        group.MapPost("/substitute", async (SubstituteRequest request, ISender sender, ClaimsPrincipal user, ICacheService cache, Application.Common.Interfaces.IApplicationDbContext db) =>
+        group.MapPost("/substitute", async (SubstituteRequest request, ISender sender, ClaimsPrincipal user, IRateLimiter rateLimiter, Application.Common.Interfaces.IApplicationDbContext db) =>
         {
             var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? user.FindFirstValue("sub")
                 ?? throw new UnauthorizedAccessException("Invalid token."));
 
             // Rate limiting: max 30 substitute requests per user per hour
-            var hourKey = $"ratelimit:{userId}:substitute:{DateTime.UtcNow:yyyyMMddHH}";
-            var countStr = await cache.GetAsync(hourKey, default);
-            var count = countStr is not null ? int.Parse(countStr) : 0;
-            if (count >= 30)
-                return Results.StatusCode(429);
-
-            await cache.SetAsync(hourKey, (count + 1).ToString(), TimeSpan.FromHours(1), default);
+            var (isExceeded, retryAfter) = await rateLimiter.CheckLimitAsync(userId.ToString(), "substitute", 30);
+            if (isExceeded)
+                return Results.Json(new { error = $"Rate limit exceeded. Try again in {retryAfter} minutes.", retryAfterMinutes = retryAfter }, statusCode: 429);
 
             // Load user injuries from profile
             var userEntity = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
@@ -75,11 +67,19 @@ public static class WorkoutEndpoints
             if (!Guid.TryParse(request.ExerciseId, out var exerciseGuid))
                 return Results.BadRequest("Invalid exerciseId format.");
 
-            var query = new GetSubstituteQuery(exerciseGuid, injuries);
+            var query = new GetSubstituteQuery(userId, exerciseGuid, injuries);
             var result = await sender.Send(query);
             return Results.Ok(result);
         })
         .WithName("GetSubstitute");
+
+        group.MapGet("/exercise-metadata/{name}", async (string name, ISender sender) =>
+        {
+            var query = new Application.Workout.Queries.GetExerciseMetadataQuery(name);
+            var result = await sender.Send(query);
+            return result is not null ? Results.Ok(result) : Results.NoContent();
+        })
+        .WithName("GetExerciseMetadata");
     }
 }
 

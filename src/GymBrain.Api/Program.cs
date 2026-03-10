@@ -42,6 +42,8 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseCors();
+
 app.Use(async (context, next) =>
 {
     try
@@ -124,7 +126,6 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
     .WithTags("Health");
 
 // Feature endpoints
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapAuthEndpoints();
