@@ -3,13 +3,11 @@ using GymBrain.Domain.Enums;
 
 namespace GymBrain.Domain.Entities;
 
-/// <summary>
-/// User aggregate root. Holds identity, hashed credentials,
-/// encrypted BYO-API key (AES-256), and personalization preferences.
-/// </summary>
 public class User : BaseEntity
 {
     private User() { } // EF Core
+
+    public NarrativeChapter CurrentChapter => NarrativeProgress.GetChapter(WorkoutsCompleted);
 
     public User(string email, string passwordHash, ExperienceLevel experienceLevel)
     {
@@ -55,7 +53,8 @@ public class User : BaseEntity
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
-    // === Profile persistence fields ===
+    // === Profile & Usage persistence fields ===
+    public int WorkoutsCompleted { get; private set; } = 0;
     public string? Goal { get; private set; }
     public string? EquipmentJson { get; private set; }  // JSON array of available equipment
     public string? Injuries { get; private set; }
@@ -75,6 +74,12 @@ public class User : BaseEntity
         DietaryPreference = dietaryPreference;
         DailyCalories = Math.Clamp(dailyCalories, 0, 10000);
         ExperienceLevel = experienceLevel;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void IncrementWorkoutsCompleted()
+    {
+        WorkoutsCompleted++;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 }

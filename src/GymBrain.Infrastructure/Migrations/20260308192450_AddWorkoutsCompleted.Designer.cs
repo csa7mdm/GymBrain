@@ -3,6 +3,7 @@ using System;
 using GymBrain.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GymBrain.Infrastructure.Migrations
 {
     [DbContext(typeof(GymBrainDbContext))]
-    partial class GymBrainDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260308192450_AddWorkoutsCompleted")]
+    partial class AddWorkoutsCompleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -789,94 +792,6 @@ namespace GymBrain.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GymBrain.Domain.Entities.Milestone", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ChapterNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ConditionType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConditionValue")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Milestones");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            ChapterNumber = 1,
-                            ConditionType = "WorkoutCount",
-                            ConditionValue = "1",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Complete your first workout session.",
-                            Name = "The Commitment"
-                        },
-                        new
-                        {
-                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            ChapterNumber = 1,
-                            ConditionType = "WorkoutCount",
-                            ConditionValue = "3",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Complete 3 total workouts.",
-                            Name = "Building Momentum"
-                        },
-                        new
-                        {
-                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            ChapterNumber = 2,
-                            ConditionType = "WorkoutsInWeek",
-                            ConditionValue = "2",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Complete 2 workouts in a single week.",
-                            Name = "Double Down"
-                        },
-                        new
-                        {
-                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            ChapterNumber = 2,
-                            ConditionType = "Streak",
-                            ConditionValue = "3",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Maintain a 3-day workout streak.",
-                            Name = "Consistency King"
-                        },
-                        new
-                        {
-                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            ChapterNumber = 3,
-                            ConditionType = "WorkoutCount",
-                            ConditionValue = "15",
-                            CreatedAtUtc = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Description = "Complete 15 total workouts.",
-                            Name = "Veteran"
-                        });
-                });
-
             modelBuilder.Entity("GymBrain.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -946,32 +861,6 @@ namespace GymBrain.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("GymBrain.Domain.Entities.UserMilestone", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MilestoneId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UnlockedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UserMilestones");
                 });
 
             modelBuilder.Entity("GymBrain.Domain.Entities.WorkoutSession", b =>

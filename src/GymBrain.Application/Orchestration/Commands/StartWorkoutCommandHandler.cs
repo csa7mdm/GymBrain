@@ -25,9 +25,11 @@ public sealed class StartWorkoutCommandHandler(
     IVaultService vault,
     ILlmProviderFactory llmProviderFactory,
     ICacheService cache,
+    IRateLimiter rateLimiter,
     Microsoft.Extensions.Configuration.IConfiguration configuration)
     : IRequestHandler<StartWorkoutCommand, StartWorkoutResponse>
 {
+    private const int HourlyLimit = 10;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromHours(2);
     private const string ManagedLlmProvider = "groq";
     private const string ManagedLlmModel = "llama-3.3-70b-versatile";
@@ -35,6 +37,11 @@ public sealed class StartWorkoutCommandHandler(
 
     public async Task<StartWorkoutResponse> Handle(StartWorkoutCommand request, CancellationToken ct)
     {
+        var (isExceeded, retryIn) = await rateLimiter.CheckLimitAsync(request.UserId.ToString(), "workout_start", HourlyLimit, ct);
+        if (isExceeded)
+        {
+            throw new GymBrain.Application.Common.Exceptions.ManagedCapException($"Hourly limit exceeded. Try again in {retryIn} minutes.", 0);
+        }
         // Check Redis cache first (avoid redundant LLM calls on reload)
         var cacheKey = $"workout:{request.UserId}:{request.ExperienceLevel}";
         var cached = await cache.GetAsync(cacheKey, ct);
@@ -60,13 +67,17 @@ public sealed class StartWorkoutCommandHandler(
         else
         {
             // Managed mode — check daily cap first
-            var dailyCapKey = $"managed_limit:{request.UserId}:{DateTime.UtcNow:yyyy-MM-dd}";
+            var dailyCapKey = $"managed_cap:{request.UserId}:{DateTime.UtcNow:yyyy-MM-dd}";
             var currentCountStr = await cache.GetAsync(dailyCapKey, ct);
             var currentCount = currentCountStr is not null ? int.Parse(currentCountStr) : 0;
 
             if (currentCount >= ManagedDailyCapPerUser)
-                throw new InvalidOperationException(
-                    "Daily AI limit reached. Add your own API key in the Vault for unlimited workouts, or try again tomorrow.");
+            {
+                var now = DateTime.UtcNow;
+                var midnight = now.Date.AddDays(1);
+                var hoursUntilMidnight = (int)(midnight - now).TotalHours;
+                throw new GymBrain.Application.Common.Exceptions.ManagedCapException("Daily AI limit reached.", Math.Max(1, hoursUntilMidnight));
+            }
 
             var managedKey = configuration["GYMBRAIN_MANAGED_LLM_KEY"]
                 ?? Environment.GetEnvironmentVariable("GYMBRAIN_MANAGED_LLM_KEY")
@@ -77,7 +88,7 @@ public sealed class StartWorkoutCommandHandler(
             preferredModel = ManagedLlmModel;
 
             // Increment cap counter (TTL 24h)
-            await cache.SetAsync(dailyCapKey, (currentCount + 1).ToString(), TimeSpan.FromDays(1), ct);
+            await cache.IncrementAsync(dailyCapKey, TimeSpan.FromDays(1), ct);
         }
 
         // Load ALL exercises (including warmups)
@@ -91,7 +102,7 @@ public sealed class StartWorkoutCommandHandler(
         if (safeExercises.Count == 0)
             throw new InvalidOperationException("No safe exercises available for your injury profile.");
 
-        var systemPrompt = SystemPromptFactory.Build(user.TonePersona, safeExercises);
+        var systemPrompt = SystemPromptFactory.Build(user.TonePersona, safeExercises, user.WorkoutsCompleted);
 
         // Token-optimized user message with profile context
         var focusPart = string.IsNullOrWhiteSpace(request.WorkoutFocus)

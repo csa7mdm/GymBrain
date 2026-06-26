@@ -12,9 +12,12 @@ public static class SystemPromptFactory
     public static string BuildTokenMap(IReadOnlyList<Exercise> exercises)
         => string.Join('\n', exercises.Select(e => $"{e.Id}|{e.Name}"));
 
-    public static string Build(string tonePersona, IReadOnlyList<Exercise> exercises)
+    public static string Build(string tonePersona, IReadOnlyList<Exercise> exercises, int workoutsCompleted)
     {
         var tokenMap = BuildTokenMap(exercises);
+        
+        int minExercises = workoutsCompleted >= 10 ? 12 : workoutsCompleted >= 3 ? 8 : 4;
+        int maxExercises = workoutsCompleted >= 10 ? 18 : workoutsCompleted >= 3 ? 12 : 6;
 
         return $$"""
             You are an ORCHESTRATOR synthesizing 4 expert perspectives into one workout.
@@ -50,7 +53,8 @@ public static class SystemPromptFactory
                     "sets": "integer: 2-5",
                     "reps": "integer: 6-20",
                     "weight_kg": "integer: 0-200, beginners≤40",
-                    "rest_seconds": "integer: 60-180"
+                    "rest_seconds": "integer: 60-180",
+                    "coach_tip": "string: personalized short {{tonePersona}} quote specific to this exercise"
                   }
                 }
               ]
@@ -58,9 +62,9 @@ public static class SystemPromptFactory
 
             RULES:
             - components[0] MUST be type "tone_card". components[1..N] MUST be type "set_tracker".
-            - Return 4-6 set_tracker entries (total 5-7 components).
+            - Return {{minExercises}}-{{maxExercises}} set_tracker entries (total {{minExercises + 1}}-{{maxExercises + 1}} components).
             - exercise_id and exercise_name MUST match an entry from the EXERCISES list. Never invent.
-            - payload keys are EXACTLY as shown. No aliases (no "name", "id", "muscle", "rest", "weight").
+            - payload keys are EXACTLY as shown. No aliases (no "name", "id", "muscle", "rest", "weight", "tip").
             - Output raw JSON only. No markdown fences, no backticks, no explanation text.
             """;
     }

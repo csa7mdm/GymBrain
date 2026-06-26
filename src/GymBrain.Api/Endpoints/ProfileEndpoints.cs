@@ -3,7 +3,7 @@ using GymBrain.Application.Profile.Queries;
 using MediatR;
 using System.Security.Claims;
 
-namespace GymBrain.API.Endpoints;
+namespace GymBrain.Api.Endpoints;
 
 public static class ProfileEndpoints
 {
@@ -31,6 +31,13 @@ public static class ProfileEndpoints
         {
             var userId = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var result = await mediator.Send(new GetProfileQuery(userId));
+            return Results.Ok(result);
+        });
+
+        group.MapPost("/increment-workouts", async (IMediator mediator, ClaimsPrincipal user) =>
+        {
+            var userId = Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result = await mediator.Send(new IncrementWorkoutsCommand(userId));
             return Results.Ok(result);
         });
     }

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using System.Text.Json;
 
-namespace GymBrain.API.Endpoints;
+namespace GymBrain.Api.Endpoints;
 
 public static class TelemetryEndpoints
 {

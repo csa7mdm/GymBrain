@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace GymBrain.Application.Orchestration.Commands;
 
-public record GetSubstituteQuery(Guid ExerciseId, string? UserInjuries)
+public record GetSubstituteQuery(Guid UserId, Guid ExerciseId, string? UserInjuries)
     : MediatR.IRequest<SubstituteResult>;
 
 public record SubstituteResult(

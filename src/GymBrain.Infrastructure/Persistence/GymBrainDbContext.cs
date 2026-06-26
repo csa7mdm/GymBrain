@@ -11,11 +11,14 @@ public class GymBrainDbContext(DbContextOptions<GymBrainDbContext> options)
     public DbSet<Exercise> Exercises => Set<Exercise>();
     public DbSet<WorkoutSession> WorkoutSessions => Set<WorkoutSession>();
     public DbSet<AnalyticsEvent> AnalyticsEvents => Set<AnalyticsEvent>();
+    public DbSet<Milestone> Milestones => Set<Milestone>();
+    public DbSet<UserMilestone> UserMilestones => Set<UserMilestone>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(GymBrainDbContext).Assembly);
         ExerciseSeeder.Seed(modelBuilder);
+        MilestoneSeeder.Seed(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 

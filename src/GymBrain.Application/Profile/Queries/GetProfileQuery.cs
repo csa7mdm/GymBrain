@@ -14,7 +14,12 @@ public record GetProfileResponse(
     string? DietaryPreference,
     int DailyCalories,
     string ExperienceLevel,
-    string? TonePersona);
+    string? TonePersona,
+    int WorkoutsCompleted,
+    int ChapterNumber,
+    string ChapterTitle,
+    string ChapterSubtitle,
+    string ChapterUnlockMessage);
 
 public sealed class GetProfileQueryHandler(IApplicationDbContext db)
     : IRequestHandler<GetProfileQuery, GetProfileResponse>
@@ -32,6 +37,11 @@ public sealed class GetProfileQueryHandler(IApplicationDbContext db)
             user.DietaryPreference,
             user.DailyCalories,
             user.ExperienceLevel.ToString(),
-            user.TonePersona);
+            user.TonePersona,
+            user.WorkoutsCompleted,
+            user.CurrentChapter.Number,
+            user.CurrentChapter.Title,
+            user.CurrentChapter.Subtitle,
+            user.CurrentChapter.UnlockMessage);
     }
 }

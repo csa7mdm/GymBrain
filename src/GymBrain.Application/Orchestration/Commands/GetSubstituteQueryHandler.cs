@@ -11,9 +11,11 @@ namespace GymBrain.Application.Orchestration.Commands;
 /// 2. Filters alternatives by the user's injury contraindications
 /// 3. Returns only safe, equipment-different alternatives
 /// </summary>
-public sealed class GetSubstituteQueryHandler(IApplicationDbContext db)
+public sealed class GetSubstituteQueryHandler(IApplicationDbContext db, IRateLimiter rateLimiter)
     : IRequestHandler<GetSubstituteQuery, SubstituteResult>
 {
+    private const int HourlyLimit = 30;
+
     private static readonly Lazy<JsonDocument> SubMap = new(() =>
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "SubstituteMap.json");
@@ -28,6 +30,13 @@ public sealed class GetSubstituteQueryHandler(IApplicationDbContext db)
 
     public async Task<SubstituteResult> Handle(GetSubstituteQuery request, CancellationToken ct)
     {
+        var (isExceeded, retryIn) = await rateLimiter.CheckLimitAsync(request.UserId.ToString(), "substitute", HourlyLimit, ct);
+        if (isExceeded)
+        {
+            return new SubstituteResult(request.ExerciseId.ToString(), "Rate Limited",
+                Array.Empty<SubstituteOption>(),
+                $"Rate limit exceeded. Try again in {retryIn} minutes.");
+        }
         var idStr = request.ExerciseId.ToString();
 
         // Load original exercise for metadata

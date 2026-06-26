@@ -18,7 +18,18 @@ public static class NutritionEndpoints
                 ?? user.FindFirstValue("sub")
                 ?? throw new UnauthorizedAccessException("Invalid token."));
 
-            var command = new GenerateNutritionPlanCommand(userId, request.Diet, request.Calories, request.Goal);
+            var command = new GenerateNutritionPlanCommand(
+                userId,
+                request.Diet,
+                request.Calories,
+                request.Goal,
+                request.DurationDays,
+                request.MonthlyBudget,
+                request.CurrencyCode,
+                request.Country,
+                request.City,
+                request.AvailableResources,
+                request.ReminderTime);
             var result = await sender.Send(command);
 
             return Results.Ok(result);
@@ -27,4 +38,14 @@ public static class NutritionEndpoints
     }
 }
 
-public record GenerateNutritionRequest(string Diet, int Calories, string Goal);
+public record GenerateNutritionRequest(
+    string Diet,
+    int Calories,
+    string Goal,
+    int DurationDays,
+    decimal? MonthlyBudget,
+    string? CurrencyCode,
+    string? Country,
+    string? City,
+    string[]? AvailableResources,
+    string? ReminderTime);

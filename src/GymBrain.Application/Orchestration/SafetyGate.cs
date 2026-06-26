@@ -19,12 +19,16 @@ public static class SafetyGate
 
     /// <summary>
     /// Validates and clamps the raw LLM JSON mega-payload.
+    /// Resilient to markdown backticks and lead-in text.
     /// </summary>
     public static string Validate(
         string rawJson,
         IReadOnlyList<Exercise> validExercises,
         ExperienceLevel level)
     {
+        // 🛡️ Quick Win: Strip markdown backticks and garbage text
+        rawJson = CleanJson(rawJson);
+
         var validIds = validExercises.Select(e => e.Id.ToString()).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var fallbackId = validExercises.First().Id.ToString();
         var maxWeight = GetMaxWeight(level);
@@ -38,6 +42,22 @@ public static class SafetyGate
         writer.Flush();
         stream.Position = 0;
         return new StreamReader(stream).ReadToEnd();
+    }
+
+    private static string CleanJson(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return "{}";
+
+        // Try to find the first '{' and last '}'
+        int start = input.IndexOf('{');
+        int end = input.LastIndexOf('}');
+
+        if (start != -1 && end != -1 && end > start)
+        {
+            return input.Substring(start, end - start + 1);
+        }
+
+        return input;
     }
 
     private static double GetMaxWeight(ExperienceLevel level) => level switch

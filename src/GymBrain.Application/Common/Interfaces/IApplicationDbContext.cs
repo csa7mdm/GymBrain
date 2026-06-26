@@ -12,5 +12,7 @@ public interface IApplicationDbContext
     DbSet<Exercise> Exercises { get; }
     DbSet<WorkoutSession> WorkoutSessions { get; }
     DbSet<AnalyticsEvent> AnalyticsEvents { get; }
+    DbSet<Milestone> Milestones { get; }
+    DbSet<UserMilestone> UserMilestones { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
