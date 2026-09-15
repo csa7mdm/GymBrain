@@ -23,13 +23,13 @@
   <em>Firebase Hosting frontend • Railway backend • Neon PostgreSQL • Upstash Redis</em>
 </p>
 
+---
+
 [Getting Started](#-getting-started) •
 [Architecture](#-architecture) •
 [API Reference](#-api-reference) •
 [Deployment](#-deployment) •
 [Contributing](#-contributing)
-
-</div>
 
 ---
 
@@ -47,6 +47,11 @@
 | 🎬 **Exercise Enrichment** | Optional ExerciseDB metadata and GIFs proxied through the backend with local caching |
 | 📱 **Mobile-First React UI** | Vite + React + TypeScript client with tab navigation and profile-first flows |
 | 🚀 **Production Hosting** | Firebase Hosting frontend with a persistent Railway API deployment |
+| 🧩 **Result Pattern** | Functional error handling eliminating exceptions for expected business logic |
+| 🏗️ **Vertical Slice Architecture** | Feature-based organization improving maintainability and team velocity |
+| 🧪 **Comprehensive Testing** | Unit tests for handlers with GitHub Actions CI/CD ensuring quality |
+| 📚 **Architecture Docs** | C4 diagrams and ADRs documenting key decisions and system structure |
+| ☁️ **Infrastructure as Code** | Terraform definitions for reproducible cloud deployments |
 
 ---
 
@@ -85,8 +90,8 @@ graph TB
     subgraph "Data & External Services"
         PG[("Neon PostgreSQL")]
         REDIS[("Upstash Redis")]
-        MODELS["Groq / OpenAI / OpenRouter / Anthropic"]
-        EXDB["ExerciseDB / RapidAPI"]
+        MODELS[("Groq / OpenAI / OpenRouter / Anthropic")]
+        EXDB[("ExerciseDB / RapidAPI")]
     end
 
     WEB --> API
@@ -119,10 +124,10 @@ graph TB
 graph LR
     USER["User Browser"] --> FIREBASE["Firebase Hosting<br/>gymbrain-pilot-cairo.web.app"]
     FIREBASE --> RAILWAY["Railway API<br/>gymbrain-api-production.up.railway.app"]
-    RAILWAY --> NEON["Neon PostgreSQL"]
-    RAILWAY --> UPSTASH["Upstash Redis"]
-    RAILWAY --> PROVIDERS["LLM Providers"]
-    RAILWAY --> EXERCISEDB["ExerciseDB Proxy"]
+    RAILWAY --> NEON[("Neon PostgreSQL")]
+    RAILWAY --> UPSTASH[("Upstash Redis")]
+    RAILWAY --> PROVIDERS[("LLM Providers")]
+    RAILWAY --> EXERCISEDB[("ExerciseDB Proxy")]
 ```
 
 ### Clean Architecture Layers
@@ -137,9 +142,9 @@ graph LR
 ├─────────────────────────────────────────────────┤
 │                GymBrain.Domain                   │  ← Entities, enums, contracts, invariants
 └─────────────────────────────────────────────────┘
+```
 
 Dependency Rule: Outer layers depend on inner layers. Never the reverse.
-```
 
 ### Request Flow
 
@@ -166,6 +171,15 @@ sequenceDiagram
     API-->>FE: JSON response
     FE-->>U: Rendered cards, plans, and profile state
 ```
+
+### Architectural Documentation
+
+The repository includes comprehensive architecture documentation:
+- **C4 Model Diagrams**: System context, container, and component views in `/docs/architecture/`
+- **Architecture Decision Records (ADRs)**: Key decisions documented in `/docs/adr/` including:
+  - ADR 001: Result Pattern for Error Handling
+  - ADR 002: FluentValidation with MediatR Pipeline Behaviors
+- **Vertical Slice Architecture**: Feature-based organization in `/src/GymBrain.Application/Features/`
 
 ---
 
@@ -328,6 +342,14 @@ npm run build
 firebase deploy --only hosting --project gymbrain-pilot-cairo
 ```
 
+### Infrastructure as Code
+
+The repository includes Terraform definitions for reproducible cloud deployments in `/infra/`:
+- Azure PostgreSQL Flexible Server (Neon equivalent)
+- Azure Redis Cache (Upstash equivalent)
+- App Service Plan and Web App for the API
+- Virtual network with service delegation subnets
+
 ### CORS Origins
 
 Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json`](src/GymBrain.Api/appsettings.Production.json):
@@ -341,13 +363,14 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 ## 🔒 Security
 
 | Layer | Implementation |
-|-------|---------------|
+|-------|----------------|
 | Authentication | JWT bearer tokens |
 | Passwords | BCrypt hashing |
 | Vaulted provider keys | Encryption before persistence |
 | Secrets management | Environment variables / user secrets |
 | Managed AI caps | Redis-backed per-user daily limits |
 | CORS | Explicit production frontend origins |
+| Error Handling | Result pattern eliminating exceptions for expected business logic |
 
 ### Security Notes
 
@@ -355,6 +378,7 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 - Rotate any secret ever exposed in logs, screenshots, or history.
 - The API only seeds an admin user if `SeedAdmin:Email` and `SeedAdmin:Password` are explicitly configured.
 - Keep `REDIS_CONNECTION` as the canonical Redis production variable.
+- Expected business errors (validation, not found, unauthorized) return appropriate HTTP status codes via Result pattern rather than throwing exceptions.
 
 ---
 
@@ -366,6 +390,7 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 | Managed AI cap | Controls free-tier backend cost |
 | BYO provider key support | Shifts high-usage cost to user-owned credentials |
 | Optional exercise enrichment | Avoids blocking workout UX when metadata is unavailable |
+| Result pattern | Eliminates exception overhead for expected business flows |
 
 ---
 
@@ -377,7 +402,11 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 dotnet test GymBrain.sln
 ```
 
-Current backend test projects live under [`tests/`](tests/).
+Current backend test projects live under [`tests/`](tests/), including:
+- Unit tests for command/query handlers (xUnit + Moq)
+- Tests covering success and failure scenarios
+- Validation behavior tests
+- GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) running on every push/PR
 
 ### Frontend
 
@@ -407,9 +436,40 @@ GymBrain/
 ├── .antigravityrules
 ├── GymBrain.sln
 ├── Dockerfile
+├── infra/
+│   └── main.tf              # Terraform infrastructure definitions
 ├── client/
 ├── src/
-└── tests/
+│   ├── GymBrain.Api/
+│   │   ├── Endpoints/       # API endpoints with Result pattern handling
+│   │   └── Program.cs
+│   ├── GymBrain.Application/
+│   │   ├── Features/        # Vertical slice architecture (exercise metadata, etc.)
+│   │   ├── Common/          # Shared interfaces, behaviors, validation
+│   │   └── Auth/            # Authentication commands/queries/handlers
+│   ├── GymBrain.Domain/
+│   │   ├── Common/          # Result pattern, Error classes
+│   │   ├── Entities/        # Domain models
+│   │   └── Enums/
+│   ├── GymBrain.Infrastructure/
+│   │   ├── Persistence/     # EF Core configuration
+│   │   ├── Services/        # Redis cache, JWT token service, etc.
+│   │   └── Security/        # Password hashing, rate limiting
+├── tests/
+│   └── GymBrain.Application.Tests/  # Unit tests for application layer
+├── docs/
+│   ├── architecture/        # C4 model diagrams
+│   │   ├── 01-SystemContext.md
+│   │   ├── 02-Container.md
+│   │   └── 03-Component.md
+│   └── adr/                 # Architecture Decision Records
+│       ├── 001-result-pattern.md
+│       └── 002-fluentvalidation-mediatr.md
+└── content/
+    ├── linkedin-post-architecture-refactor.md
+    ├── linkedin-post-arabic.md
+    └── presentation/
+        └── gymbrain-architecture-refactor.md
 ```
 
 ---
@@ -421,7 +481,7 @@ GymBrain/
 | [`.codexrules`](.codexrules) | Current repo-specific agent rules |
 | [`.antigravityrules`](.antigravityrules) | Legacy agent guidance kept for continuity |
 | [`AI_CONTEXT.md`](AI_CONTEXT.md) | Current architecture and delivery state |
-| [`.gymbrain_knowledge.md`](.gymbrain_knowledge.md) | Append-only lessons learned log |
+| [`$.gymbrain_knowledge.md`](.gymbrain_knowledge.md) | Append-only lessons learned log |
 
 ---
 
@@ -435,14 +495,30 @@ GymBrain/
 - [x] Profile persistence and plans
 - [x] Nutrition generation
 - [x] Railway + Firebase production deployment
+- [x] Result pattern for error handling
+- [x] Redis caching implementation
+- [x] Vertical slice architecture
+- [x] Comprehensive unit testing
+- [x] GitHub Actions CI/CD pipeline
+- [x] Infrastructure as code (Terraform)
+- [x] Architecture documentation (C4 diagrams, ADRs)
 - [ ] Flutter mobile app
 - [ ] Gamification and deeper progression systems
+- [ ] Refresh token rotation for enhanced security
+- [ ] Distributed tracing with OpenTelemetry
 
 ---
 
 ## 🤝 Contributing
 
 Contributions should keep the Clean Architecture boundaries intact, avoid committing secrets, and update the project docs when behavior or deployment changes.
+
+When contributing:
+1. Follow the existing architectural patterns (Result pattern, vertical slices)
+2. Write unit tests for new functionality
+3. Update architecture documentation if significant changes are made
+4. Ensure all secrets are managed through environment variables or user secrets
+5. Keep CORS origins updated for new frontend deployments
 
 ---
 
@@ -453,7 +529,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ---
 
 <div align="center">
-  <strong>Built for production with .NET 9, React 19, Railway, Firebase, PostgreSQL, and Redis.</strong>
+  <strong>Built for production with .NET 9, React 19, Railway, Firebase, PostgreSQL, and Redis.</strong><br>
+  <strong>Enhanced with Result pattern, vertical slice architecture, caching, testing, and DevOps automation.</strong>
 </div>
-
-
