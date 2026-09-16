@@ -18,7 +18,7 @@ public static class AuthEndpoints
             var result = await sender.Send(command);
             return result.IsSuccess
                 ? Results.Ok(result.Value)
-                : Results.BadRequest(result.Error.Message);
+                : Results.BadRequest(new { detail = result.Error!.Message });
         })
         .WithName("RegisterUser")
         .AllowAnonymous();
@@ -28,7 +28,7 @@ public static class AuthEndpoints
             var result = await sender.Send(command);
             return result.IsSuccess
                 ? Results.Ok(result.Value)
-                : Results.Unauthorized(result.Error.Message);
+                : Results.Json(new { detail = result.Error!.Message }, statusCode: StatusCodes.Status401Unauthorized);
         })
         .WithName("LoginUser")
         .AllowAnonymous();
@@ -41,9 +41,7 @@ public static class AuthEndpoints
 
             var command = new VaultApiKeyCommand(userId, request.Provider, request.ApiKey, request.Model);
             var result = await sender.Send(command);
-            return result.IsSuccess
-                ? Results.Ok(result.Value)
-                : Results.BadRequest(result.Error.Message);
+            return Results.Ok(result);
         })
         .WithName("VaultApiKey")
         .RequireAuthorization();

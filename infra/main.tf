@@ -1,3 +1,5 @@
+# DRAFT ONLY: incomplete, unvalidated Azure proposal. Not the Railway deployment.
+# Variables and provider schemas must be completed and validated before use.
 terraform {
   required_version = ">= 1.0.0"
   required_providers {

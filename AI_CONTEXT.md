@@ -20,9 +20,8 @@ GymBrain is an AI fitness coaching platform with a production React frontend on 
 
 ### Backend
 
-- Railway deployment is active.
-- Health endpoint is responding healthy.
-- Redis is read from `REDIS_CONNECTION`.
+- Production deployment and health must be verified in Railway after each push; repository build results are not evidence of live health.
+- Redis is read from `REDIS_CONNECTION` (or `ConnectionStrings:Redis`). Connections are lazy; payload caching can degrade, while unavailable usage counters return HTTP 503.
 - Vault encryption key is read from `VAULT_ENCRYPTION_KEY`.
 - JWT issuer and audience are both configurable.
 - Admin seeding only happens when `SeedAdmin:Email` and `SeedAdmin:Password` are explicitly set.

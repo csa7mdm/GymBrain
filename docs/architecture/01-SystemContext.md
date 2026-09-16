@@ -10,7 +10,7 @@
 The core GymBrain system providing AI-powered fitness coaching capabilities.
 
 ### External Systems
-- **PostgreSQL Database (Neon)**: Primary data storage for user profiles, workout plans, nutrition data, telemetry
+- **PostgreSQL Database (Neon)**: Primary data storage for user profiles, workout completions, dietary preferences, telemetry
 - **Redis Cache (Upstash)**: Distributed caching layer for improved performance
 - **Authentication Providers**: 
   - Email/Password authentication via JWT
@@ -25,7 +25,7 @@ The core GymBrain system providing AI-powered fitness coaching capabilities.
 - **Payment Processor** (Future): Stripe/PayPal for premium subscriptions
 - **Email Service** (Future): SendGrid/SMTP for notifications and newsletters
 - **Analytics & Monitoring**: 
-  - Application Insights / Serilog for logging
+  - Serilog for logging; Application Insights is planned
   - Potential integration with Google Analytics or Mixpanel
   - Error tracking with Sentry (future)
 
@@ -44,7 +44,7 @@ The core GymBrain system providing AI-powered fitness coaching capabilities.
 4. **Progress Tracking**: Record and analyze workout completion and metrics
 5. **Exercise Library**: Maintain comprehensive exercise database with metadata
 6. **AI Coaching**: Use LLMs to provide personalized recommendations and form feedback
-7. **Notifications**: Send reminders, motivational messages, and progress updates
+7. **Notifications (planned backend capability)**: Send reminders, motivational messages, and progress updates
 8. **Data Security**: Protect user data with encryption and secure authentication
 
 ### Key Integration Points

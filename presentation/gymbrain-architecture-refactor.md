@@ -1,3 +1,5 @@
+> Draft presentation copy, not verified implementation evidence. Result migration is limited to login/registration, API integration tests are planned, and Azure Terraform is incomplete and unvalidated. Use README.md and docs/architecture for current scope; deployment success must be verified separately.
+
 # GymBrain Architecture Refactoring: From Clean Architecture to Senior-Level .NET Excellence
 
 ## Slide 1: Title Slide

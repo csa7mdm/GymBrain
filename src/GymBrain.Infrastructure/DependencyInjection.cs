@@ -29,18 +29,22 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<GymBrainDbContext>());
 
-        // Support Railway-style flat env vars as well as .NET connection strings.
+        // Delay connecting until a cache operation; Redis must not block API startup.
         var redisConn = configuration["REDIS_CONNECTION"]
-            ?? configuration.GetConnectionString("Redis")
-            ?? "localhost:6379";
-        services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConn));
-
-        services.AddStackExchangeRedisCache(options =>
+            ?? configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConn))
         {
-            options.Configuration = redisConn;
-            options.InstanceName = "GymBrain:";
-        });
-        services.AddScoped<ICacheService, RedisCacheService>();
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+            {
+                var options = ConfigurationOptions.Parse(redisConn);
+                options.AbortOnConnectFail = false;
+                return ConnectionMultiplexer.Connect(options);
+            });
+            services.AddScoped<RedisCacheService>();
+        }
+        services.AddScoped<ICacheService>(sp => new ResilientCacheService(
+            sp.GetService<RedisCacheService>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ResilientCacheService>>()));
 
         // Security services
         services.AddScoped<IVaultService, VaultService>();

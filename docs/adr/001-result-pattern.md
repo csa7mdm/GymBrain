@@ -1,15 +1,15 @@
 # ADR 001: Use Result Pattern for Error Handling
 
 ## Status
-Accepted
+Accepted direction; partially implemented
 
 ## Context
 The GymBrain API needed a consistent way to handle expected business errors (validation failures, not found, unauthorized access) without using exceptions for control flow. Previously, some handlers threw exceptions while others returned nullable values or special response types, leading to inconsistent error handling and potential 500 errors for expected business conditions.
 
 ## Decision
 We will implement a Result pattern (similar to functional programming's Either monad) where:
-- All command/query handlers return `Result<T>` or `Result` 
-- `Result<T>.Success()` represents successful operations with a value
+- Planned migration: all command/query handlers return `Result<T>` or `Result`
+- `Result.Success(value)` represents successful operations with a value
 - `Result.Failure(Error)` represents failed operations with an error object
 - Expected business errors (validation, not found, unauthorized) return Failure results
 - Unexpected errors (database connection failures, null references) still throw exceptions
@@ -45,8 +45,9 @@ Updated `AuthEndpoints` to map Result outcomes to appropriate HTTP responses.
 
 ## Related Decisions
 - ADR 002: Use FluentValidation with MediatR pipeline behaviors
-- ADR 003: Implement vertical slice architecture for features
+- A separate vertical-slice ADR is planned; ADR 003 is not present.
 
 ## References
 - [Result Pattern in C#](https://ardalis.com/the-result-pattern-in-csharp/)
 - [Functional Error Handling in C#](https://blog.ploeh.dk/2015/08/03/either-as-a-monad-for-error-handling-in-csharp/)
+Current scope: only login and registration return Result<T>. Their endpoints map failures to 401 and 400 respectively. Vault and other handlers retain DTO/exception contracts. The broader status-code matrix above is the intended migration, not implemented globally.

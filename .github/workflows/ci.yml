@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, develop ]
 
 jobs:
   build:
@@ -19,10 +19,12 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore GymBrain.sln
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build GymBrain.sln --configuration Release --no-restore
 
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test GymBrain.sln --configuration Release --no-build --verbosity normal
+    - name: Build API image
+      run: docker build -t gymbrain-api:local .

@@ -47,11 +47,11 @@
 | 🎬 **Exercise Enrichment** | Optional ExerciseDB metadata and GIFs proxied through the backend with local caching |
 | 📱 **Mobile-First React UI** | Vite + React + TypeScript client with tab navigation and profile-first flows |
 | 🚀 **Production Hosting** | Firebase Hosting frontend with a persistent Railway API deployment |
-| 🧩 **Result Pattern** | Functional error handling eliminating exceptions for expected business logic |
+| 🧩 **Result Pattern** | Typed success/failure handling for login and registration |
 | 🏗️ **Vertical Slice Architecture** | Feature-based organization improving maintainability and team velocity |
-| 🧪 **Comprehensive Testing** | Unit tests for handlers with GitHub Actions CI/CD ensuring quality |
+| 🧪 **Backend Testing** | Unit tests for selected handlers and services, with build/test/image CI |
 | 📚 **Architecture Docs** | C4 diagrams and ADRs documenting key decisions and system structure |
-| ☁️ **Infrastructure as Code** | Terraform definitions for reproducible cloud deployments |
+| ☁️ **Infrastructure as Code** | Draft Azure Terraform proposal; incomplete and not deployed |
 
 ---
 
@@ -146,6 +146,13 @@ graph LR
 
 Dependency Rule: Outer layers depend on inner layers. Never the reverse.
 
+### Implementation Status
+
+- Feature-oriented MediatR handlers and FluentValidation are implemented within the layered solution.
+- [`Result` and `Result<T>`](src/GymBrain.Domain/Common/Result.cs) exist with typed errors and unit tests. Login and registration return typed Results with `Error` objects; other handlers still use DTOs and exceptions. Refresh tokens and a platform-wide Result migration remain planned.
+- C4 documents and ADRs are linked below. The .NET 9 CI workflow builds/tests and builds the API image for pushes and pull requests to master/develop. Terraform is an incomplete Azure proposal, not the Railway deployment configuration.
+- Nutrition generation uses Redis for usage counters, not meal-plan payload caching or persistence.
+
 ### Request Flow
 
 ```mermaid
@@ -179,7 +186,7 @@ The repository includes comprehensive architecture documentation:
 - **Architecture Decision Records (ADRs)**: Key decisions documented in `/docs/adr/` including:
   - ADR 001: Result Pattern for Error Handling
   - ADR 002: FluentValidation with MediatR Pipeline Behaviors
-- **Vertical Slice Architecture**: Feature-based organization in `/src/GymBrain.Application/Features/`
+- **Vertical Slice Architecture**: Feature-oriented handlers under Auth, Orchestration, Profile, Vault, and Workout within the layered solution
 
 ---
 
@@ -320,17 +327,23 @@ The React client is the current production surface and validates the backend con
 
 The backend deploys from the repository root using [`Dockerfile`](Dockerfile) on Railway.
 
-Canonical production variables:
+Production configuration (set secret values in Railway):
 
 - `ConnectionStrings__DefaultConnection`
-- `REDIS_CONNECTION`
+- `REDIS_CONNECTION` (required for workout rate limits and managed AI usage counters; blank disables Redis)
 - `VAULT_ENCRYPTION_KEY`
 - `JWT__Secret`
 - `JWT__Issuer=GymBrain`
 - `JWT__Audience=GymBrain`
-- `GYMBRAIN_MANAGED_LLM_KEY`
+- `GYMBRAIN_MANAGED_LLM_KEY` (required for managed AI; BYO credentials are stored through the vault)
 - `ASPNETCORE_ENVIRONMENT=Production`
 - `PORT=8080`
+
+Redis connections are created on demand. Unavailable payload caching degrades to cache misses/skipped writes; operations requiring usage counters return HTTP 503 rather than bypassing limits. All workout starts require Redis because they have an hourly limit. The local default is `ConnectionStrings:Redis=localhost:6379`.
+
+The container listens on port 8080; configure the Railway service target port accordingly. `PORT` alone does not change the listener. PostgreSQL must be reachable at startup because the API applies migrations before serving requests. `/health` is a liveness response, not a Redis dependency check.
+
+For a service connected to `master` with automatic deployments enabled, a pushed commit should trigger a deployment. Otherwise deploy the desired commit manually in Railway. Check the build logs and `/health` after deployment; repository validation alone does not establish production health.
 
 ### Frontend Hosting
 
@@ -344,7 +357,7 @@ firebase deploy --only hosting --project gymbrain-pilot-cairo
 
 ### Infrastructure as Code
 
-The repository includes Terraform definitions for reproducible cloud deployments in `/infra/`:
+The repository includes Draft Azure Terraform proposal; incomplete and not deployed in `/infra/`:
 - Azure PostgreSQL Flexible Server (Neon equivalent)
 - Azure Redis Cache (Upstash equivalent)
 - App Service Plan and Web App for the API
@@ -370,7 +383,7 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 | Secrets management | Environment variables / user secrets |
 | Managed AI caps | Redis-backed per-user daily limits |
 | CORS | Explicit production frontend origins |
-| Error Handling | Result pattern eliminating exceptions for expected business logic |
+| Error Handling | Typed Results for login/registration; other errors use middleware |
 
 ### Security Notes
 
@@ -378,7 +391,7 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 - Rotate any secret ever exposed in logs, screenshots, or history.
 - The API only seeds an admin user if `SeedAdmin:Email` and `SeedAdmin:Password` are explicitly configured.
 - Keep `REDIS_CONNECTION` as the canonical Redis production variable.
-- Expected business errors (validation, not found, unauthorized) return appropriate HTTP status codes via Result pattern rather than throwing exceptions.
+- Login failures return HTTP 401 and duplicate registration returns HTTP 400 with a detail field. FluentValidation still throws ValidationException; middleware maps it to HTTP 400. Other handlers have not migrated to Result.
 
 ---
 
@@ -402,11 +415,7 @@ Production origins are defined in [`src/GymBrain.Api/appsettings.Production.json
 dotnet test GymBrain.sln
 ```
 
-Current backend test projects live under [`tests/`](tests/), including:
-- Unit tests for command/query handlers (xUnit + Moq)
-- Tests covering success and failure scenarios
-- Validation behavior tests
-- GitHub Actions CI/CD pipeline (`.github/workflows/ci.yml`) running on every push/PR
+Backend tests under [`tests/`](tests/) cover login/registration with EF Core InMemory and test doubles, Result invariants, workout prompts, safety rules, injury filtering, vault encryption, and Redis fallback behavior. The API test project is currently an empty scaffold; HTTP integration coverage is planned. Empty placeholder tests have been removed.
 
 ### Frontend
 
@@ -432,7 +441,6 @@ Playwright coverage lives under [`client/e2e/`](client/e2e/).
 GymBrain/
 ├── README.md
 ├── AI_CONTEXT.md
-├── .codexrules
 ├── .antigravityrules
 ├── GymBrain.sln
 ├── Dockerfile
@@ -444,7 +452,7 @@ GymBrain/
 │   │   ├── Endpoints/       # API endpoints with Result pattern handling
 │   │   └── Program.cs
 │   ├── GymBrain.Application/
-│   │   ├── Features/        # Vertical slice architecture (exercise metadata, etc.)
+│   │   ├── Workout/         # Exercise metadata query
 │   │   ├── Common/          # Shared interfaces, behaviors, validation
 │   │   └── Auth/            # Authentication commands/queries/handlers
 │   ├── GymBrain.Domain/
@@ -478,7 +486,6 @@ GymBrain/
 
 | File | Purpose |
 |------|---------|
-| [`.codexrules`](.codexrules) | Current repo-specific agent rules |
 | [`.antigravityrules`](.antigravityrules) | Legacy agent guidance kept for continuity |
 | [`AI_CONTEXT.md`](AI_CONTEXT.md) | Current architecture and delivery state |
 | [`$.gymbrain_knowledge.md`](.gymbrain_knowledge.md) | Append-only lessons learned log |
@@ -498,9 +505,9 @@ GymBrain/
 - [x] Result pattern for error handling
 - [x] Redis caching implementation
 - [x] Vertical slice architecture
-- [x] Comprehensive unit testing
-- [x] GitHub Actions CI/CD pipeline
-- [x] Infrastructure as code (Terraform)
+- [x] Unit tests for selected handlers and services
+- [x] GitHub Actions build/test/image CI
+- [ ] Deployable infrastructure as code (Azure Terraform draft only)
 - [x] Architecture documentation (C4 diagrams, ADRs)
 - [ ] Flutter mobile app
 - [ ] Gamification and deeper progression systems

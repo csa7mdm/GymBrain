@@ -61,6 +61,16 @@ app.Use(async (context, next) =>
             retryAfterHours = ex.RetryAfterHours
         });
     }
+    catch (GymBrain.Application.Common.Exceptions.CacheUnavailableException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        await context.Response.WriteAsJsonAsync(new { detail = ex.Message });
+    }
+    catch (FluentValidation.ValidationException)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new { detail = "Request validation failed." });
+    }
     catch (UnauthorizedAccessException ex)
     {
         context.Response.ContentType = "application/json";

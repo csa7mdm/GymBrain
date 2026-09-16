@@ -30,23 +30,23 @@
   - Provide health checks and monitoring endpoints
 
 #### 3. **PostgreSQL Database**
-- **Technology**: PostgreSQL 15 (hosted on Neon.tech)
+- **Technology**: PostgreSQL (Neon; deployed version not verified)
 - **Description**: Relational database for storing all application data.
-  - Schemas: Users, Workouts, Nutrition, Telemetry, Configuration
+  - Schemas: Users, Exercises, WorkoutSessions, AnalyticsEvents, Milestones, UserMilestones
 - **Responsibilities**:
-  - Persist user profiles, workout plans, nutrition plans, completion records
+  - Persist user profiles, workout completion records, telemetry and milestones
   - Support ACID transactions
   - Provide querying capabilities for reports and analytics
   - Ensure data integrity and security
 
 #### 4. **Redis Cache**
-- **Technology**: Redis 7 (hosted on Upstash)
+- **Technology**: Redis-compatible service (Upstash; deployed version not verified)
 - **Description**: In-memory data store for caching frequently accessed data.
-  - Used for: Exercise metadata, user profiles, computed recommendations
+  - Used for: Exercise metadata, generated workouts, usage counters
 - **Responsibilities**:
   - Reduce database load by caching read-heavy operations
   - Improve response times for API endpoints
-  - Store temporary session data (if needed)
+  - Session storage is not implemented
   - Support automatic expiration of cached data
 
 #### 5. **LLM Provider Services**
@@ -60,7 +60,7 @@
   - Power the AI coaching chatbot (future)
 
 #### 6. **Exercise Metadata Service**
-- **Technology**: Custom API or third-party service (to be defined)
+- **Technology**: ExerciseDB via RapidAPI (optional)
 - **Description**: Service providing detailed exercise information.
   - Data: Exercise names, descriptions, muscle groups, equipment needed, difficulty level
   - Media: Images, videos demonstrating proper form
@@ -85,15 +85,15 @@
 3. **API Application ↔ Redis Cache**
    - Communication: StackExchange.Redis client
    - Operations: GET, SET, INCREMENT, KEYEXPIRE
-   - Data Flow: Cache exercise metadata, cache user profile lookups, cache computed recommendations
+   - Data Flow: Cache exercise metadata and workouts; enforce usage counters
 
 4. **API Application ↔ LLM Provider Services**
-   - Communication: HTTP/JSON via HttpClient (with Polly for resilience)
+   - Communication: HTTP/JSON via typed HttpClient; provider-specific fallback logic
    - Operations: POST requests to generate completions
    - Data Flow: Send prompts (user context + goals), receive AI-generated plans/advice
 
 5. **API Application ↔ Exercise Metadata Service**
-   - Communication: HTTP/JSON or gRPC
+   - Communication: HTTP/JSON
    - Operations: GET requests for exercise details
    - Data Flow: Request exercise metadata, receive detailed exercise information
 
@@ -107,11 +107,11 @@
 - **PostgreSQL**: Hosted on Neon.tech (serverless PostgreSQL)
 - **Redis**: Hosted on Upstash (serverless Redis)
 - **LLM Services**: Various third-party APIs (OpenAI, Groq, OpenRouter)
-- **Exercise Metadata**: To be implemented (potentially custom service or third-party)
+- **Exercise Metadata**: Optional ExerciseDB HTTP integration is implemented
 
 ### Security Considerations
-- All inter-service communication over HTTPS
-- JWT tokens are short-lived (15 minutes) with refresh tokens stored securely (HTTP-only cookies planned)
+- Production HTTP traffic uses HTTPS; database/cache TLS depends on configured connection strings.
+- JWT expiry is configured by Jwt:ExpiryMinutes (code fallback: 60 minutes). Refresh tokens and HTTP-only refresh cookies are not implemented.
 - API keys for external services stored as environment variables/secrets
 - Database connections use SSL/TLS
 - Rate limiting on API endpoints to prevent abuse

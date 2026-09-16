@@ -17,10 +17,10 @@ public class ResultTests
     [Fact]
     public void Failure_Should_Return_IsFailure_True_With_Error()
     {
-        var result = Result.Failure("Something went wrong");
+        var result = Result.Failure(Error.Unexpected("Something went wrong"));
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
-        result.Error.Should().Be("Something went wrong");
+        result.Error!.Message.Should().Be("Something went wrong");
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class ResultTests
     [Fact]
     public void Generic_Failure_Should_Throw_On_Value_Access()
     {
-        var result = Result.Failure<int>("fail");
+        var result = Result.Failure<int>(Error.Unexpected("fail"));
         result.IsFailure.Should().BeTrue();
         var act = () => result.Value;
         act.Should().Throw<InvalidOperationException>();

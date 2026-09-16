@@ -35,10 +35,9 @@ public sealed class GenerateNutritionPlanCommandHandler(
         else
         {
             var dailyCapKey = $"managed_nutr_cap:{request.UserId}:{DateTime.UtcNow:yyyy-MM-dd}";
-            var currentCountStr = await cache.GetAsync(dailyCapKey, ct);
-            var currentCount = currentCountStr is not null ? int.Parse(currentCountStr) : 0;
+            var currentCount = await cache.IncrementAsync(dailyCapKey, TimeSpan.FromDays(1), ct);
 
-            if (currentCount >= ManagedDailyCapPerUser)
+            if (currentCount > ManagedDailyCapPerUser)
             {
                 var now = DateTime.UtcNow;
                 var midnight = now.Date.AddDays(1);
@@ -54,7 +53,6 @@ public sealed class GenerateNutritionPlanCommandHandler(
             providerName = ManagedLlmProvider;
             preferredModel = ManagedLlmModel;
 
-            await cache.IncrementAsync(dailyCapKey, TimeSpan.FromDays(1), ct);
         }
 
         var durationDays = Math.Clamp(request.DurationDays, 1, 31);

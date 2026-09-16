@@ -1,3 +1,5 @@
+> Draft presentation copy, not verified implementation evidence. Result migration is limited to login/registration, API integration tests are planned, and Azure Terraform is incomplete and unvalidated. Use README.md and docs/architecture for current scope; deployment success must be verified separately.
+
 # منشور لينكدإن عربي مصري - تحسين معمارية تطبيق GymBrain
 
 فيترة وجيزة خلصت أعمل تحسينات معمارية جادة على تطبيق GymBrain - plataforma للتربية البدنية المدعومة بالذكاء الاصطناعي - وقولت أشارككم أبرز التغييرات اللي عملتها وازاي كل تعديل بيضيف قيمة للمشروع من منظور معمار حلولSenior.

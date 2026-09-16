@@ -26,14 +26,14 @@ public class SystemPromptFactoryTests
     [Fact]
     public void Build_Should_Include_Persona()
     {
-        var prompt = SystemPromptFactory.Build("Drill Sergeant", Exercises);
+        var prompt = SystemPromptFactory.Build("Drill Sergeant", Exercises, workoutsCompleted: 0);
         prompt.Should().Contain("Drill Sergeant");
     }
 
     [Fact]
     public void Build_Should_Include_Anti_Hallucination_Rules()
     {
-        var prompt = SystemPromptFactory.Build("Coach", Exercises);
+        var prompt = SystemPromptFactory.Build("Coach", Exercises, workoutsCompleted: 0);
         prompt.Should().Contain("MUST match an entry from the EXERCISES list");
         prompt.Should().Contain("Never invent");
     }

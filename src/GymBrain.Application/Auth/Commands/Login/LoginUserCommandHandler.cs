@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using GymBrain.Application.Common.Interfaces;
 using MediatR;
 using GymBrain.Domain.Common;
