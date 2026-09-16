@@ -13,7 +13,7 @@ public static class WorkoutEndpoints
             .WithTags("Workout")
             .RequireAuthorization();
 
-        group.MapPost("/start", async (StartWorkoutRequest request, ISender sender, ClaimsPrincipal user, IRateLimiter rateLimiter) =>
+        group.MapPost("/start", async (StartWorkoutRequest request, ISender sender, ClaimsPrincipal user, CancellationToken ct) =>
         {
             var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? user.FindFirstValue("sub")
@@ -24,13 +24,8 @@ public static class WorkoutEndpoints
                 ? parsed
                 : Domain.Enums.ExperienceLevel.Beginner;
 
-            // === RATE LIMITING (Task 1D): max 10 workout generations per user per hour ===
-            var (isExceeded, retryAfter) = await rateLimiter.CheckLimitAsync(userId.ToString(), "workout_start", 10);
-            if (isExceeded)
-                return Results.Json(new { error = $"Rate limit exceeded. Try again in {retryAfter} minutes.", retryAfterMinutes = retryAfter }, statusCode: 429);
-
             var command = new StartWorkoutCommand(userId, level, request.WorkoutFocus);
-            var result = await sender.Send(command);
+            var result = await sender.Send(command, ct);
             return Results.Ok(result);
         })
         .WithName("StartWorkout");
@@ -41,34 +36,31 @@ public static class WorkoutEndpoints
                 ?? user.FindFirstValue("sub")
                 ?? throw new UnauthorizedAccessException("Invalid token."));
 
-            var command = new SaveWorkoutCommand(userId, request.PayloadJson);
+            var command = new SaveWorkoutCommand(userId, request.PayloadJson, request.SessionId);
             var result = await sender.Send(command);
             return Results.Ok(result);
         })
         .WithName("SaveWorkout");
 
+        group.MapGet("/history", async (int? offset, ISender sender, ClaimsPrincipal user, CancellationToken ct) =>
+        {
+            var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? user.FindFirstValue("sub") ?? throw new UnauthorizedAccessException("Invalid token."));
+            return Results.Ok(await sender.Send(new Application.Orchestration.Queries.GetWorkoutHistoryQuery(userId, offset ?? 0), ct));
+        }).WithName("GetWorkoutHistory");
+
         // === POST /api/workout/substitute (Task 1B — Machine Taken) ===
-        group.MapPost("/substitute", async (SubstituteRequest request, ISender sender, ClaimsPrincipal user, IRateLimiter rateLimiter, Application.Common.Interfaces.IApplicationDbContext db) =>
+        group.MapPost("/substitute", async (SubstituteRequest request, ISender sender, ClaimsPrincipal user, CancellationToken ct) =>
         {
             var userId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? user.FindFirstValue("sub")
                 ?? throw new UnauthorizedAccessException("Invalid token."));
 
-            // Rate limiting: max 30 substitute requests per user per hour
-            var (isExceeded, retryAfter) = await rateLimiter.CheckLimitAsync(userId.ToString(), "substitute", 30);
-            if (isExceeded)
-                return Results.Json(new { error = $"Rate limit exceeded. Try again in {retryAfter} minutes.", retryAfterMinutes = retryAfter }, statusCode: 429);
-
-            // Load user injuries from profile
-            var userEntity = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
-                .FirstOrDefaultAsync(db.Users, u => u.Id == userId, default);
-            var injuries = userEntity?.Injuries;
-
             if (!Guid.TryParse(request.ExerciseId, out var exerciseGuid))
                 return Results.BadRequest("Invalid exerciseId format.");
 
-            var query = new GetSubstituteQuery(userId, exerciseGuid, injuries);
-            var result = await sender.Send(query);
+            var query = new GetSubstituteQuery(userId, exerciseGuid, null);
+            var result = await sender.Send(query, ct);
             return Results.Ok(result);
         })
         .WithName("GetSubstitute");
@@ -84,5 +76,5 @@ public static class WorkoutEndpoints
 }
 
 public record StartWorkoutRequest(string? WorkoutFocus);
-public record SaveWorkoutRequest(string PayloadJson);
+public record SaveWorkoutRequest(string PayloadJson, Guid? SessionId = null);
 public record SubstituteRequest(string ExerciseId);

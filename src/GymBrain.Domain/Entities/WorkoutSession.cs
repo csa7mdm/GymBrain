@@ -11,9 +11,9 @@ public class WorkoutSession : BaseEntity
     // EF Core constructor
     private WorkoutSession() { PayloadJson = ""; }
 
-    public WorkoutSession(Guid userId, string payloadJson)
+    public WorkoutSession(Guid userId, string payloadJson, Guid? sessionId = null)
     {
-        Id = Guid.NewGuid();
+        Id = sessionId ?? Guid.NewGuid();
         UserId = userId;
         PayloadJson = payloadJson;
         CreatedAtUtc = DateTime.UtcNow;

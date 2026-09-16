@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getProfile } from './services/api';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/auth';
 import AuthPage from './pages/AuthPage';
@@ -15,7 +16,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const items: { id: Tab; icon: string; label: string }[] = [
     { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'train', icon: '💪', label: 'Train' },
-    { id: 'plans', icon: '📋', label: 'Plans' },
+    { id: 'plans', icon: '📋', label: 'History' },
     { id: 'profile', icon: '👤', label: 'Profile' },
     { id: 'vault', icon: '🔐', label: 'Vault' },
   ];
@@ -35,14 +36,37 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 
 function SignedInApp() {
   const [tab, setTab] = useState<Tab>('home');
-  const [needsOnboarding, setNeedsOnboarding] = useState(() => {
-    const profile = localStorage.getItem('gymbrain_profile');
-    try {
-      return !profile || !JSON.parse(profile).name;
-    } catch {
-      return true;
-    }
-  });
+  const { user } = useAuth();
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const [profileError, setProfileError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    getProfile().then(result => {
+      if (cancelled) return;
+      if (!result.data) { setProfileError(result.error || 'Could not load your profile.'); return; }
+      const profile = result.data;
+      if (profile.goal) {
+        let local = {};
+        try { local = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}'); } catch { /* refresh invalid cache */ }
+        let equipment: string[] = [];
+        try { const value = JSON.parse(profile.equipmentJson || '[]'); if (Array.isArray(value)) equipment = value.filter(x => typeof x === 'string'); } catch { /* empty equipment */ }
+        const old = local as { name?: string };
+        localStorage.setItem('gymbrain_profile', JSON.stringify({ ...local,
+          name: old.name || user?.email.split('@')[0] || 'Athlete',
+          goal: profile.goal, level: profile.experienceLevel, equipment, injuries: profile.injuries,
+          daysPerWeek: profile.daysPerWeek, diet: profile.dietaryPreference, calories: profile.dailyCalories,
+        }));
+      }
+      setNeedsOnboarding(!profile.goal);
+      setProfileError('');
+    });
+    return () => { cancelled = true; };
+  }, [attempt, user?.email]);
+
+  if (profileError) return <div className="app-content"><p role="alert">{profileError}</p>
+    <button className="m3-btn m3-btn--filled" onClick={() => { setProfileError(''); setAttempt(n => n + 1); }}>Retry profile</button></div>;
+  if (needsOnboarding === null) return <div className="app-content" role="status">Loading your account…</div>;
 
   if (needsOnboarding) {
     return (

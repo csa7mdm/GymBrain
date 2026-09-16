@@ -5,7 +5,8 @@ namespace GymBrain.Application.Orchestration.Commands;
 
 public sealed record SaveWorkoutCommand(
     Guid UserId,
-    string PayloadJson) : IRequest<SaveWorkoutResponse>;
+    string PayloadJson,
+    Guid? SessionId = null) : IRequest<SaveWorkoutResponse>;
 
 public sealed record SaveWorkoutResponse(
     Guid WorkoutSessionId, 

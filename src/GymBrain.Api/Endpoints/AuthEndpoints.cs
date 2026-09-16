@@ -46,7 +46,7 @@ public static class AuthEndpoints
         .WithName("VaultApiKey")
         .RequireAuthorization();
 
-        group.MapGet("/models", () => Results.Ok(GymBrain.Application.Common.LlmModelCatalog.AllModels))
+        group.MapGet("/models", () => Results.Ok(GymBrain.Application.Common.LlmModelCatalog.AllModels.Where(model => model.Provider is "openai" or "groq" or "openrouter")))
             .WithName("GetLlmModels")
             .AllowAnonymous();
     }

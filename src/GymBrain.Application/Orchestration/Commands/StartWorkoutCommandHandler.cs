@@ -37,20 +37,24 @@ public sealed class StartWorkoutCommandHandler(
 
     public async Task<StartWorkoutResponse> Handle(StartWorkoutCommand request, CancellationToken ct)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(40));
+        ct = timeout.Token;
         var (isExceeded, retryIn) = await rateLimiter.CheckLimitAsync(request.UserId.ToString(), "workout_start", HourlyLimit, ct);
         if (isExceeded)
         {
-            throw new GymBrain.Application.Common.Exceptions.ManagedCapException($"Hourly limit exceeded. Try again in {retryIn} minutes.", 0);
+            throw new GymBrain.Application.Common.Exceptions.RequestLimitException($"Hourly limit exceeded. Try again in {retryIn} minutes.", retryIn);
         }
-        // Check Redis cache first (avoid redundant LLM calls on reload)
-        var cacheKey = $"workout:{request.UserId}:{request.ExperienceLevel}";
-        var cached = await cache.GetAsync(cacheKey, ct);
-        if (cached is not null)
-            return new StartWorkoutResponse(cached);
-
-        // Load user 
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct)
             ?? throw new InvalidOperationException("User not found.");
+        // Hash the complete generation context; changed restrictions cannot hit an old plan.
+        var context = JsonSerializer.Serialize(new { request.WorkoutFocus, user.ExperienceLevel,
+            user.Goal, user.EquipmentJson, user.Injuries, user.TonePersona, user.WorkoutsCompleted,
+            user.LlmProvider, user.PreferredModel, user.EncryptedApiKey });
+        var fingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(context)));
+        var cacheKey = $"workout:v3:{request.UserId}:{fingerprint}";
+        var cached = await cache.GetAsync(cacheKey, ct);
+        if (cached is not null) return new StartWorkoutResponse(cached);
 
         // Resolve API key: BYO key takes priority; fall back to managed key
         string apiKey;
@@ -95,7 +99,7 @@ public sealed class StartWorkoutCommandHandler(
 
         // === DETERMINISTIC INJURY PRE-FILTER (Task 1A) ===
         // Filters out warmup exercises AND contraindicated exercises BEFORE LLM call
-        var safeExercises = InjuryFilter.Filter(allExercises, user.Injuries);
+        var safeExercises = InjuryFilter.Filter(EquipmentFilter.Filter(allExercises, user.EquipmentJson), user.Injuries);
         if (safeExercises.Count == 0)
             throw new InvalidOperationException("No safe exercises available for your injury profile.");
 
@@ -104,7 +108,7 @@ public sealed class StartWorkoutCommandHandler(
         // Token-optimized user message with profile context
         var focusPart = string.IsNullOrWhiteSpace(request.WorkoutFocus)
             ? "full-body" : request.WorkoutFocus;
-        var levelStr = request.ExperienceLevel.ToString().ToLowerInvariant();
+        var levelStr = user.ExperienceLevel.ToString().ToLowerInvariant();
         var userMessage = $"Workout: {focusPart} | Level: {levelStr}";
 
         if (!string.IsNullOrEmpty(user.Goal))
@@ -154,10 +158,10 @@ public sealed class StartWorkoutCommandHandler(
                 lastException);
 
         // Safety Gate: sanitize hallucinated IDs and clamp weights
-        var safeJson = SafetyGate.Validate(rawJson, safeExercises, request.ExperienceLevel);
+        var safeJson = SafetyGate.Validate(rawJson, safeExercises, user.ExperienceLevel);
 
         // === WARM-UP PREPEND (Task 1C) ===
-        safeJson = PrependWarmUp(safeJson, allExercises, user.Injuries);
+        safeJson = PrependWarmUp(safeJson, EquipmentFilter.Filter(allExercises, user.EquipmentJson).ToList(), user.Injuries);
 
         // Cache for 2 hours
         await cache.SetAsync(cacheKey, safeJson, CacheTtl, ct);
@@ -176,6 +180,7 @@ public sealed class StartWorkoutCommandHandler(
         {
             var warmups = allExercises
                 .Where(e => string.Equals(e.Category, "Warmup", StringComparison.OrdinalIgnoreCase))
+                .Where(e => !InjuryFilter.GetExcludedIds(injuries).Contains(e.Id.ToString()))
                 .ToList();
 
             // If user has knee issues, exclude Bodyweight Air Squats
@@ -197,7 +202,8 @@ public sealed class StartWorkoutCommandHandler(
 
             // Build warm-up components and prepend them (after the tone_card)
             // tone_card stays at index 0, warm-ups go at index 1..N
-            var toneCard = components.Count > 0 ? components[0]?.DeepClone() : null;
+            var hasToneCard = components.Count > 0 && components[0]?["type"]?.GetValue<string>() == "tone_card";
+            var toneCard = hasToneCard ? components[0]?.DeepClone() : null;
             var newComponents = new JsonArray();
 
             if (toneCard is not null)
@@ -222,7 +228,7 @@ public sealed class StartWorkoutCommandHandler(
             }
 
             // Add the original set_tracker components (skip tone_card which we already added)
-            for (int i = 1; i < components.Count; i++)
+            for (int i = hasToneCard ? 1 : 0; i < components.Count; i++)
             {
                 var component = components[i]?.DeepClone();
                 if (component is not null)

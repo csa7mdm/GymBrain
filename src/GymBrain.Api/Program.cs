@@ -50,6 +50,12 @@ app.Use(async (context, next) =>
     {
         await next();
     }
+    catch (GymBrain.Application.Common.Exceptions.RequestLimitException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.Response.Headers.RetryAfter = (ex.RetryAfterMinutes * 60).ToString();
+        await context.Response.WriteAsJsonAsync(new { detail = ex.Message, retryAfterMinutes = ex.RetryAfterMinutes });
+    }
     catch (GymBrain.Application.Common.Exceptions.ManagedCapException ex)
     {
         context.Response.ContentType = "application/json";
@@ -65,6 +71,11 @@ app.Use(async (context, next) =>
     {
         context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         await context.Response.WriteAsJsonAsync(new { detail = ex.Message });
+    }
+    catch (OperationCanceledException) when (!context.RequestAborted.IsCancellationRequested)
+    {
+        context.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
+        await context.Response.WriteAsJsonAsync(new { detail = "The request timed out. Please retry." });
     }
     catch (FluentValidation.ValidationException)
     {
@@ -95,7 +106,7 @@ app.Use(async (context, next) =>
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<GymBrainDbContext>();
-    await db.Database.MigrateAsync();
+    if (!app.Environment.IsEnvironment("Testing")) await db.Database.MigrateAsync();
 
     var adminEmail = builder.Configuration["SeedAdmin:Email"];
     var adminPassword = builder.Configuration["SeedAdmin:Password"];
@@ -145,3 +156,6 @@ app.MapProfileEndpoints();
 app.MapTelemetryEndpoints();
 
 app.Run();
+
+// Exposes the real HTTP pipeline to WebApplicationFactory integration tests.
+public partial class Program { }

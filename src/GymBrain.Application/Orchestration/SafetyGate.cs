@@ -1,161 +1,85 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using GymBrain.Domain.Entities;
 using GymBrain.Domain.Enums;
 
 namespace GymBrain.Application.Orchestration;
 
-/// <summary>
-/// C# deterministic rule engine that validates and sanitizes raw LLM JSON output.
-/// Enforces:
-/// 1. Exercise IDs must exist in the seeded catalog (anti-hallucination).
-/// 2. Weight caps per ExperienceLevel (Beginner ≤ 40kg).
-/// 3. Structural JSON integrity.
-/// </summary>
 public static class SafetyGate
 {
-    private const double BeginnerMaxWeightKg = 40.0;
-    private const double IntermediateMaxWeightKg = 100.0;
-    private const double AdvancedMaxWeightKg = 200.0;
-
-    /// <summary>
-    /// Validates and clamps the raw LLM JSON mega-payload.
-    /// Resilient to markdown backticks and lead-in text.
-    /// </summary>
-    public static string Validate(
-        string rawJson,
-        IReadOnlyList<Exercise> validExercises,
-        ExperienceLevel level)
+    public static string Validate(string rawJson, IReadOnlyList<Exercise> validExercises, ExperienceLevel level)
     {
-        // 🛡️ Quick Win: Strip markdown backticks and garbage text
-        rawJson = CleanJson(rawJson);
-
-        var validIds = validExercises.Select(e => e.Id.ToString()).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var fallbackId = validExercises.First().Id.ToString();
-        var maxWeight = GetMaxWeight(level);
-
-        using var doc = JsonDocument.Parse(rawJson);
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-
-        ProcessElement(doc.RootElement, writer, validIds, fallbackId, maxWeight);
-
-        writer.Flush();
-        stream.Position = 0;
-        return new StreamReader(stream).ReadToEnd();
-    }
-
-    private static string CleanJson(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input)) return "{}";
-
-        // Try to find the first '{' and last '}'
-        int start = input.IndexOf('{');
-        int end = input.LastIndexOf('}');
-
-        if (start != -1 && end != -1 && end > start)
+        try
         {
-            return input.Substring(start, end - start + 1);
-        }
-
-        return input;
-    }
-
-    private static double GetMaxWeight(ExperienceLevel level) => level switch
-    {
-        ExperienceLevel.Beginner => BeginnerMaxWeightKg,
-        ExperienceLevel.Intermediate => IntermediateMaxWeightKg,
-        ExperienceLevel.Advanced => AdvancedMaxWeightKg,
-        _ => BeginnerMaxWeightKg
-    };
-
-    private static void ProcessElement(
-        JsonElement element,
-        Utf8JsonWriter writer,
-        HashSet<string> validIds,
-        string fallbackId,
-        double maxWeight)
-    {
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.Object:
-                writer.WriteStartObject();
-                foreach (var prop in element.EnumerateObject())
+            var start = rawJson.IndexOf('{'); var end = rawJson.LastIndexOf('}');
+            if (start < 0 || end <= start) throw new JsonException();
+            var root = JsonNode.Parse(rawJson[start..(end + 1)]) as JsonObject ?? throw new JsonException();
+            var catalog = validExercises.ToDictionary(e => e.Id.ToString(), StringComparer.OrdinalIgnoreCase);
+            if (catalog.Count == 0) throw new JsonException();
+            var maxWeight = level switch { ExperienceLevel.Advanced or ExperienceLevel.Athlete => 200, ExperienceLevel.Intermediate => 100, _ => 40 };
+            var components = new JsonArray();
+            var count = 0;
+            if (root["components"] is JsonArray input)
+            {
+                if (input.Count > 21) throw new JsonException();
+                foreach (var component in input)
                 {
-                    writer.WritePropertyName(prop.Name);
-
-                    // Clamp exercise_id to valid catalog IDs
-                    if (prop.Name.Equals("exercise_id", StringComparison.OrdinalIgnoreCase)
-                        && prop.Value.ValueKind == JsonValueKind.String)
+                    var type = component?["type"]?.GetValue<string>();
+                    var payload = component?["payload"] as JsonObject ?? throw new JsonException();
+                    if (type == "tone_card")
                     {
-                        var id = prop.Value.GetString() ?? "";
-                        writer.WriteStringValue(validIds.Contains(id) ? id : fallbackId);
+                        if (components.Count != 0) throw new JsonException();
+                        components.Add(new JsonObject { ["type"] = "tone_card", ["payload"] = new JsonObject {
+                            ["message"] = Text(payload, "message", 1000), ["persona"] = Text(payload, "persona", 100) } });
                     }
-                    // Clamp weight_kg to experience level cap
-                    else if (prop.Name.Equals("weight_kg", StringComparison.OrdinalIgnoreCase)
-                             && prop.Value.ValueKind == JsonValueKind.Number)
+                    else if (type == "set_tracker")
                     {
-                        var weight = prop.Value.GetDouble();
-                        writer.WriteNumberValue(Math.Min(Math.Max(weight, 0), maxWeight));
+                        components.Add(new JsonObject { ["type"] = type, ["payload"] = ExercisePayload(payload, catalog, maxWeight) });
+                        count++;
                     }
-                    // Clamp reps to 1-30 range
-                    else if (prop.Name.Equals("reps", StringComparison.OrdinalIgnoreCase)
-                             && prop.Value.ValueKind == JsonValueKind.Number)
-                    {
-                        var reps = (int)prop.Value.GetDouble();
-                        writer.WriteNumberValue(Math.Clamp(reps, 1, 30));
-                    }
-                    // Clamp rest_seconds to 30-300 range
-                    else if (prop.Name.Equals("rest_seconds", StringComparison.OrdinalIgnoreCase)
-                             && prop.Value.ValueKind == JsonValueKind.Number)
-                    {
-                        var rest = (int)prop.Value.GetDouble();
-                        writer.WriteNumberValue(Math.Clamp(rest, 30, 300));
-                    }
-                    // Clamp sets to 1-10 range
-                    else if (prop.Name.Equals("sets", StringComparison.OrdinalIgnoreCase)
-                             && prop.Value.ValueKind == JsonValueKind.Number)
-                    {
-                        var sets = (int)prop.Value.GetDouble();
-                        writer.WriteNumberValue(Math.Clamp(sets, 1, 10));
-                    }
-                    else
-                    {
-                        ProcessElement(prop.Value, writer, validIds, fallbackId, maxWeight);
-                    }
+                    else throw new JsonException();
                 }
-                writer.WriteEndObject();
-                break;
-
-            case JsonValueKind.Array:
-                writer.WriteStartArray();
-                foreach (var item in element.EnumerateArray())
-                    ProcessElement(item, writer, validIds, fallbackId, maxWeight);
-                writer.WriteEndArray();
-                break;
-
-            case JsonValueKind.String:
-                writer.WriteStringValue(element.GetString());
-                break;
-
-            case JsonValueKind.Number:
-                writer.WriteNumberValue(element.GetDouble());
-                break;
-
-            case JsonValueKind.True:
-                writer.WriteBooleanValue(true);
-                break;
-
-            case JsonValueKind.False:
-                writer.WriteBooleanValue(false);
-                break;
-
-            case JsonValueKind.Null:
-                writer.WriteNullValue();
-                break;
-
-            default:
-                writer.WriteNullValue();
-                break;
+            }
+            else if (root.ContainsKey("exercise_id"))
+            {
+                components.Add(new JsonObject { ["type"] = "set_tracker", ["payload"] = ExercisePayload(root, catalog, maxWeight) });
+                count++;
+            }
+            if (count == 0) throw new JsonException();
+            return new JsonObject { ["screen_id"] = "workout_today", ["components"] = components }
+                .ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
+        {
+            throw new InvalidOperationException("The generated workout did not pass validation. Please try again.", ex);
+        }
+    }
+
+    private static JsonObject ExercisePayload(JsonObject payload, Dictionary<string, Exercise> catalog, double maxWeight)
+    {
+        var id = payload["exercise_id"]?.GetValue<string>() ?? "";
+        if (!catalog.TryGetValue(id, out var exercise)) throw new JsonException();
+        // Identity and equipment always come from the filtered catalog, never model text.
+        return new JsonObject {
+            ["exercise_id"] = exercise.Id.ToString(), ["exercise_name"] = exercise.Name,
+            ["target_muscle"] = exercise.TargetMuscle, ["equipment"] = exercise.Equipment,
+            ["sets"] = (int)Number(payload, "sets", 3, 1, 10),
+            ["reps"] = (int)Number(payload, "reps", 10, 1, 30),
+            ["weight_kg"] = Number(payload, "weight_kg", 0, 0, maxWeight),
+            ["rest_seconds"] = (int)Number(payload, "rest_seconds", 90, 30, 300),
+            ["coach_tip"] = Text(payload, "coach_tip", 500)
+        };
+    }
+    private static double Number(JsonObject payload, string key, double fallback, double min, double max)
+    {
+        if (!payload.ContainsKey(key)) return fallback;
+        var value = payload[key]?.GetValue<double>() ?? throw new JsonException();
+        if (!double.IsFinite(value)) throw new JsonException();
+        return Math.Clamp(value, min, max);
+    }
+    private static string Text(JsonObject payload, string key, int limit)
+    {
+        var text = payload[key]?.GetValue<string>() ?? "";
+        return text.Length <= limit ? text : text[..limit];
     }
 }

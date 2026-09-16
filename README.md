@@ -552,3 +552,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
   <strong>Built for production with .NET 9, React 19, Railway, Firebase, PostgreSQL, and Redis.</strong><br>
   <strong>Enhanced with Result pattern, vertical slice architecture, caching, testing, and DevOps automation.</strong>
 </div>
+## Release readiness
+
+See [the current release checklist](docs/RELEASE_READINESS.md) for implemented behavior, test coverage, rollout compatibility, and remaining launch gates.

@@ -22,11 +22,7 @@ public static class TelemetryEndpoints
             return result.IsSuccess ? Results.Ok(new { Id = result.Value }) : Results.BadRequest(result.Error);
         });
 
-        group.MapGet("/metrics", async (IMediator mediator) =>
-        {
-            var result = await mediator.Send(new GetMetricsQuery());
-            return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
-        });
+
     }
 }
 

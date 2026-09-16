@@ -23,11 +23,11 @@ public class SafetyGateTests
     }
 
     [Fact]
-    public void Should_Replace_Hallucinated_Exercise_Id()
+    public void Should_Reject_Hallucinated_Exercise_Id()
     {
         var json = """{"exercise_id": "00000000-0000-0000-0000-fakefakefake", "weight_kg": 20.0}""";
-        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
-        result.Should().Contain("10000001-0000-0000-0000-000000000001"); // fallback to first valid
+        var action = () => SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        action.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
@@ -78,5 +78,22 @@ public class SafetyGateTests
         var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
         result.Should().Contain("10");
         result.Should().NotContain("20");
+    }
+
+    [Theory]
+    [InlineData("{}")] [InlineData("{\"components\":[]}")]
+    [InlineData("{\"exercise_id\":\"10000001-0000-0000-0000-000000000001\",\"sets\":\"100000\"}")]
+    public void RejectsMissingExercisesAndWrongNumericTypes(string json)
+    {
+        var action = () => SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        action.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void CanonicalIdentityReplacesMisleadingModelText()
+    {
+        var json = """{"exercise_id":"10000001-0000-0000-0000-000000000001","exercise_name":"Unsafe invented movement","equipment":"wrong"}""";
+        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
+        result.Should().Contain("Barbell Squat").And.NotContain("Unsafe invented movement").And.NotContain("wrong");
     }
 }

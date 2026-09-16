@@ -33,9 +33,8 @@ public sealed class GetSubstituteQueryHandler(IApplicationDbContext db, IRateLim
         var (isExceeded, retryIn) = await rateLimiter.CheckLimitAsync(request.UserId.ToString(), "substitute", HourlyLimit, ct);
         if (isExceeded)
         {
-            return new SubstituteResult(request.ExerciseId.ToString(), "Rate Limited",
-                Array.Empty<SubstituteOption>(),
-                $"Rate limit exceeded. Try again in {retryIn} minutes.");
+            throw new GymBrain.Application.Common.Exceptions.RequestLimitException(
+                $"Substitution limit exceeded. Try again in {retryIn} minutes.", retryIn);
         }
         var idStr = request.ExerciseId.ToString();
 
@@ -57,8 +56,11 @@ public sealed class GetSubstituteQueryHandler(IApplicationDbContext db, IRateLim
                 "No substitutes mapped for this exercise. Consider skipping it.");
         }
 
-        // Get contraindicated IDs for this user
-        var excludedIds = InjuryFilter.GetExcludedIds(request.UserInjuries);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct)
+            ?? throw new InvalidOperationException("User not found.");
+        var catalog = await db.Exercises.ToListAsync(ct);
+        var allowed = InjuryFilter.Filter(EquipmentFilter.Filter(catalog, user.EquipmentJson), user.Injuries)
+            .ToDictionary(e => e.Id.ToString(), StringComparer.OrdinalIgnoreCase);
 
         var alternatives = new List<SubstituteOption>();
         if (entry.TryGetProperty("alternatives", out var alts))
@@ -66,12 +68,12 @@ public sealed class GetSubstituteQueryHandler(IApplicationDbContext db, IRateLim
             foreach (var alt in alts.EnumerateArray())
             {
                 var altId = alt.GetProperty("exercise_id").GetString() ?? "";
-                if (excludedIds.Contains(altId)) continue; // skip contraindicated
+                if (!allowed.TryGetValue(altId, out var exercise)) continue;
 
                 alternatives.Add(new SubstituteOption(
                     ExerciseId: altId,
-                    Name: alt.GetProperty("name").GetString() ?? "",
-                    Equipment: alt.GetProperty("equipment").GetString() ?? "",
+                    Name: exercise.Name,
+                    Equipment: exercise.Equipment,
                     Reason: alt.GetProperty("reason").GetString() ?? ""
                 ));
             }

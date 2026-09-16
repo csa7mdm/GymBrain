@@ -8,6 +8,7 @@ namespace GymBrain.Application.Common.Interfaces;
 /// </summary>
 public interface IApplicationDbContext
 {
+    Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }
     DbSet<User> Users { get; }
     DbSet<Exercise> Exercises { get; }
     DbSet<WorkoutSession> WorkoutSessions { get; }

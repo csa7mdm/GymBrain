@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { startWorkout, saveWorkout, getSubstitute, trackEvent } from '../services/api';
 import type { SubstituteOption } from '../services/api';
 import { searchExercise, type ExerciseDbItem } from '../services/exerciseDb';
-import substituteMapJson from '../data/SubstituteMap.json';
+import { useAuth } from '../context/auth';
+import type { Completion } from '../services/workoutHistory';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SduiPayload {
@@ -95,7 +96,7 @@ function SubstituteModal({ exerciseId, exerciseName, onSelect, onDismiss }: Subs
             if (!cancelled) {
                 setOffline(true);
                 setLoading(false);
-                setSubs(getLocalSubstitutes(exerciseId));
+                setSubs([]);
             }
         }, 3000);
 
@@ -106,14 +107,14 @@ function SubstituteModal({ exerciseId, exerciseName, onSelect, onDismiss }: Subs
                 setSubs(res.data.substitutes);
                 setOffline(false);
             } else {
-                setSubs(getLocalSubstitutes(exerciseId));
+                setSubs([]);
                 setOffline(true);
             }
             setLoading(false);
         }).catch(() => {
             clearTimeout(timeout);
             if (cancelled) return;
-            setSubs(getLocalSubstitutes(exerciseId));
+            setSubs([]);
             setOffline(true);
             setLoading(false);
         });
@@ -138,12 +139,12 @@ function SubstituteModal({ exerciseId, exerciseName, onSelect, onDismiss }: Subs
                 <p style={{ color: 'var(--md-on-surface-variant, #aaa)', fontSize: 13, marginBottom: 16 }}>
                     Original: <strong style={{ color: '#fff' }}>{exerciseName}</strong>
                 </p>
-                {offline && <div style={{ background: 'rgba(255,165,0,0.15)', border: '1px solid #FFBF00', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#FFBF00', marginBottom: 12 }}>⚡ Offline — showing cached alternatives</div>}
+                {offline && <div style={{ background: 'rgba(255,165,0,0.15)', border: '1px solid #FFBF00', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#FFBF00', marginBottom: 12 }}>Could not load alternatives. Check your connection and try again.</div>}
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: 40 }}><div className="m3-spinner" style={{ width: 32, height: 32, borderWidth: 3 }} /><p style={{ color: '#aaa', marginTop: 12, fontSize: 14 }}>Finding safe alternatives...</p></div>
+                    <div style={{ textAlign: 'center', padding: 40 }}><div className="m3-spinner" style={{ width: 32, height: 32, borderWidth: 3 }} /><p style={{ color: '#aaa', marginTop: 12, fontSize: 14 }}>Checking alternatives against your profile...</p></div>
                 ) : subs.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: 20, color: '#aaa' }}>
-                        <p>No safe substitutes available.</p>
+                        <p>No alternatives match your current profile.</p>
                         <p style={{ fontSize: 12 }}>Consider skipping this exercise.</p>
                         <button className="m3-btn m3-btn--outlined" style={{ marginTop: 12 }} onClick={onDismiss}>I'll Wait</button>
                     </div>
@@ -175,27 +176,16 @@ function SubstituteModal({ exerciseId, exerciseName, onSelect, onDismiss }: Subs
     );
 }
 
-function getLocalSubstitutes(exerciseId: string): SubstituteOption[] {
-    try {
-        type AltEntry = { exercise_id?: string; exerciseId?: string; name: string; equipment: string; reason: string; };
-        type ExerciseEntry = { alternatives: AltEntry[] };
-        type SubMap = { substitutes: Record<string, ExerciseEntry> };
-        const map = (substituteMapJson as unknown as SubMap).substitutes;
-        const entry = map?.[exerciseId];
-        if (!entry?.alternatives) return [];
-        return entry.alternatives.map(a => ({
-            exerciseId: a.exercise_id || a.exerciseId || '',
-            name: a.name,
-            equipment: a.equipment,
-            reason: a.reason,
-        }));
-    } catch {
-        return [];
-    }
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function WorkoutPage() {
+    const { user } = useAuth();
+    const draftKey = `gymbrain_active_workout:${user!.userId}`;
+    const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [pendingJson, setPendingJson] = useState<string | null>(null);
+    const saveInFlight = useRef(false);
+    const [saveError, setSaveError] = useState('');
     const [focus, setFocus] = useState('');
     const [payload, setPayload] = useState<MegaPayload | null>(null);
     const [loading, setLoading] = useState(false);
@@ -212,14 +202,14 @@ export default function WorkoutPage() {
 
     // Phase 3: sessionStorage persistence
     useEffect(() => {
-        if (payload) {
+        if (payload && !saved) {
             try {
-                sessionStorage.setItem('gymbrain_active_workout', JSON.stringify({ payload, focus }));
+                sessionStorage.setItem(draftKey, JSON.stringify({ payload, focus, sessionId, progress: [...setProgress], pendingJson }));
             } catch { /* ignore storage quota */ }
         }
-    }, [payload, focus]);
+    }, [payload, focus, sessionId, setProgress, pendingJson, draftKey, saved]);
 
-    const [showResume, setShowResume] = useState(() => !!sessionStorage.getItem('gymbrain_active_workout'));
+    const [showResume, setShowResume] = useState(() => !!sessionStorage.getItem(draftKey));
 
     const parseMegaPayload = (raw: string): MegaPayload => {
         let cleaned = raw.trim();
@@ -285,13 +275,14 @@ export default function WorkoutPage() {
     };
 
     const handleStart = async () => {
-        setError(''); setLoading(true); sessionStorage.removeItem('gymbrain_active_workout'); setShowResume(false);
+        setError(''); setLoading(true); setShowResume(false);
         const result = await startWorkout(focus || undefined);
         setLoading(false);
         if (result.error) { setError(result.error); return; }
         if (result.data?.megaPayloadJson) {
             try {
                 const parsed = parseMegaPayload(result.data.megaPayloadJson);
+                setSessionId(crypto.randomUUID()); setSaved(false); setPendingJson(null); setSaveError('');
                 setSetProgress(initialProgress(parsed));
                 setPayload(parsed);
                 const exerciseCount = parsed.components?.filter(c => c.type === 'set_tracker').length || 0;
@@ -302,8 +293,8 @@ export default function WorkoutPage() {
 
     const handleResume = () => {
         try {
-            const saved = sessionStorage.getItem('gymbrain_active_workout');
-            if (saved) { const { payload: p, focus: f } = JSON.parse(saved); setSetProgress(initialProgress(p)); setPayload(p); setFocus(f || ''); }
+            const saved = sessionStorage.getItem(draftKey);
+            if (saved) { const draft = JSON.parse(saved); setSessionId(draft.sessionId || crypto.randomUUID()); setPendingJson(draft.pendingJson || null); setSetProgress(draft.progress ? new Map(draft.progress) : initialProgress(draft.payload)); setPayload(draft.payload); setFocus(draft.focus || ''); }
         } catch { /* ignore */ }
         setShowResume(false);
     };
@@ -411,7 +402,7 @@ export default function WorkoutPage() {
                     </div>
                 )}
                 {/* Equipment Busy? Button — only on main exercises, not warmups, not during rest */}
-                {!isWarmup && !isResting && (
+                {!isWarmup && !isResting && !progress?.completed.some(Boolean) && (
                     <button
                         style={{
                             width: '100%', minHeight: 56, marginTop: 10,
@@ -428,6 +419,15 @@ export default function WorkoutPage() {
                         🔄 Equipment Busy?
                     </button>
                 )}
+                    {progress && <div className="mt-md">
+                        {progress.completed.map((_, si) => <div key={si} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                            <span>Set {si + 1}</span>
+                            <label style={{ flex: 1 }}>Reps<input aria-label={`${comp.payload.exercise_name} set ${si + 1} reps`} className="m3-input" type="number" min={0} max={1000} step={1} value={progress.actualReps[si]}
+                                onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const reps = [...p.actualReps]; reps[si] = Math.max(0, Math.min(1000, Math.trunc(Number(e.target.value)))); next.set(idx, { ...p, actualReps: reps }); return next; })} /></label>
+                            <label style={{ flex: 1 }}>kg<input aria-label={`${comp.payload.exercise_name} set ${si + 1} weight kg`} className="m3-input" type="number" min={0} max={1000} step={0.5} value={progress.actualWeight[si]}
+                                onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const weights = [...p.actualWeight]; weights[si] = Math.max(0, Math.min(1000, Number(e.target.value))); next.set(idx, { ...p, actualWeight: weights }); return next; })} /></label>
+                        </div>)}
+                    </div>}
                 {exInfo && (<>
                     <button className="exercise-card__expand-btn" onClick={() => setExpandedCard(isExp ? null : idx)}>{isExp ? '▲ Hide Details' : '▼ Form Tips & Instructions'}</button>
                     {isExp && (
@@ -442,39 +442,37 @@ export default function WorkoutPage() {
     };
 
     const handleSaveWorkout = async () => {
-        if (!payload?.components) return;
-        const exercises = payload.components.filter(c => c.type === 'set_tracker').map(c => ({
-            name: c.payload.exercise_name || 'Exercise',
-            sets: c.payload.sets || 3,
-            reps: c.payload.reps || 10,
-            weight: c.payload.weight_kg || 0,
-        }));
-        const { totalSets, completedSets } = getProgress();
-        const workout = {
-            id: Date.now().toString(), date: new Date().toISOString(),
-            focus: focus || 'Full Body', exercises, completedSets, totalSets,
+        if (!payload?.components || saveInFlight.current || saved) return false;
+        if (getProgress().completedSets === 0) { setSaveError('Record at least one completed set before saving.'); return false; }
+        const completion: Completion = { schemaVersion: 1, focus: focus || 'Full Body',
+            exercises: payload.components.flatMap((comp, index) => {
+                const progress = setProgress.get(index);
+                if (comp.type !== 'set_tracker' || !progress) return [];
+                return [{ exerciseId: comp.payload.exercise_id, name: comp.payload.exercise_name || 'Exercise',
+                    sets: progress.completed.map((completed, i) => ({ completed, reps: progress.actualReps[i], weightKg: progress.actualWeight[i] })) }];
+            }),
         };
-        const saved = JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]');
-        saved.push(workout);
-        localStorage.setItem('gymbrain_workouts', JSON.stringify(saved));
-        sessionStorage.removeItem('gymbrain_active_workout');
+        const json = pendingJson || JSON.stringify(completion);
+        setPendingJson(json);
+        // Freeze and persist the exact first attempt before sending, for lost-response retries.
+        try { sessionStorage.setItem(draftKey, JSON.stringify({ payload, focus, sessionId, progress: [...setProgress], pendingJson: json })); } catch { /* request remains retryable while mounted */ }
+        saveInFlight.current = true; setSaving(true); setSaveError('');
+        const result = await saveWorkout(json, sessionId);
+        saveInFlight.current = false; setSaving(false);
+        if (result.error || !result.data) { setSaveError(result.error || 'Save failed. Retry this session.'); return false; }
+        setSaved(true); sessionStorage.removeItem(draftKey); restTimer.stop();
+        trackEvent('workout_completed', { exerciseCount: completion.exercises.length, completedSets: getProgress().completedSets });
+        showToast('Workout saved to your account.', 'success');
+        return true;
+    };
 
-        trackEvent('workout_completed', { duration: 0, exerciseCount: exercises.length, totalSets });
-
-        try {
-            const apiResult = await saveWorkout(JSON.stringify(payload));
-            if (apiResult.error) {
-                showToast(`Saved locally. Cloud sync: ${apiResult.error}`, 'info');
-            } else {
-                showToast('✅ Workout saved!', 'success');
-            }
-        } catch {
-            showToast('✅ Saved locally (offline)', 'success');
-        }
+    const resetWorkout = () => {
+        sessionStorage.removeItem(draftKey); setPayload(null); setExerciseImages(new Map());
+        setSetProgress(new Map()); setExpandedCard(null); restTimer.stop(); setSaved(false); setPendingJson(null); setSaveError('');
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
-    if (loading) return (<div className="app-content"><div className="m3-spinner-container"><div className="m3-spinner" /><p className="md-body-lg">Generating your workout with AI...</p><p className="md-body-sm text-muted">SafetyGate validating output</p></div></div>);
+    if (loading) return (<div className="app-content"><div className="m3-spinner-container"><div className="m3-spinner" /><p className="md-body-lg">Generating your workout with AI...</p><p className="md-body-sm text-muted">Checking the generated workout</p></div></div>);
 
     const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
     const profileContext = profile.name
@@ -487,7 +485,7 @@ export default function WorkoutPage() {
             <h2 className="md-headline-sm" style={{ color: 'var(--md-primary)', textAlign: 'center' }}>Resume Your Workout?</h2>
             <p className="md-body-sm text-muted" style={{ textAlign: 'center' }}>You have an in-progress workout from this session.</p>
             <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg" style={{ maxWidth: 320 }} onClick={handleResume}>▶ Resume Workout</button>
-            <button className="m3-btn m3-btn--outlined" style={{ maxWidth: 320 }} onClick={() => { sessionStorage.removeItem('gymbrain_active_workout'); setShowResume(false); }}>Start Fresh</button>
+            <button className="m3-btn m3-btn--outlined" style={{ maxWidth: 320 }} onClick={() => { sessionStorage.removeItem(draftKey); setShowResume(false); }}>Start Fresh</button>
         </div>
     );
 
@@ -542,38 +540,38 @@ export default function WorkoutPage() {
 
             <div className="workout-progress-header">
                 <div className="workout-progress-header__top"><h2 className="workout-progress-header__title">Your Workout</h2><span className="workout-progress-header__counter numeric">{completedSets}/{totalSets}</span></div>
-                <p className="workout-progress-header__subtitle">AI-generated • SafetyGate validated</p>
+                <p className="workout-progress-header__subtitle">AI-generated workout</p>
                 <div className="workout-progress-bar"><div className="workout-progress-bar__fill" style={{ width: `${percent}%` }} /></div>
                 {percent === 100 && <div className="workout-complete-banner">🎉 Workout Complete! Great job!</div>}
             </div>
 
+            <fieldset disabled={saving || saved || !!pendingJson} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
             {payload.components?.map((comp, idx) => {
                 if (comp.type === 'tone_card') return (<div key={idx} className="tone-card" style={{ animationDelay: `${idx * 0.08}s` }}><div className="tone-card__emoji">💬</div><p>"{comp.payload.message}"</p>{comp.payload.persona && <span className="persona-tag">— {comp.payload.persona as string}</span>}</div>);
                 if (comp.type === 'warmup_card') return renderExerciseCard({ ...comp, type: 'set_tracker', payload: { ...comp.payload, sets: 1, reps: 1 } }, idx);
                 if (comp.type === 'set_tracker') return renderExerciseCard(comp, idx);
                 return null;
             })}
+            </fieldset>
             {(!payload.components || payload.components.length === 0) && (<div className="m3-card m3-card--outlined" style={{ textAlign: 'center' }}><p className="text-muted">No workout components returned.</p></div>)}
             {exercises.length > 0 && (<div className="workout-summary-card"><div className="workout-summary-card__row">
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.length}</span><span>Exercises</span></div>
                 <div className="workout-summary-card__stat"><span className="numeric">{totalSets}</span><span>Total Sets</span></div>
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.reduce((s, c) => s + ((c.payload.sets || 3) as number) * ((c.payload.reps || 10) as number), 0)}</span><span>Total Reps</span></div>
             </div></div>)}
+            {saveError && <div role="alert" className="m3-error-banner">Not confirmed saved: {saveError} Your session is retained in this browser tab. Retry to confirm it.</div>}
+            {saved && <p role="status">Saved to your account. View it in History.</p>}
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button className="m3-btn m3-btn--tonal" style={{ flex: 1 }} onClick={handleSaveWorkout}>💾 Save</button>
-                <button className="m3-btn m3-btn--outlined" style={{ flex: 1 }} onClick={() => {
-                    if (completedSets > 0) {
-                        if (window.confirm(`You've completed ${completedSets} of ${totalSets} sets. Save progress?`)) {
-                            handleSaveWorkout();
-                        } else {
-                            sessionStorage.removeItem('gymbrain_active_workout');
-                            setPayload(null); setExerciseImages(new Map()); setSetProgress(new Map()); setExpandedCard(null); restTimer.stop();
-                        }
-                    } else {
-                        sessionStorage.removeItem('gymbrain_active_workout');
-                        setPayload(null); setExerciseImages(new Map()); setSetProgress(new Map()); setExpandedCard(null); restTimer.stop();
+                <button className="m3-btn m3-btn--tonal" style={{ flex: 1 }} disabled={saving || saved} onClick={handleSaveWorkout}>
+                    {saving ? 'Saving…' : saved ? 'Saved' : pendingJson ? 'Retry save' : 'Finish & Save'}
+                </button>
+                <button className="m3-btn m3-btn--outlined" style={{ flex: 1 }} disabled={saving || (!!pendingJson && !saved)} onClick={async () => {
+                    if (!saved && completedSets > 0) {
+                        if (!window.confirm('Finish and save this session before starting another?')) return;
+                        if (!await handleSaveWorkout()) return;
                     }
-                }}>🔄 New</button>
+                    resetWorkout();
+                }}>New workout</button>
             </div>
 
             {/* Substitute Modal */}

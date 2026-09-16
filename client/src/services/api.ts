@@ -19,6 +19,7 @@ async function request<T>(
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
+      signal: options.signal ?? AbortSignal.timeout(45000),
       headers: { ...headers, ...(options.headers as Record<string, string>) },
     });
 
@@ -118,11 +119,17 @@ export interface SaveWorkoutResponse {
   unlockedMilestones: Milestone[];
 }
 
-export function saveWorkout(payloadJson: string) {
+export function saveWorkout(payloadJson: string, sessionId: string) {
   return request<SaveWorkoutResponse>('/api/workout/save', {
     method: 'POST',
-    body: JSON.stringify({ payloadJson }),
+    body: JSON.stringify({ payloadJson, sessionId }),
   });
+}
+
+export interface WorkoutHistoryItem { id: string; completedAtUtc: string; payloadJson: string; }
+export interface WorkoutHistoryResponse { items: WorkoutHistoryItem[]; total: number; hasMore: boolean; }
+export function getWorkoutHistory(offset = 0) {
+  return request<WorkoutHistoryResponse>(`/api/workout/history?offset=${offset}`);
 }
 
 export interface SubstituteOption {

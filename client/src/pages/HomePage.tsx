@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { readCompletion, useWorkoutHistory } from '../services/workoutHistory';
 
 const QUOTES = [
   { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
@@ -16,21 +17,21 @@ interface HomePageProps {
   onNavigate: (tab: string) => void;
 }
 
-interface SavedWorkout {
-  id: string; date: string; focus: string;
-  exercises: { name: string; sets: number; reps: number; weight: number }[];
-  completedSets: number; totalSets: number;
-}
-
 export default function HomePage({ onNavigate }: HomePageProps) {
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
-  const workouts: SavedWorkout[] = JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]');
+  const { history, error: historyError, retry } = useWorkoutHistory();
+  const workouts = (history?.items || []).map(item => {
+    const completion = readCompletion(item);
+    const sets = completion?.exercises.flatMap(ex => ex.sets) || [];
+    return { id: item.id, date: item.completedAtUtc, focus: completion?.focus || 'Workout',
+      exercises: completion?.exercises || [], completedSets: sets.filter(set => set.completed).length, totalSets: sets.length };
+  });
   const name = profile.name || 'Athlete';
 
   // Calculate stats
-  const totalWorkouts = workouts.length;
+  const totalWorkouts = history?.total ?? '—';
   const totalExercises = workouts.reduce((s, w) => s + (w.exercises?.length || 0), 0);
   const bmi = profile.height && profile.weight
     ? (profile.weight / ((profile.height / 100) ** 2)).toFixed(1)
@@ -74,6 +75,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         )}
       </div>
 
+      {historyError && <div role="alert" className="m3-error-banner">History is unavailable.
+        <button className="m3-btn m3-btn--outlined" onClick={retry}>Retry history</button></div>}
       {/* Stats */}
       <div className="home-stats">
         <div className="home-stat">
@@ -82,7 +85,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
         <div className="home-stat">
           <span className="home-stat__value">{totalExercises}</span>
-          <span className="home-stat__label">Exercises</span>
+          <span className="home-stat__label">Recent exercises</span>
         </div>
         <div className="home-stat">
           <span className="home-stat__value">{bmi || '—'}</span>
@@ -145,14 +148,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ height: '100%', width: `${Math.min(streak * 10, 100)}%`, background: 'var(--md-primary)' }} />
             </div>
 
-            <div className="md-body-sm text-muted mb-sm">Overall Completion Rate</div>
+            <div className="md-body-sm text-muted mb-sm">Recent Completion Rate</div>
             <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
               <div style={{ height: '100%', width: `${totalWorkouts ? Math.round((workouts.reduce((s, w) => s + w.completedSets, 0) / Math.max(workouts.reduce((s, w) => s + w.totalSets, 0), 1)) * 100) : 0}%`, background: 'var(--md-tertiary)' }} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--md-on-surface-variant)' }}>
-              <span>Total Sets Completed: {workouts.reduce((s, w) => s + w.completedSets, 0)}</span>
-              <span>Avg Sets/Workout: {totalWorkouts ? Math.round(workouts.reduce((s, w) => s + w.completedSets, 0) / totalWorkouts) : 0}</span>
+              <span>Recent Sets Completed: {workouts.reduce((s, w) => s + w.completedSets, 0)}</span>
+              <span>Avg Sets/Workout: {totalWorkouts ? Math.round(workouts.reduce((s, w) => s + w.completedSets, 0) / workouts.length) : 0}</span>
             </div>
           </div>
         </>
@@ -165,7 +168,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <span className="section-header__icon">📋</span>
             <span className="section-header__title">Recent Workouts</span>
           </div>
-          {workouts.slice(-2).reverse().map(w => (
+          {workouts.slice(0, 2).map(w => (
             <div key={w.id} className="saved-workout">
               <div className="saved-workout__icon">💪</div>
               <div className="saved-workout__info">

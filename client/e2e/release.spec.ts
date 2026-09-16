@@ -16,7 +16,8 @@ async function signInLocally(page: Page, profile: Record<string, unknown> = {}) 
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/auth/models') return route.fulfill({ json: [] });
-    if (path === '/api/profile') return route.fulfill({ json: serverProfile });
+    if (path === '/api/profile') return route.fulfill({ json: profile.name ? serverProfile : { ...serverProfile, goal: null } });
+    if (path === '/api/workout/history') return route.fulfill({ json: { items: [], total: 0, hasMore: false } });
     if (path === '/api/events') return route.fulfill({ json: {} });
     return route.fulfill({ status: 503, json: { detail: 'Unconfigured test API request' } });
   });
@@ -128,4 +129,53 @@ test('substituting another exercise preserves completed sets', async ({ page }) 
   await page.getByRole('button', { name: 'Use This' }).click();
   await expect(page.locator('.exercise-card').nth(1)).toContainText('Band Row');
   await expect(first.getByTitle('Set 1', { exact: true })).toHaveClass(/set-circle--done/);
+});
+
+test('completion retry retains actual results and history survives a fresh browser session', async ({ page, browser }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  await page.route('**/api/workout/start', route => route.fulfill({ json: { megaPayloadJson: JSON.stringify({
+    components: [{ type: 'set_tracker', payload: { exercise_id: 'squat', exercise_name: 'Squat', sets: 2, reps: 10 } }],
+  }) } }));
+  await page.route('**/api/workout/exercise-metadata/**', route => route.fulfill({ status: 204 }));
+  const writes: { payloadJson: string; sessionId: string }[] = [];
+  await page.route('**/api/workout/save', route => {
+    writes.push(route.request().postDataJSON());
+    return route.fulfill({ status: writes.length === 1 ? 503 : 200,
+      json: writes.length === 1 ? { detail: 'Connection interrupted' } : { workoutSessionId: writes[0].sessionId, unlockedMilestones: [] } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: /Start Training/ }).click();
+  await page.getByRole('button', { name: /Generate Workout/ }).click();
+  await page.getByLabel('Squat set 1 reps', { exact: true }).fill('8');
+  await page.getByLabel('Squat set 1 weight kg', { exact: true }).fill('25');
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await page.reload();
+  await page.getByRole('button', { name: /Start Training/ }).click();
+  await page.getByRole('button', { name: /Resume Workout/ }).click();
+  await expect(page.getByLabel('Squat set 1 reps', { exact: true })).toHaveValue('8');
+  await expect(page.getByTitle('Set 1', { exact: true })).toHaveClass(/set-circle--done/);
+  await page.getByRole('button', { name: 'Finish & Save' }).click();
+  await expect(page.getByRole('alert')).toContainText('Connection interrupted');
+  await expect(page.getByLabel('Squat set 1 reps', { exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Retry save' }).click();
+  await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+  expect(writes).toHaveLength(2);
+  expect(writes[1]).toEqual(writes[0]);
+  expect(JSON.parse(writes[0].payloadJson).exercises[0].sets[0]).toEqual({ completed: true, reps: 8, weightKg: 25 });
+
+  const context = await browser.newContext();
+  const fresh = await context.newPage();
+  // No local profile or history on this device: only auth and the server response.
+  await signInLocally(fresh);
+  await fresh.route('**/api/profile', route => route.fulfill({ json: serverProfile }));
+  await fresh.route('**/api/workout/history?*', route => route.fulfill({ json: {
+    items: [{ id: writes[0].sessionId, completedAtUtc: new Date().toISOString(), payloadJson: writes[0].payloadJson }], total: 1, hasMore: false,
+  } }));
+  await fresh.goto('http://127.0.0.1:5178/');
+  await expect(fresh.getByText('Hello,', { exact: true })).toBeVisible();
+  await fresh.getByRole('button', { name: /History/ }).click();
+  await expect(fresh.getByText('1 saved sessions', { exact: true })).toBeVisible();
+  await fresh.locator('summary').click();
+  await expect(fresh.getByText('Set 1: 8 reps × 25 kg', { exact: true })).toBeVisible();
+  await context.close();
 });
