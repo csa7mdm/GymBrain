@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GymBrain.Application.Auth.Commands.Login;
 using GymBrain.Application.Auth.Commands.Register;
 using GymBrain.Application.Vault.Commands;
+using GymBrain.Domain.Common;
 using MediatR;
 
 namespace GymBrain.Api.Endpoints;
@@ -15,7 +16,9 @@ public static class AuthEndpoints
         group.MapPost("/register", async (RegisterUserCommand command, ISender sender) =>
         {
             var result = await sender.Send(command);
-            return Results.Ok(result);
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : Results.BadRequest(result.Error.Message);
         })
         .WithName("RegisterUser")
         .AllowAnonymous();
@@ -23,7 +26,9 @@ public static class AuthEndpoints
         group.MapPost("/login", async (LoginUserCommand command, ISender sender) =>
         {
             var result = await sender.Send(command);
-            return Results.Ok(result);
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : Results.Unauthorized(result.Error.Message);
         })
         .WithName("LoginUser")
         .AllowAnonymous();
@@ -36,14 +41,16 @@ public static class AuthEndpoints
 
             var command = new VaultApiKeyCommand(userId, request.Provider, request.ApiKey, request.Model);
             var result = await sender.Send(command);
-            return Results.Ok(result);
+            return result.IsSuccess
+                ? Results.Ok(result.Value)
+                : Results.BadRequest(result.Error.Message);
         })
         .WithName("VaultApiKey")
         .RequireAuthorization();
 
         group.MapGet("/models", () => Results.Ok(GymBrain.Application.Common.LlmModelCatalog.AllModels))
-        .WithName("GetLlmModels")
-        .AllowAnonymous();
+            .WithName("GetLlmModels")
+            .AllowAnonymous();
     }
 }
 

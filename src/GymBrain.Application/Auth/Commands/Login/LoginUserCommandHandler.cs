@@ -1,6 +1,6 @@
 using GymBrain.Application.Common.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
+using GymBrain.Domain.Common;
 
 namespace GymBrain.Application.Auth.Commands.Login;
 
@@ -8,17 +8,18 @@ public sealed class LoginUserCommandHandler(
     IApplicationDbContext db,
     IPasswordHasher passwordHasher,
     IJwtTokenService jwtService)
-    : IRequestHandler<LoginUserCommand, LoginUserResponse>
+    : IRequestHandler<LoginUserCommand, Result<LoginUserResponse>>
 {
-    public async Task<LoginUserResponse> Handle(LoginUserCommand request, CancellationToken ct)
+    public async Task<Result<LoginUserResponse>> Handle(LoginUserCommand request, CancellationToken ct)
     {
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email, ct)
-            ?? throw new UnauthorizedAccessException("Invalid credentials.");
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email, ct);
+        if (user == null)
+            return Result.Failure<LoginUserResponse>(Error.Unauthorized("Invalid credentials."));
 
         if (!passwordHasher.Verify(request.Password, user.PasswordHash))
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            return Result.Failure<LoginUserResponse>(Error.Unauthorized("Invalid credentials."));
 
         var token = jwtService.GenerateToken(user);
-        return new LoginUserResponse(user.Id, token);
+        return Result.Success(new LoginUserResponse(user.Id, token));
     }
 }

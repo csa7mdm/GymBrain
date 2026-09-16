@@ -1,50 +1,94 @@
 namespace GymBrain.Domain.Common;
 
 /// <summary>
+/// Represents an error that can be returned from a Result.
+/// </summary>
+public class Error
+{
+    public string Message { get; }
+    public string Code { get; }
+
+    public Error(string message, string code = null)
+    {
+        Message = message;
+        Code = code ?? "Error";
+    }
+
+    public static Error NullValue(string propertyName) => 
+        new Error($"The value for '{propertyName}' cannot be null.", "NullValue");
+    
+    public static Error NotFound(string entityName, object key) => 
+        new Error($"Entity '{entityName}' with key '{key}' was not found.", "NotFound");
+    
+    public static Error ValidationError(string message) => 
+        new Error(message, "Validation");
+    
+    public static Error Unexpected(string message) => 
+        new Error(message, "Unexpected");
+    
+    public static Error Conflict(string message) => 
+        new Error(message, "Conflict");
+    
+    public static Error Forbidden(string message) => 
+        new Error(message, "Forbidden");
+    
+    public static Error Unauthorized(string message) => 
+        new Error(message, "Unauthorized");
+}
+
+/// <summary>
 /// A Result monad for returning success/failure without throwing exceptions
 /// for expected business failures. This replaces exception-driven flow control.
 /// </summary>
-public class Result
+public abstract class Result
 {
-    protected Result(bool isSuccess, string? error)
+    protected Result(bool isSuccess, Error error)
     {
-        if (isSuccess && error is not null)
+        if (isSuccess && error != null)
             throw new InvalidOperationException("A success result cannot carry an error.");
-        if (!isSuccess && string.IsNullOrWhiteSpace(error))
-            throw new InvalidOperationException("A failure result must carry an error message.");
-
+        if (!isSuccess && error == null)
+            throw new InvalidOperationException("A failure result must carry an error.");
+        
         IsSuccess = isSuccess;
         Error = error;
     }
 
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
-    public string? Error { get; }
+    public Error Error { get; }
 
-    public static Result Success() => new(true, null);
-    public static Result Failure(string error) => new(false, error);
-
-    public static Result<TValue> Success<TValue>(TValue value) => new(value, true, null);
-    public static Result<TValue> Failure<TValue>(string error) => new(default, false, error);
+    public static Result Success() => new SuccessResult();
+    public static Result Failure(Error error) => new FailureResult(error);
+    
+    public static Result<TValue> Success<TValue>(TValue value) => new SuccessResult<TValue>(value);
+    public static Result<TValue> Failure<TValue>(Error error) => new FailureResult<TValue>(error);
 }
 
-/// <summary>
-/// Generic Result monad carrying a typed value on success.
-/// </summary>
-/// <typeparam name="TValue">The type of the success value.</typeparam>
-public class Result<TValue> : Result
+public class SuccessResult : Result
 {
-    private readonly TValue? _value;
+    public SuccessResult() : base(true, null) { }
+}
 
-    internal Result(TValue? value, bool isSuccess, string? error)
-        : base(isSuccess, error)
+public class SuccessResult<TValue> : Result
+{
+    public SuccessResult(TValue value) : base(true, null)
     {
-        _value = value;
+        Value = value;
     }
 
-    public TValue Value => IsSuccess
-        ? _value!
-        : throw new InvalidOperationException("Cannot access Value on a failed result.");
+    public TValue Value { get; }
+}
 
-    public static implicit operator Result<TValue>(TValue value) => Success(value);
+public class FailureResult : Result
+{
+    public FailureResult(Error error) : base(false, error) { }
+}
+
+public class FailureResult<TValue> : Result
+{
+    public FailureResult(TValue value, Error error) : base(false, error)
+    {
+        // Note: We don't use the value in a failure result, but we keep it to match the constructor signature.
+        // In practice, we ignore the value when IsSuccess is false.
+    }
 }

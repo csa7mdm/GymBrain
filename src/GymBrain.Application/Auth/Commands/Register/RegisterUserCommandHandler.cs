@@ -10,13 +10,13 @@ public sealed class RegisterUserCommandHandler(
     IApplicationDbContext db,
     IPasswordHasher passwordHasher,
     IJwtTokenService jwtService)
-    : IRequestHandler<RegisterUserCommand, RegisterUserResponse>
+    : IRequestHandler<RegisterUserCommand, Result<RegisterUserResponse>>
 {
-    public async Task<RegisterUserResponse> Handle(RegisterUserCommand request, CancellationToken ct)
+    public async Task<Result<RegisterUserResponse>> Handle(RegisterUserCommand request, CancellationToken ct)
     {
         var exists = await db.Users.AnyAsync(u => u.Email == request.Email, ct);
         if (exists)
-            throw new InvalidOperationException("A user with this email already exists.");
+            return Result.Failure<RegisterUserResponse>(Error.ValidationError("A user with this email already exists."));
 
         var hash = passwordHasher.Hash(request.Password);
         var user = new User(request.Email, hash, Domain.Enums.ExperienceLevel.Beginner);
@@ -28,6 +28,6 @@ public sealed class RegisterUserCommandHandler(
         await db.SaveChangesAsync(ct);
 
         var token = jwtService.GenerateToken(user);
-        return new RegisterUserResponse(user.Id, token);
+        return Result.Success(new RegisterUserResponse(user.Id, token));
     }
 }
