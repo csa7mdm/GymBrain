@@ -28,3 +28,26 @@ jobs:
       run: dotnet test GymBrain.sln --configuration Release --no-build --verbosity normal
     - name: Build API image
       run: docker build -t gymbrain-api:local .
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firebase-client
+          path: client/dist
+          if-no-files-found: error

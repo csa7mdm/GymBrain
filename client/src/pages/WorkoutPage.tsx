@@ -33,9 +33,9 @@ function useRestTimer() {
     const [seconds, setSeconds] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const durationRef = useRef(0);
+    const [duration, setDuration] = useState(0);
     const start = useCallback((duration: number) => {
-        durationRef.current = duration;
+        setDuration(duration);
         setSeconds(duration);
         setIsRunning(true);
     }, []);
@@ -50,9 +50,9 @@ function useRestTimer() {
                         if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
                         // Audio chime
                         try {
-                            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-                            if (AudioContext) {
-                                const ctx = new AudioContext();
+                            const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+                            if (AudioContextClass) {
+                                const ctx = new AudioContextClass();
                                 const osc = ctx.createOscillator();
                                 const gain = ctx.createGain();
                                 osc.type = 'sine';
@@ -74,7 +74,7 @@ function useRestTimer() {
         }
         return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
     }, [isRunning, seconds]);
-    return { seconds, isRunning, start, stop, duration: durationRef.current };
+    return { seconds, isRunning, start, stop, duration };
 }
 
 // ─── Substitute Modal ─────────────────────────────────────────────────────────
@@ -118,7 +118,6 @@ function SubstituteModal({ exerciseId, exerciseName, onSelect, onDismiss }: Subs
             setLoading(false);
         });
         return () => { cancelled = true; clearTimeout(timeout); };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [exerciseId]);
 
     return (
@@ -220,15 +219,7 @@ export default function WorkoutPage() {
         }
     }, [payload, focus]);
 
-    // On mount, check for a resumed workout
-    const [showResume, setShowResume] = useState(false);
-    useEffect(() => {
-        const saved = sessionStorage.getItem('gymbrain_active_workout');
-        if (saved && !payload) {
-            setShowResume(true);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const [showResume, setShowResume] = useState(() => !!sessionStorage.getItem('gymbrain_active_workout'));
 
     const parseMegaPayload = (raw: string): MegaPayload => {
         let cleaned = raw.trim();
@@ -269,26 +260,29 @@ export default function WorkoutPage() {
             .filter(c => c.type === 'set_tracker' && c.payload.exercise_name)
             .map(c => c.payload.exercise_name as string);
         if (names.length === 0) return;
+        let cancelled = false;
         const fetchImages = async () => {
-            const ni = new Map(exerciseImages);
-            for (const name of names) { if (!ni.has(name)) { const r = await searchExercise(name); if (r) ni.set(name, r); } }
-            setExerciseImages(ni);
+            const images = new Map<string, ExerciseDbItem>();
+            for (const name of names) {
+                const item = await searchExercise(name);
+                if (item) images.set(name, item);
+            }
+            if (!cancelled) setExerciseImages(images);
         };
-        fetchImages();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        void fetchImages();
+        return () => { cancelled = true; };
     }, [payload]);
 
-    useEffect(() => {
-        if (!payload?.components) return;
-        const prog = new Map<number, SetProgress>();
-        payload.components.forEach((comp, idx) => {
+    const initialProgress = (workout: MegaPayload) => {
+        const progress = new Map<number, SetProgress>();
+        workout.components?.forEach((comp, idx) => {
             if (comp.type === 'set_tracker') {
                 const n = comp.payload.sets || 3;
-                prog.set(idx, { completed: Array(n).fill(false), actualWeight: Array(n).fill(comp.payload.weight_kg || 0), actualReps: Array(n).fill(comp.payload.reps || 10) });
+                progress.set(idx, { completed: Array(n).fill(false), actualWeight: Array(n).fill(comp.payload.weight_kg || 0), actualReps: Array(n).fill(comp.payload.reps || 10) });
             }
         });
-        setSetProgress(prog);
-    }, [payload]);
+        return progress;
+    };
 
     const handleStart = async () => {
         setError(''); setLoading(true); sessionStorage.removeItem('gymbrain_active_workout'); setShowResume(false);
@@ -298,6 +292,7 @@ export default function WorkoutPage() {
         if (result.data?.megaPayloadJson) {
             try {
                 const parsed = parseMegaPayload(result.data.megaPayloadJson);
+                setSetProgress(initialProgress(parsed));
                 setPayload(parsed);
                 const exerciseCount = parsed.components?.filter(c => c.type === 'set_tracker').length || 0;
                 trackEvent('workout_started', { exerciseCount });
@@ -308,7 +303,7 @@ export default function WorkoutPage() {
     const handleResume = () => {
         try {
             const saved = sessionStorage.getItem('gymbrain_active_workout');
-            if (saved) { const { payload: p, focus: f } = JSON.parse(saved); setPayload(p); setFocus(f || ''); }
+            if (saved) { const { payload: p, focus: f } = JSON.parse(saved); setSetProgress(initialProgress(p)); setPayload(p); setFocus(f || ''); }
         } catch { /* ignore */ }
         setShowResume(false);
     };

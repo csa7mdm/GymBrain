@@ -1,7 +1,24 @@
 import { API_BASE } from './api';
-import { ExerciseSchema, type ValidatedExercise } from '../types/schemas';
+export interface ExerciseDbItem {
+  id: string;
+  name: string;
+  gifUrl: string;
+  target: string;
+  bodyPart: string;
+  equipment: string;
+  secondaryMuscles: string[];
+  instructions: string[];
+}
 
-export type ExerciseDbItem = ValidatedExercise;
+function isExercise(value: unknown): value is ExerciseDbItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return ['id', 'name', 'target', 'bodyPart', 'equipment'].every(key => typeof item[key] === 'string')
+    && typeof item.gifUrl === 'string'
+    && (item.gifUrl === '' || /^https?:\/\//i.test(item.gifUrl))
+    && Array.isArray(item.secondaryMuscles) && item.secondaryMuscles.every(x => typeof x === 'string')
+    && Array.isArray(item.instructions) && item.instructions.every(x => typeof x === 'string');
+}
 
 const exerciseCache = new Map<string, ExerciseDbItem>();
 
@@ -14,8 +31,11 @@ export async function searchExercise(name: string): Promise<ExerciseDbItem | nul
     const local = localStorage.getItem(`gymbrain_exdb_${cacheKey}`);
     if (local) {
       const parsed = JSON.parse(local);
-      exerciseCache.set(cacheKey, parsed);
-      return parsed;
+      if (isExercise(parsed)) {
+        exerciseCache.set(cacheKey, parsed);
+        return parsed;
+      }
+      localStorage.removeItem(`gymbrain_exdb_${cacheKey}`);
     }
   } catch {
     // Ignore parsing errors and refetch.
@@ -30,10 +50,9 @@ export async function searchExercise(name: string): Promise<ExerciseDbItem | nul
     if (response.status === 204 || !response.ok) return null;
 
     const raw = await response.json();
-    const result = ExerciseSchema.safeParse(raw);
-    if (!result.success) return null;
+    if (!isExercise(raw)) return null;
 
-    const best = result.data;
+    const best = raw;
     exerciseCache.set(cacheKey, best);
 
     try {

@@ -46,3 +46,8 @@ build_err.txt
 error.txt
 out.json
 audit_extracted.txt
+
+# Browser test artifacts
+client/test-results/
+client/playwright-report/
+client/e2e-report/

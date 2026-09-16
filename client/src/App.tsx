@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useState } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/auth';
 import AuthPage from './pages/AuthPage';
 import OnboardingPage from './pages/OnboardingPage';
 import HomePage from './pages/HomePage';
@@ -32,8 +33,7 @@ function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   );
 }
 
-function AppContent() {
-  const { user, isAuthenticated } = useAuth();
+function SignedInApp() {
   const [tab, setTab] = useState<Tab>('home');
   const [needsOnboarding, setNeedsOnboarding] = useState(() => {
     const profile = localStorage.getItem('gymbrain_profile');
@@ -43,24 +43,6 @@ function AppContent() {
       return true;
     }
   });
-
-  useEffect(() => {
-    if (user) {
-      const profile = localStorage.getItem('gymbrain_profile');
-      try {
-        if (!profile || !JSON.parse(profile).name) {
-          setNeedsOnboarding(true);
-        } else {
-          setNeedsOnboarding(false);
-        }
-      } catch {
-        setNeedsOnboarding(true);
-      }
-    }
-  }, [user]);
-
-
-  if (!isAuthenticated) return <AuthPage />;
 
   if (needsOnboarding) {
     return (
@@ -81,6 +63,11 @@ function AppContent() {
       <BottomNav tab={tab} setTab={setTab} />
     </div>
   );
+}
+
+function AppContent() {
+  const { user } = useAuth();
+  return user ? <SignedInApp key={user.userId} /> : <AuthPage />;
 }
 
 export default function App() {

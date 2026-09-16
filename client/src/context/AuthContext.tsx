@@ -1,31 +1,21 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-
-interface User {
-    userId: string;
-    email: string;
-    token: string;
-}
-
-interface AuthContextType {
-    user: User | null;
-    setAuth: (userId: string, email: string, token: string) => void;
-    logout: () => void;
-    isAuthenticated: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
+import { useState, type ReactNode } from 'react';
+import { AuthContext, type User } from './auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-
-    useEffect(() => {
+    const [user, setUser] = useState<User | null>(() => {
+        // Remove credentials retained by older onboarding builds.
+        try {
+            const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+            if ('apiKey' in profile) {
+                delete profile.apiKey;
+                localStorage.setItem('gymbrain_profile', JSON.stringify(profile));
+            }
+        } catch { localStorage.removeItem('gymbrain_profile'); }
         const token = localStorage.getItem('gymbrain_token');
         const userId = localStorage.getItem('gymbrain_userId');
         const email = localStorage.getItem('gymbrain_email');
-        if (token && userId && email) {
-            setUser({ userId, email, token });
-        }
-    }, []);
+        return token && userId && email ? { userId, email, token } : null;
+    });
 
     const setAuth = (userId: string, email: string, token: string) => {
         localStorage.setItem('gymbrain_token', token);
@@ -48,10 +38,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
-}
-
-export function useAuth() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-    return ctx;
 }

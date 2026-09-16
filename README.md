@@ -424,6 +424,19 @@ cd client
 npm run build
 ```
 
+### Frontend Release Checks
+
+```bash
+cd client
+npm ci
+npm run lint
+npm run build
+npx playwright install chromium
+npm run test:release
+```
+
+The release suite covers onboarding retries, profile experience-level writes, provider-key storage cleanup, malformed optional metadata, and preserving set progress during substitutions on desktop and mobile Chromium. API responses are intercepted: this suite does not establish live database/provider integration. CI runs these checks and uploads the compiled `firebase-client` artifact. Firebase deployment remains a separate step.
+
 ### Browser Flows
 
 ```bash

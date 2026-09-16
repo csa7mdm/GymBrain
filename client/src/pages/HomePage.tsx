@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const QUOTES = [
   { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
@@ -49,16 +49,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   });
 
   // Streak (consecutive days with workouts ending today)
-  const [streak, setStreak] = useState(0);
-  useEffect(() => {
-    let s = 0;
-    const d = new Date();
-    while (true) {
-      if (workoutDates.includes(d.toDateString())) { s++; d.setDate(d.getDate() - 1); }
-      else break;
-    }
-    setStreak(s);
-  }, []);
+  let streak = 0;
+  const streakDate = new Date();
+  while (workoutDates.includes(streakDate.toDateString())) {
+    streak++;
+    streakDate.setDate(streakDate.getDate() - 1);
+  }
 
   const goalLabels: Record<string, string> = {
     'muscle': '💪 Build Muscle', 'fat-loss': '🔥 Lose Fat', 'strength': '🏋️ Get Strong',

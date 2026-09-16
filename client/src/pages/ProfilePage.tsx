@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { generateNutritionPlan, getProfile, saveProfile, type ProfileData } from '../services/api';
+import { useAuth } from '../context/auth';
+import { generateNutritionPlan, getProfile, saveProfile, type SaveProfileRequest } from '../services/api';
+
+interface NutritionPlan {
+  message_from_coach?: string;
+  meals?: { type: string; name: string; calories: number; description: string;
+    protein_g: number; carbs_g: number; fat_g: number }[];
+}
 
 const GOALS = [
   { id: 'muscle', icon: '💪', label: 'Build Muscle' },
@@ -29,13 +35,17 @@ export default function ProfilePage() {
   const [diet, setDiet] = useState('Standard');
   const [calories, setCalories] = useState(2500);
   const [saved, setSaved] = useState(false);
+  const [profileError, setProfileError] = useState('');
   const [loadingProfile, setLoadingProfile] = useState(true);
+
+  const [injuries, setInjuries] = useState('None');
 
   useEffect(() => {
     const fetchProfile = async () => {
       const res = await getProfile();
       if (res.data) {
         setGoal(res.data.goal);
+        setLevel(res.data.experienceLevel);
         setDaysPerWeek(res.data.daysPerWeek);
         setDiet(res.data.dietaryPreference);
         setCalories(res.data.dailyCalories);
@@ -54,7 +64,6 @@ export default function ProfilePage() {
       if (p.age) setAge(p.age);
       if (p.height) setHeight(p.height);
       if (p.weight) setWeight(p.weight);
-      if (p.level) setLevel(p.level);
       if (p.focusAreas) setFocusAreas(p.focusAreas);
 
       setLoadingProfile(false);
@@ -62,16 +71,17 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
-  const [injuries, setInjuries] = useState('None');
 
   const handleSave = async () => {
-    const profile: ProfileData = {
+    setProfileError('');
+    const profile: SaveProfileRequest = {
       goal,
       daysPerWeek,
       dietaryPreference: diet,
       dailyCalories: calories,
       injuries,
-      equipmentJson: JSON.stringify(equipment)
+      equipmentJson: JSON.stringify(equipment),
+      experienceLevel: level,
     };
 
     const res = await saveProfile(profile);
@@ -79,7 +89,8 @@ export default function ProfilePage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } else {
-      alert('Failed to save profile to server: ' + res.error);
+      setProfileError('Failed to save profile: ' + res.error);
+      return;
     }
 
     // Save metadata to localstorage
@@ -90,7 +101,7 @@ export default function ProfilePage() {
 
   const [generatingNutrition, setGeneratingNutrition] = useState(false);
   const [nutritionError, setNutritionError] = useState('');
-  const [nutritionPlan, setNutritionPlan] = useState<any>(null);
+  const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
 
   const handleGenerateNutrition = async () => {
     setGeneratingNutrition(true);
@@ -107,7 +118,7 @@ export default function ProfilePage() {
         }
         setNutritionPlan(JSON.parse(raw));
       }
-    } catch (e) {
+    } catch {
       setNutritionError('Failed to generate nutrition plan.');
     }
     setGeneratingNutrition(false);
@@ -269,7 +280,7 @@ export default function ProfilePage() {
           {nutritionPlan && (
             <div className="mt-md p-md" style={{ background: 'var(--md-surface-variant)', borderRadius: 12 }}>
               <div className="md-body-md mb-md"><em>"{nutritionPlan.message_from_coach}"</em></div>
-              {nutritionPlan.meals?.map((m: any, idx: number) => (
+              {nutritionPlan.meals?.map((m, idx) => (
                 <div key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 8, marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <strong>{m.type}: {m.name}</strong>
@@ -288,6 +299,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {profileError && <div role="alert" className="m3-error-banner">{profileError}</div>}
       {/* Save */}
       <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg mt-md" onClick={handleSave}>
         {saved ? '✓ Saved!' : '💾 Save Profile'}

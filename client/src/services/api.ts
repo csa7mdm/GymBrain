@@ -171,6 +171,16 @@ export function healthCheck() {
   return request<string>('/');
 }
 
+export interface SaveProfileRequest {
+  goal: string;
+  equipmentJson: string;
+  injuries: string;
+  daysPerWeek: number;
+  dietaryPreference: string;
+  dailyCalories: number;
+  experienceLevel: string;
+}
+
 export interface ProfileData {
   goal: string;
   equipmentJson: string;
@@ -178,6 +188,7 @@ export interface ProfileData {
   daysPerWeek: number;
   dietaryPreference: string;
   dailyCalories: number;
+  experienceLevel: string;
   workoutsCompleted: number;
   chapterNumber?: number;
   chapterTitle?: string;
@@ -189,8 +200,8 @@ export function getProfile() {
   return request<ProfileData>('/api/profile');
 }
 
-export function saveProfile(profile: ProfileData) {
-  return request<void>('/api/profile/save', {
+export function saveProfile(profile: SaveProfileRequest) {
+  return request<{ message: string }>('/api/profile/save', {
     method: 'POST',
     body: JSON.stringify(profile),
   });

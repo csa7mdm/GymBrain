@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface SavedWorkout {
   id: string; date: string; focus: string;
@@ -7,15 +7,10 @@ interface SavedWorkout {
 }
 
 export default function PlansPage() {
-  const [workouts, setWorkouts] = useState<SavedWorkout[]>([]);
+  const [workouts, setWorkouts] = useState<SavedWorkout[]>(() => JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]'));
   const [showCreatePlan, setShowCreatePlan] = useState(false);
   const [planName, setPlanName] = useState('');
   const [planDays, setPlanDays] = useState(4);
-
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('gymbrain_workouts') || '[]');
-    setWorkouts(saved);
-  }, []);
 
   const deleteWorkout = (id: string) => {
     const updated = workouts.filter(w => w.id !== id);
@@ -25,14 +20,14 @@ export default function PlansPage() {
 
   const createPlan = () => {
     if (!planName.trim()) return;
-    const plans = JSON.parse(localStorage.getItem('gymbrain_plans') || '[]');
+    const plans: { id: string; name: string; daysPerWeek: number; createdAt: string }[] = JSON.parse(localStorage.getItem('gymbrain_plans') || '[]');
     plans.push({ id: Date.now().toString(), name: planName, daysPerWeek: planDays, createdAt: new Date().toISOString() });
     localStorage.setItem('gymbrain_plans', JSON.stringify(plans));
     setPlanName('');
     setShowCreatePlan(false);
   };
 
-  const plans = JSON.parse(localStorage.getItem('gymbrain_plans') || '[]');
+  const plans: { id: string; name: string; daysPerWeek: number; createdAt: string }[] = JSON.parse(localStorage.getItem('gymbrain_plans') || '[]');
 
   return (
     <div className="app-content fade-in">
@@ -73,7 +68,7 @@ export default function PlansPage() {
             <span className="section-header__icon">🎯</span>
             <span className="section-header__title">Training Journey</span>
           </div>
-          {plans.map((plan: any) => {
+          {plans.map((plan) => {
             const cycleLength = plan.daysPerWeek * 4; // Assume 4-week cycles
             const completedInCycle = workouts.length % cycleLength;
             const progressPct = Math.round((completedInCycle / cycleLength) * 100);

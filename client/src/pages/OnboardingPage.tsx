@@ -11,7 +11,7 @@ export interface UserProfile {
     goal: string; level: string; daysPerWeek: number;
     equipment: string[]; focusAreas: string[];
     injuries: string; // free-text for InjuryFilter backend
-    provider: string; model: string; apiKey: string;
+    provider: string; model: string;
 }
 
 const GOALS = [
@@ -72,60 +72,35 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
     const filteredModels = models.filter(m => m.provider === provider);
 
     const handleFinish = async () => {
+        if (vaultLoading) return;
+        setVaultLoading(true);
+        setVaultError('');
         try {
-            const profile: UserProfile = {
-                name: name || 'Athlete',
-                age, height, weight, goal, level, daysPerWeek,
-                equipment, focusAreas, injuries,
-                provider: useFree ? 'groq' : provider,
-                model: useFree ? 'llama-3.3-70b-versatile' : model,
-                apiKey: useFree ? '' : apiKey,
-            };
-
             if (!useFree && apiKey.trim()) {
-                setVaultLoading(true);
-                setVaultError('');
-                try {
-                    const result = await vaultApiKey(provider, apiKey, model);
-                    setVaultLoading(false);
-                    if (result.error) { setVaultError(result.error); return; }
-                } catch (e) {
-                    setVaultLoading(false);
-                    console.warn('Vault API key failed, continuing anyway:', e);
-                }
+                const result = await vaultApiKey(provider, apiKey, model);
+                if (result.error) { setVaultError(result.error); return; }
             }
 
-            const profileData = JSON.stringify(profile);
-            localStorage.setItem('gymbrain_profile', profileData);
-            localStorage.getItem('gymbrain_profile'); // Ensure flushed
+            const result = await saveProfile({
+                goal, equipmentJson: JSON.stringify(equipment), injuries,
+                daysPerWeek, dietaryPreference: 'none', dailyCalories: 2000,
+                experienceLevel: level,
+            });
+            if (result.error) { setVaultError(result.error); return; }
 
-            try {
-                await saveProfile({
-                    goal,
-                    equipmentJson: JSON.stringify(equipment),
-                    injuries,
-                    daysPerWeek,
-                    dietaryPreference: 'none',
-                    dailyCalories: 2000,
-                });
-            } catch (apiErr) {
-                console.warn('Backend saveProfile failed, frontend profile will continue:', apiErr);
-            }
-
-            console.log('Profile saved, completing onboarding...');
-
-            setTimeout(() => onComplete(profile), 50);
-        } catch (err) {
-            console.error('handleFinish error:', err);
-            // Force complete even on error
-            const fallbackProfile: UserProfile = {
+            const profile: UserProfile = {
                 name: name || 'Athlete', age, height, weight, goal, level,
                 daysPerWeek, equipment, focusAreas, injuries,
-                provider: 'groq', model: 'llama-3.3-70b-versatile', apiKey: '',
+                provider: useFree ? 'groq' : provider,
+                model: useFree ? 'llama-3.3-70b-versatile' : model,
             };
-            localStorage.setItem('gymbrain_profile', JSON.stringify(fallbackProfile));
-            localStorage.getItem('gymbrain_profile'); // Ensure flushed
-            setTimeout(() => onComplete(fallbackProfile), 50);
+            localStorage.setItem('gymbrain_profile', JSON.stringify(profile));
+            setApiKey('');
+            onComplete(profile);
+        } catch {
+            setVaultError('Could not finish setup. Please try again.');
+        } finally {
+            setVaultLoading(false);
         }
     };
 
@@ -344,7 +319,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
                                             <option value="groq">Groq (Free)</option>
                                             <option value="openrouter">OpenRouter</option>
                                             <option value="openai">OpenAI</option>
-                                            <option value="anthropic">Anthropic</option>
+
                                         </select>
                                     </div>
                                     <div className="m3-field">
