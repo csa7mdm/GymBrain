@@ -179,3 +179,28 @@ test('completion retry retains actual results and history survives a fresh brows
   await expect(fresh.getByText('Set 1: 8 reps × 25 kg', { exact: true })).toBeVisible();
   await context.close();
 });
+
+test('failed profile load blocks editing and retry restores server preferences', async ({ page }) => {
+  await signInLocally(page, { name: 'Returning Athlete' });
+  await page.goto('/');
+  await expect(page.getByText('Hello,', { exact: true })).toBeVisible();
+  let fail = true;
+  let writes = 0;
+  await page.route('**/api/profile', route => route.fulfill(fail
+    ? { status: 503, json: { detail: 'Temporarily unavailable' } }
+    : { json: serverProfile }));
+  await page.route('**/api/profile/save', route => {
+    writes++;
+    expect(route.request().postDataJSON().experienceLevel).toBe('Advanced');
+    return route.fulfill({ json: { message: 'Saved' } });
+  });
+  await page.getByRole('button', { name: /Profile/ }).click();
+  await expect(page.getByRole('alert')).toContainText('Could not load your saved profile');
+  await expect(page.getByRole('button', { name: /Save Profile/ })).toHaveCount(0);
+  expect(writes).toBe(0);
+  fail = false;
+  await page.getByRole('button', { name: 'Retry loading profile' }).click();
+  await expect(page.getByRole('button', { name: 'Advanced', exact: true })).toHaveClass(/active/);
+  await page.getByRole('button', { name: /Save Profile/ }).click();
+  await expect.poll(() => writes).toBe(1);
+});

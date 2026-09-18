@@ -37,12 +37,23 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const [injuries, setInjuries] = useState('None');
 
   useEffect(() => {
+    let cancelled = false;
     const fetchProfile = async () => {
+      setLoadingProfile(true);
+      setLoadError('');
       const res = await getProfile();
+      if (cancelled) return;
+      if (!res.data || res.error) {
+        setLoadError('Could not load your saved profile. Please retry before editing.');
+        setLoadingProfile(false);
+        return;
+      }
       if (res.data) {
         setGoal(res.data.goal);
         setLevel(res.data.experienceLevel);
@@ -69,7 +80,8 @@ export default function ProfilePage() {
       setLoadingProfile(false);
     };
     fetchProfile();
-  }, []);
+    return () => { cancelled = true; };
+  }, [loadAttempt]);
 
 
   const handleSave = async () => {
@@ -136,6 +148,17 @@ export default function ProfilePage() {
       <div className="app-content flex-center" style={{ height: '100vh' }}>
         <div className="m3-loader"></div>
         <p className="md-label-lg mt-md">Loading Profile...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="app-content fade-in">
+        <div role="alert" className="m3-error-banner">{loadError}</div>
+        <button className="m3-btn m3-btn--filled mt-md" onClick={() => setLoadAttempt(attempt => attempt + 1)}>
+          Retry loading profile
+        </button>
       </div>
     );
   }
