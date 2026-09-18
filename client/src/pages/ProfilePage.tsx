@@ -2,11 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/auth';
 import { generateNutritionPlan, getProfile, saveProfile, type SaveProfileRequest } from '../services/api';
 
-interface NutritionPlan {
-  message_from_coach?: string;
-  meals?: { type: string; name: string; calories: number; description: string;
-    protein_g: number; carbs_g: number; fat_g: number }[];
-}
+import MealCards from '../components/MealCards';
+import { parseMealPlan, type MealPlan } from '../services/mealPlan';
 
 const GOALS = [
   { id: 'muscle', icon: '💪', label: 'Build Muscle' },
@@ -113,7 +110,7 @@ export default function ProfilePage() {
 
   const [generatingNutrition, setGeneratingNutrition] = useState(false);
   const [nutritionError, setNutritionError] = useState('');
-  const [nutritionPlan, setNutritionPlan] = useState<NutritionPlan | null>(null);
+  const [nutritionPlan, setNutritionPlan] = useState<MealPlan | null>(null);
 
   const handleGenerateNutrition = async () => {
     setGeneratingNutrition(true);
@@ -128,7 +125,7 @@ export default function ProfilePage() {
         if (raw.startsWith('```')) {
           raw = raw.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
         }
-        setNutritionPlan(JSON.parse(raw));
+        setNutritionPlan(parseMealPlan(raw));
       }
     } catch {
       setNutritionError('Failed to generate nutrition plan.');
@@ -300,25 +297,7 @@ export default function ProfilePage() {
 
           {nutritionError && <div className="m3-error-banner mt-sm">{nutritionError}</div>}
 
-          {nutritionPlan && (
-            <div className="mt-md p-md" style={{ background: 'var(--md-surface-variant)', borderRadius: 12 }}>
-              <div className="md-body-md mb-md"><em>"{nutritionPlan.message_from_coach}"</em></div>
-              {nutritionPlan.meals?.map((m, idx) => (
-                <div key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 8, marginBottom: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <strong>{m.type}: {m.name}</strong>
-                    <span className="text-muted">{m.calories} kcal</span>
-                  </div>
-                  <div className="md-body-sm text-muted">{m.description}</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                    <span className="chip chip-info" style={{ fontSize: '0.7rem' }}>P: {m.protein_g}g</span>
-                    <span className="chip chip-warning" style={{ fontSize: '0.7rem' }}>C: {m.carbs_g}g</span>
-                    <span className="chip chip-success" style={{ fontSize: '0.7rem' }}>F: {m.fat_g}g</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {nutritionPlan && <MealCards plan={nutritionPlan} />}
         </div>
       </div>
 

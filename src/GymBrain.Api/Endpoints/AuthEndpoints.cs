@@ -58,6 +58,17 @@ public static class AuthEndpoints
         .WithName("VaultApiKey")
         .RequireAuthorization();
 
+        group.MapPost("/models/discover", async (VaultApiKeyRequest request,
+            GymBrain.Application.Common.Interfaces.ILlmProviderFactory factory, HttpContext context, CancellationToken ct) =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            if (string.IsNullOrWhiteSpace(request.ApiKey) || request.ApiKey.Length > 4096)
+                return Results.BadRequest(new { detail = "Enter a valid provider API key." });
+            var models = await factory.GetProvider(request.Provider).GetAvailableModelsAsync(request.ApiKey, ct);
+            return Results.Ok(models.Select((id, index) => new GymBrain.Application.Common.LlmModelInfo(
+                request.Provider, id, id, "Live provider catalog; generation availability may vary.", request.Provider == "openrouter" && id.EndsWith(":free"), index)));
+        }).RequireAuthorization();
+
         group.MapGet("/models", () => Results.Ok(GymBrain.Application.Common.LlmModelCatalog.AllModels.Where(model => model.Provider is "openai" or "groq" or "openrouter")))
             .WithName("GetLlmModels")
             .AllowAnonymous();

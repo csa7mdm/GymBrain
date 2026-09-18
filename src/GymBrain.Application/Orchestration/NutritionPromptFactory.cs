@@ -85,7 +85,12 @@ public static class NutritionPromptFactory
                       "protein_g": "integer",
                       "carbs_g": "integer",
                       "fat_g": "integer",
-                      "description": "string"
+                      "description": "string",
+                      "servings": "integer",
+                      "prep_minutes": "integer",
+                      "cook_minutes": "integer",
+                      "ingredients": [{ "name": "string", "quantity": "string" }],
+                      "steps": ["string"]
                     }
                   ]
                 }
@@ -95,6 +100,9 @@ public static class NutritionPromptFactory
             RULES:
             - days array MUST have exactly {{durationDays}} entries
             - Each day must contain 3 to 5 meals
+            - Every meal needs ingredient quantities and ordered, actionable cooking steps
+            - State servings and prep/cook time; calories and macros are estimates per serving
+            - Include appropriate cooking and storage guidance; never claim medical suitability
             - total_calories should stay within +/- 100 kcal of target
             - Use geographically sensible, budget-aware ingredients and meal choices
             - Respect the available resources when selecting recipes and prep complexity

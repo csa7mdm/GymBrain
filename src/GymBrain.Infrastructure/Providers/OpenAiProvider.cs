@@ -43,6 +43,12 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
             payload["response_format"] = new { type = "json_object" };
         }
 
+        if (model.StartsWith("gpt-5", StringComparison.Ordinal))
+        {
+            payload.Remove("temperature");
+            payload.Remove("max_tokens");
+            payload["max_completion_tokens"] = maxTokens;
+        }
         var json = JsonSerializer.Serialize(payload);
         using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
         {
@@ -70,9 +76,7 @@ public sealed class OpenAiProvider(HttpClient httpClient) : ILlmProvider
     }
 
     public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)
-    {
-        return Task.FromResult(LlmModelCatalog.GetByProvider("openai").Select(m => m.ModelId));
-    }
+        => LiveModelDiscovery.FetchAsync(httpClient, "openai", apiKey, ct);
 
     public async Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default)
     {

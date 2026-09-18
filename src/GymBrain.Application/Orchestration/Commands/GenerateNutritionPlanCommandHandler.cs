@@ -80,7 +80,7 @@ public sealed class GenerateNutritionPlanCommandHandler(
         var userMessage = $"Generate a {durationDays}-day {request.Diet} meal plan for {request.Calories} daily calories focused on {request.Goal}. Use a monthly budget of {request.MonthlyBudget?.ToString("0.##") ?? "unspecified"} {request.CurrencyCode ?? "local currency"}, assume the user is in {locationLine}, and only rely on these available resources: {resourcesLine}.";
 
         var provider = llmProviderFactory.GetProvider(providerName);
-        var rawJson = await provider.ChatCompletionAsync(apiKey, preferredModel, systemPrompt, userMessage, forceJson: true, ct: ct);
+        var rawJson = await provider.ChatCompletionAsync(apiKey, preferredModel, systemPrompt, userMessage, forceJson: true, maxTokens: 6000, ct: ct);
 
         return new GenerateNutritionPlanResponse(rawJson);
     }

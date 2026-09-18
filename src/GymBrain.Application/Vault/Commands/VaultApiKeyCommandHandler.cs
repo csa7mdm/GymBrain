@@ -17,42 +17,18 @@ public sealed class VaultApiKeyCommandHandler(
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct)
             ?? throw new InvalidOperationException("User not found.");
 
-        var model = request.Model ?? LlmModelCatalog.GetDefaultModel(request.Provider);
-        
-        // --- Pre-flight Health Check and Automatic Fallback ---
         var provider = llmProviderFactory.GetProvider(request.Provider);
-        var modelsToTry = new List<string> { model };
-        
-        // Add other free models from catalog as candidates if this is a free-tier test
-        var otherFreeModels = LlmModelCatalog.GetByProvider(request.Provider)
-            .Where(m => m.IsFree && m.ModelId != model)
-            .Select(m => m.ModelId);
-        modelsToTry.AddRange(otherFreeModels);
-
-        string workingModel = string.Empty;
-        foreach (var m in modelsToTry)
-        {
-            if (await provider.CheckHealthAsync(request.ApiKey, m, ct))
-            {
-                workingModel = m;
-                break;
-            }
-        }
-
-        if (string.IsNullOrEmpty(workingModel))
-        {
-            throw new InvalidOperationException(
-                $"Authentication failed or all tested models are currently unavailable for {request.Provider}. Please check your API key.");
-        }
+        var available = (await provider.GetAvailableModelsAsync(request.ApiKey, ct)).ToArray();
+        var workingModel = request.Model ?? available.FirstOrDefault();
+        if (workingModel == null || !available.Contains(workingModel, StringComparer.Ordinal))
+            throw new InvalidOperationException("This model is no longer available for this provider. Refresh the model list and choose again.");
 
         var encrypted = vaultService.Encrypt(request.ApiKey);
         user.VaultApiKey(encrypted, request.Provider, workingModel);
 
         await db.SaveChangesAsync(ct);
         
-        var message = workingModel == model 
-            ? $"API key verified and vaulted for {request.Provider} ({workingModel})."
-            : $"API key verified! '{model}' was unavailable, so we switched you to '{workingModel}'.";
+        var message = $"Key verified and saved for {request.Provider} ({workingModel}). Model access and provider quotas still apply when generating.";
 
         return new VaultApiKeyResponse(message);
     }

@@ -105,6 +105,10 @@ export function getLlmModels() {
   return request<ILlmModel[]>('/api/auth/models');
 }
 
+export function discoverLlmModels(provider: string, apiKey: string) {
+  return request<ILlmModel[]>('/api/auth/models/discover', { method: 'POST', body: JSON.stringify({ provider, apiKey }) });
+}
+
 export function vaultApiKey(provider: string, apiKey: string, model?: string) {
   return request<VaultResponse>('/api/auth/vault-key', {
     method: 'POST',
@@ -185,7 +189,7 @@ export interface NutritionResponse {
 export function generateNutritionPlan(diet: string, calories: number, goal: string) {
   return request<NutritionResponse>('/api/nutrition/generate', {
     method: 'POST',
-    body: JSON.stringify({ diet, calories, goal }),
+    body: JSON.stringify({ diet, calories, goal, durationDays: 1 }),
   });
 }
 

@@ -81,23 +81,8 @@ public sealed class OpenRouterProvider(HttpClient httpClient) : ILlmProvider
             .GetString() ?? throw new InvalidOperationException("OpenRouter returned empty content.");
     }
 
-    public async Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://openrouter.ai/api/v1/models");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-        var response = await httpClient.SendAsync(request, ct);
-        if (!response.IsSuccessStatusCode) return Enumerable.Empty<string>();
-
-        var json = await response.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(json);
-        
-        return doc.RootElement.GetProperty("data")
-            .EnumerateArray()
-            .Select(m => m.GetProperty("id").GetString()!)
-            .Where(id => id.EndsWith(":free"))
-            .ToList(); // Materialize before JsonDocument is disposed
-    }
+    public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)
+        => LiveModelDiscovery.FetchAsync(httpClient, "openrouter", apiKey, ct);
 
     public async Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default)
     {

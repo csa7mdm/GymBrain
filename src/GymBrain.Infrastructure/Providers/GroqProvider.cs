@@ -70,9 +70,7 @@ public sealed class GroqProvider(HttpClient httpClient) : ILlmProvider
     }
 
     public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)
-    {
-        return Task.FromResult(LlmModelCatalog.GetByProvider("groq").Select(m => m.ModelId));
-    }
+        => LiveModelDiscovery.FetchAsync(httpClient, "groq", apiKey, ct);
 
     public async Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default)
     {

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { vaultApiKey, getLlmModels, saveProfile } from '../services/api';
+import { useState } from 'react';
+import { vaultApiKey, discoverLlmModels, saveProfile } from '../services/api';
 import type { ILlmModel } from '../services/api';
 
 interface OnboardingProps {
@@ -55,15 +55,21 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
     // Step 3
     const [useFree, setUseFree] = useState(true);
     const [provider, setProvider] = useState('groq');
-    const [model, setModel] = useState('llama-3.3-70b-versatile');
+    const [model, setModel] = useState('');
     const [apiKey, setApiKey] = useState('');
     const [models, setModels] = useState<ILlmModel[]>([]);
     const [vaultLoading, setVaultLoading] = useState(false);
     const [vaultError, setVaultError] = useState('');
 
-    useEffect(() => {
-        getLlmModels().then(r => { if (r.data) setModels(r.data); });
-    }, []);
+    const [loadingModels, setLoadingModels] = useState(false);
+    const loadModels = async () => {
+        setLoadingModels(true); setVaultError(''); setModels([]); setModel('');
+        const result = await discoverLlmModels(provider, apiKey.trim());
+        setLoadingModels(false);
+        if (result.error) { setVaultError(result.error); return; }
+        setModels(result.data || []); setModel(result.data?.[0]?.modelId || '');
+        if (!result.data?.length) setVaultError('No compatible models are currently available.');
+    };
 
     const toggleChip = (list: string[], item: string, setter: (v: string[]) => void) => {
         setter(list.includes(item) ? list.filter(x => x !== item) : [...list, item]);
@@ -105,7 +111,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
     };
 
     const canContinue1 = name.trim().length > 0;
-    const canFinish = useFree || apiKey.trim().length > 0;
+    const canFinish = useFree || (apiKey.trim().length > 0 && !!model && !loadingModels);
 
     const stepPercent = ((step - 1) / 2) * 100;
 
@@ -314,14 +320,22 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
                                 <div style={{ marginTop: 12 }} onClick={e => e.stopPropagation()}>
                                     <div className="m3-field">
                                         <label className="m3-field__label" htmlFor="ob-provider">Provider</label>
-                                        <select id="ob-provider" className="m3-select" value={provider}
-                                            onChange={e => { setProvider(e.target.value); setModel(''); }}>
+                                        <select id="ob-provider" disabled={loadingModels || vaultLoading} className="m3-select" value={provider}
+                                            onChange={e => { setProvider(e.target.value); setModel(''); setModels([]); setApiKey(''); }}>
                                             <option value="groq">Groq (Free)</option>
                                             <option value="openrouter">OpenRouter</option>
                                             <option value="openai">OpenAI</option>
 
                                         </select>
                                     </div>
+                                    <div className="m3-field">
+                                        <label className="m3-field__label" htmlFor="ob-key">API Key</label>
+                                        <input id="ob-key" disabled={loadingModels || vaultLoading} className="m3-input" type="password"
+                                            placeholder="sk-..." value={apiKey}
+                                            onChange={e => { setApiKey(e.target.value); setModels([]); setModel(''); }} />
+                                    </div>
+                                    <p className="md-body-sm text-muted">Load models after entering your key. It is sent only to GymBrain and the selected provider for verification.</p>
+                                    <button type="button" className="m3-btn m3-btn--outlined" disabled={loadingModels || apiKey.trim().length < 10} onClick={loadModels}>{loadingModels ? 'Loading models…' : 'Load latest models'}</button>
                                     <div className="m3-field">
                                         <label className="m3-field__label" htmlFor="ob-model">Model</label>
                                         <select id="ob-model" className="m3-select" value={model}
@@ -331,12 +345,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
                                             ))}
                                         </select>
                                     </div>
-                                    <div className="m3-field">
-                                        <label className="m3-field__label" htmlFor="ob-key">API Key</label>
-                                        <input id="ob-key" className="m3-input" type="password"
-                                            placeholder="sk-..." value={apiKey}
-                                            onChange={e => setApiKey(e.target.value)} />
-                                    </div>
+
                                 </div>
                             )}
                         </div>

@@ -61,7 +61,10 @@ test('BYO onboarding never persists the provider key, including after retry', as
     json: attempts === 1 ? { detail: 'Save unavailable' } : { message: 'Saved' } }));
   await reachFinalSetup(page);
   await page.getByText('BYO API Key', { exact: true }).click();
+  await page.route('**/api/auth/models/discover', route => route.fulfill({ json: [{ provider: 'groq', modelId: 'fresh-model', displayName: 'Fresh model' }] }));
   await page.getByLabel('API Key', { exact: true }).fill('test-provider-secret');
+  await page.getByRole('button', { name: 'Load latest models' }).click();
+  await expect(page.getByLabel('Model', { exact: true })).toHaveValue('fresh-model');
   await page.getByRole('button', { name: /Let's Go/ }).click();
   await expect(page.getByText('Save unavailable')).toBeVisible();
   await expect(page.getByRole('button', { name: /Let's Go/ })).toBeEnabled();
@@ -224,4 +227,51 @@ test('legacy workouts are not counted as zero-result completed sessions', async 
   await page.getByRole('button', { name: /History/ }).click();
   await page.locator('summary').first().click();
   await expect(page.getByText('Saved with an earlier version. Actual set results were not recorded.')).toBeVisible();
+});
+
+test('Vault discovers live models, clears stale choices and keeps provider keys out of storage', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  let calls = 0;
+  await page.route('**/api/auth/models/discover', route => {
+    calls++;
+    return route.fulfill(calls === 1 ? { status: 400, json: { detail: 'Provider is rate limiting requests. Retry later.' } } :
+      { json: [{ provider: 'openrouter', modelId: 'new/model:free', displayName: 'New model', isFree: true }] });
+  });
+  await page.route('**/api/auth/vault-key', route => {
+    expect(route.request().postDataJSON().model).toBe('new/model:free');
+    return route.fulfill({ json: { message: 'Connection saved' } });
+  });
+  await page.goto('/'); await page.getByRole('button', { name: /Vault/ }).click();
+  await page.getByLabel('API key', { exact: true }).fill('test-key-not-real');
+  await page.getByRole('button', { name: 'Load latest models' }).click();
+  await expect(page.getByRole('alert')).toContainText('rate limiting');
+  await expect(page.getByRole('button', { name: 'Save connection' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Load latest models' }).click();
+  await expect(page.getByLabel('Model', { exact: true })).toHaveValue('new/model:free');
+  await page.getByRole('button', { name: 'Save connection' }).click();
+  await expect(page.getByText('Connection saved', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('API key', { exact: true })).toHaveValue('');
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain('test-key-not-real');
+});
+
+test('meal plan shows one recipe at a time with ingredients and cooking steps', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  await page.route('**/api/nutrition/generate', route => route.fulfill({ json: { payloadJson: JSON.stringify({ days: [
+    { day_number: 1, meals: [{ name: 'Oat bowl', type: 'Breakfast', ingredients: [{ name: 'Oats', quantity: '50 g' }], steps: ['Simmer oats in water.'], servings: 1, prep_minutes: 2, cook_minutes: 5 }] },
+    { day_number: 2, meals: [{ name: 'Lentil soup', type: 'Lunch', ingredients: [{ name: 'Lentils', quantity: '100 g' }], steps: ['Rinse lentils.', 'Simmer until tender.'] }] },
+  ] }) } }));
+  await page.goto('/'); await page.getByRole('button', { name: /Profile/ }).click();
+  await page.getByRole('button', { name: /Generate AI Meal Plan/ }).click();
+  await expect(page.getByRole('heading', { name: 'Oat bowl' })).toBeVisible();
+  await expect(page.getByText('50 g', { exact: true })).toBeVisible();
+  await expect(page.getByText('Simmer oats in water.')).toBeVisible();
+  await page.getByRole('article').screenshot({ path: test.info().outputPath('meal-card.png') });
+  await expect(page.getByRole('heading', { name: 'Lentil soup' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Previous meal' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Next meal' }).click();
+  await expect(page.getByRole('heading', { name: 'Lentil soup' })).toBeVisible();
+  await expect(page.getByText('Day 2 · Lunch')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next meal' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Previous meal' }).click();
+  await expect(page.getByRole('heading', { name: 'Oat bowl' })).toBeVisible();
 });
