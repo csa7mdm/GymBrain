@@ -14,7 +14,7 @@ public sealed class LoginUserCommandHandler(
     public async Task<Result<LoginUserResponse>> Handle(LoginUserCommand request, CancellationToken ct)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email, ct);
-        if (user == null)
+        if (user == null || user.FirebaseUid != null)
             return Result.Failure<LoginUserResponse>(Error.Unauthorized("Invalid credentials."));
 
         if (!passwordHasher.Verify(request.Password, user.PasswordHash))

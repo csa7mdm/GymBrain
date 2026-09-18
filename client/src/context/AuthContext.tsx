@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { firebaseSignOut } from '../services/firebase';
 import { AuthContext, type User } from './auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        void firebaseSignOut().catch(() => {});
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('gymbrain_')) {
                 localStorage.removeItem(key);

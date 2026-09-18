@@ -37,6 +37,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+    options.AddPolicy("auth", context => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
 
@@ -125,7 +133,7 @@ using (var scope = app.Services.CreateScope())
                 GymBrain.Domain.Enums.ExperienceLevel.Beginner);
             db.Users.Add(adminUser);
         }
-        else
+        else if (adminUser.FirebaseUid == null)
         {
             adminUser.UpdatePassword(hash);
         }
@@ -147,6 +155,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = Dat
     .WithTags("Health");
 
 // Feature endpoints
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapAuthEndpoints();

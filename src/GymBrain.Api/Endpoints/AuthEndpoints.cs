@@ -11,7 +11,19 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/auth").WithTags("Auth");
+        var group = app.MapGroup("/api/auth").WithTags("Auth").RequireRateLimiting("auth");
+
+        if (!string.IsNullOrWhiteSpace(app.Configuration["Firebase:ProjectId"]))
+            group.MapPost("/firebase", async (FirebaseSignInRequest request, ClaimsPrincipal principal,
+                GymBrain.Infrastructure.Persistence.GymBrainDbContext db,
+                GymBrain.Application.Common.Interfaces.IPasswordHasher hasher, CancellationToken ct) =>
+            {
+                if (request.LegacyPassword?.Length > 256) return Results.BadRequest(new { detail = "Invalid password." });
+                var user = await GymBrain.Infrastructure.Security.FirebaseIdentity.ResolveAsync(db, principal, true, ct, request.LegacyPassword, hasher);
+                return user == null
+                    ? Results.Json(new { detail = "To link an existing account, enter its current GymBrain password. Linking switches this account to Firebase sign-in.", code = "account_link_required" }, statusCode: 409)
+                    : Results.Ok(new { userId = user.Id, email = user.Email });
+            }).RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute { AuthenticationSchemes = "Firebase" });
 
         group.MapPost("/register", async (RegisterUserCommand command, ISender sender) =>
         {
@@ -53,3 +65,4 @@ public static class AuthEndpoints
 }
 
 public record VaultApiKeyRequest(string Provider, string ApiKey, string? Model = null);
+public record FirebaseSignInRequest(string? LegacyPassword = null);

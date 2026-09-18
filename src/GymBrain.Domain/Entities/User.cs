@@ -17,6 +17,15 @@ public class User : BaseEntity
     }
 
     public string Email { get; private set; } = null!;
+    public string? FirebaseUid { get; private set; }
+    public void LinkFirebase(string uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid) || uid.Length > 128) throw new ArgumentException("Invalid identity.");
+        if (FirebaseUid != null && FirebaseUid != uid) throw new InvalidOperationException("Account already linked.");
+        FirebaseUid = uid;
+        // Retain the legacy hash for a reversible rollout; linked accounts use Firebase sign-in.
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
     public string PasswordHash { get; private set; } = null!;
     public string? EncryptedApiKey { get; private set; }
     public string? LlmProvider { get; private set; }

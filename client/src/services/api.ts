@@ -1,8 +1,11 @@
+import { firebaseToken, firebaseSignOut } from './firebase';
+
 export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface ApiResponse<T> {
   data?: T;
   error?: string;
+  code?: string;
 }
 
 async function request<T>(
@@ -17,6 +20,9 @@ async function request<T>(
   };
 
   try {
+    if (localStorage.getItem('gymbrain_auth_source') === 'firebase') {
+      headers.Authorization = `Bearer ${await firebaseToken()}`;
+    }
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       signal: options.signal ?? AbortSignal.timeout(45000),
@@ -26,24 +32,27 @@ async function request<T>(
     if (!res.ok) {
       const text = await res.text();
 
-      if (res.status === 401 && !endpoint.includes('/auth/login')) {
+      if (res.status === 401 && !endpoint.startsWith('/api/auth/')) {
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('gymbrain_')) {
             localStorage.removeItem(key);
           }
         });
+        await firebaseSignOut().catch(() => {});
         window.location.href = '/';
         return { error: 'Session expired. Please sign in again.' };
       }
 
       let errorMessage: string;
+      let code: string | undefined;
       try {
         const parsed = JSON.parse(text);
+        code = parsed.code;
         errorMessage = parsed.detail || parsed.title || parsed.message || text;
       } catch {
         errorMessage = text || `Request failed (${res.status})`;
       }
-      return { error: errorMessage };
+      return { error: errorMessage, code };
     }
 
     const data = await res.json();
@@ -56,6 +65,13 @@ async function request<T>(
 export interface AuthResponse {
   userId: string;
   token: string;
+}
+
+export function connectFirebase(token: string, legacyPassword?: string) {
+  return request<{ userId: string; email: string }>('/api/auth/firebase', {
+    method: 'POST', headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ legacyPassword }),
+  });
 }
 
 export function register(email: string, password: string, tonePersona?: string) {
@@ -156,9 +172,8 @@ export function getSubstitute(exerciseId: string) {
 export function trackEvent(eventName: string, metadata?: object): void {
   const token = localStorage.getItem('gymbrain_token');
   if (!token) return;
-  fetch(`${API_BASE}/api/events`, {
+  void request('/api/events', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ eventName, metadata }),
   }).catch(() => { });
 }

@@ -31,7 +31,7 @@ Old clients without session IDs remain compatible during rollout but are not dup
 ## Remaining launch gates
 
 - Decide invite-only pilot versus open signup and configure admission accordingly.
-- Complete password recovery with a verified sender/email service, account deletion/export, authentication abuse protection, and session lifecycle handling.
+- Firebase Google/email sign-in and password recovery are implemented; see FIREBASE_AUTH.md for rollout and remaining live checks. Unlinked legacy recovery, account deletion/export, production abuse controls and immediate global session revocation remain open.
 - Persist the remaining personal profile fields; remove or clearly defer incomplete nutrition/plan experiences.
 - Verify the core journey on deployed PostgreSQL/Redis with a controlled provider and a budgeted real-provider smoke test.
 - Have qualified fitness reviewers review representative routines, equipment metadata, restrictions, and advertised claims. The current keyword map is not comprehensive.
