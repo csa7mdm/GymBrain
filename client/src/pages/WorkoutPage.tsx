@@ -483,7 +483,7 @@ export default function WorkoutPage() {
         <div className="app-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
             <div style={{ fontSize: '3rem' }}>💪</div>
             <h2 className="md-headline-sm" style={{ color: 'var(--md-primary)', textAlign: 'center' }}>Resume Your Workout?</h2>
-            <p className="md-body-sm text-muted" style={{ textAlign: 'center' }}>You have an in-progress workout from this session.</p>
+            <p className="md-body-sm text-muted" style={{ textAlign: 'center' }}>This unfinished workout is saved only in this browser tab. Closing the tab may lose it.</p>
             <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg" style={{ maxWidth: 320 }} onClick={handleResume}>▶ Resume Workout</button>
             <button className="m3-btn m3-btn--outlined" style={{ maxWidth: 320 }} onClick={() => { sessionStorage.removeItem(draftKey); setShowResume(false); }}>Start Fresh</button>
         </div>
@@ -559,6 +559,7 @@ export default function WorkoutPage() {
                 <div className="workout-summary-card__stat"><span className="numeric">{totalSets}</span><span>Total Sets</span></div>
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.reduce((s, c) => s + ((c.payload.sets || 3) as number) * ((c.payload.reps || 10) as number), 0)}</span><span>Total Reps</span></div>
             </div></div>)}
+            {!saved && <p className="md-body-sm text-muted">Unfinished workouts stay in this browser tab and may be lost when it closes. Connect to the internet and choose Finish &amp; Save to keep this workout in your account.</p>}
             {saveError && <div role="alert" className="m3-error-banner">Not confirmed saved: {saveError} Your session is retained in this browser tab. Retry to confirm it.</div>}
             {saved && <p role="status">Saved to your account. View it in History.</p>}
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>

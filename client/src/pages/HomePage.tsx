@@ -25,9 +25,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const workouts = (history?.items || []).map(item => {
     const completion = readCompletion(item);
     const sets = completion?.exercises.flatMap(ex => ex.sets) || [];
-    return { id: item.id, date: item.completedAtUtc, focus: completion?.focus || 'Workout',
+    return { hasResults: completion !== null, id: item.id, date: item.completedAtUtc, focus: completion?.focus || 'Workout',
       exercises: completion?.exercises || [], completedSets: sets.filter(set => set.completed).length, totalSets: sets.length };
   });
+  const recordedWorkouts = workouts.filter(workout => workout.hasResults);
+  const missingResults = workouts.length - recordedWorkouts.length;
   const name = profile.name || 'Athlete';
 
   // Calculate stats
@@ -84,7 +86,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <span className="home-stat__label">Workouts</span>
         </div>
         <div className="home-stat">
-          <span className="home-stat__value">{totalExercises}</span>
+          <span className="home-stat__value">{missingResults ? '—' : totalExercises}</span>
           <span className="home-stat__label">Recent exercises</span>
         </div>
         <div className="home-stat">
@@ -135,12 +137,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         <div className="home-quote__author">— {quote.author}</div>
       </div>
 
-      {/* AI Analytics: Health Pillars */}
-      {workouts.length > 0 && (
+      {/* Summaries only include sessions with recorded results. */}
+      {recordedWorkouts.length > 0 && (
         <>
           <div className="section-header mt-lg" style={{ marginBottom: 16 }}>
             <span className="section-header__icon">🧬</span>
-            <span className="section-header__title">Health Pillars</span>
+            <span className="section-header__title">Recent Recorded Results</span>
           </div>
           <div className="m3-card mb-lg">
             <div className="md-body-sm text-muted mb-sm">Consistency (Streak)</div>
@@ -150,16 +152,18 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
             <div className="md-body-sm text-muted mb-sm">Recent Completion Rate</div>
             <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden', marginBottom: 16 }}>
-              <div style={{ height: '100%', width: `${totalWorkouts ? Math.round((workouts.reduce((s, w) => s + w.completedSets, 0) / Math.max(workouts.reduce((s, w) => s + w.totalSets, 0), 1)) * 100) : 0}%`, background: 'var(--md-tertiary)' }} />
+              <div style={{ height: '100%', width: `${totalWorkouts ? Math.round((recordedWorkouts.reduce((s, w) => s + w.completedSets, 0) / Math.max(recordedWorkouts.reduce((s, w) => s + w.totalSets, 0), 1)) * 100) : 0}%`, background: 'var(--md-tertiary)' }} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--md-on-surface-variant)' }}>
-              <span>Recent Sets Completed: {workouts.reduce((s, w) => s + w.completedSets, 0)}</span>
-              <span>Avg Sets/Workout: {totalWorkouts ? Math.round(workouts.reduce((s, w) => s + w.completedSets, 0) / workouts.length) : 0}</span>
+              <span>Recent Sets Completed: {recordedWorkouts.reduce((s, w) => s + w.completedSets, 0)}</span>
+              <span>Avg Sets/Workout: {totalWorkouts ? Math.round(recordedWorkouts.reduce((s, w) => s + w.completedSets, 0) / recordedWorkouts.length) : 0}</span>
             </div>
           </div>
         </>
       )}
+
+      {missingResults > 0 && <p className="md-body-sm text-muted">Some older workouts have no recorded set results. They count toward your workout total but are excluded from set statistics.</p>}
 
       {/* Recent Workouts */}
       {workouts.length > 0 && (
@@ -174,7 +178,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <div className="saved-workout__info">
                 <div className="saved-workout__name">{w.focus}</div>
                 <div className="saved-workout__meta">
-                  {w.exercises?.length || 0} exercises · {w.completedSets}/{w.totalSets} sets
+                  {w.hasResults
+                    ? `${w.exercises.length} exercises · ${w.completedSets}/${w.totalSets} sets`
+                    : 'Older workout · set results unavailable'}
                 </div>
               </div>
             </div>

@@ -204,3 +204,24 @@ test('failed profile load blocks editing and retry restores server preferences',
   await page.getByRole('button', { name: /Save Profile/ }).click();
   await expect.poll(() => writes).toBe(1);
 });
+
+test('legacy workouts are not counted as zero-result completed sessions', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  await page.route('**/api/workout/history?*', route => route.fulfill({ json: {
+    items: [
+      { id: 'legacy', completedAtUtc: '2026-09-01T12:00:00Z', payloadJson: '{}' },
+      { id: 'recorded', completedAtUtc: '2026-09-02T12:00:00Z', payloadJson: JSON.stringify({
+        schemaVersion: 1, focus: 'Strength', exercises: [{ name: 'Squat', sets: [
+          { completed: true, reps: 8, weightKg: 20 }, { completed: true, reps: 8, weightKg: 20 },
+        ] }],
+      }) },
+    ], total: 2, hasMore: false,
+  } }));
+  await page.goto('/');
+  await expect(page.getByText('Older workout · set results unavailable', { exact: true })).toBeVisible();
+  await expect(page.getByText('Avg Sets/Workout: 2', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 exercises · 2/2 sets', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /History/ }).click();
+  await page.locator('summary').first().click();
+  await expect(page.getByText('Saved with an earlier version. Actual set results were not recorded.')).toBeVisible();
+});
