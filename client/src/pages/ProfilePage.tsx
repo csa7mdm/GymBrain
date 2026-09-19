@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [diet, setDiet] = useState('Standard');
   const [calories, setCalories] = useState(2500);
   const [saved, setSaved] = useState(false);
+  const [needsPersonalSync, setNeedsPersonalSync] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -60,19 +61,22 @@ export default function ProfilePage() {
         setInjuries(res.data.injuries || 'None');
         try {
           const eq = JSON.parse(res.data.equipmentJson || '[]');
-          setEquipment(eq);
+          setEquipment(Array.isArray(eq) ? eq.filter(item => typeof item === 'string') : []);
         } catch {
           setEquipment(['Bodyweight']);
         }
       }
 
-      // Load other non-persisted fields from localstorage for now
-      const p = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
-      if (p.name) setName(p.name);
-      if (p.age) setAge(p.age);
-      if (p.height) setHeight(p.height);
-      if (p.weight) setWeight(p.weight);
-      if (p.focusAreas) setFocusAreas(p.focusAreas);
+      // Server values win; legacy browser values migrate only on an explicit save.
+      let local: Record<string, unknown> = {};
+      try { const cached = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}'); if (cached && typeof cached === 'object' && !Array.isArray(cached)) local = cached; } catch { /* optional legacy cache */ }
+      setNeedsPersonalSync(!res.data.personalProfile);
+      const p = res.data.personalProfile || local;
+      if (typeof p.name === 'string') setName(p.name);
+      if (typeof p.age === 'number' && Number.isFinite(p.age)) setAge(p.age);
+      if (typeof p.height === 'number' && Number.isFinite(p.height)) setHeight(p.height);
+      if (typeof p.weight === 'number' && Number.isFinite(p.weight)) setWeight(p.weight);
+      if (Array.isArray(p.focusAreas)) setFocusAreas(p.focusAreas.filter((area): area is string => typeof area === 'string'));
 
       setLoadingProfile(false);
     };
@@ -91,21 +95,24 @@ export default function ProfilePage() {
       injuries,
       equipmentJson: JSON.stringify(equipment),
       experienceLevel: level,
+      personalProfile: { name: name.trim() || 'Athlete', age, height, weight, focusAreas },
     };
 
     const res = await saveProfile(profile);
     if (!res.error) {
       setSaved(true);
+      setNeedsPersonalSync(false);
       setTimeout(() => setSaved(false), 2000);
     } else {
       setProfileError('Failed to save profile: ' + res.error);
       return;
     }
 
-    // Save metadata to localstorage
-    const existing = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+    // Refresh the optional browser display cache after the server confirms the save.
+    let existing = {};
+    try { existing = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}') || {}; } catch { /* rebuild optional cache */ }
     const updated = { ...existing, name, age, height, weight, goal, level, daysPerWeek, equipment, focusAreas, diet, calories };
-    localStorage.setItem('gymbrain_profile', JSON.stringify(updated));
+    try { localStorage.setItem('gymbrain_profile', JSON.stringify(updated)); } catch { /* server save already succeeded */ }
   };
 
   const [generatingNutrition, setGeneratingNutrition] = useState(false);
@@ -171,6 +178,8 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {needsPersonalSync && <p className="md-body-sm text-muted">Review your personal details and choose Save Profile to make them available on your other devices.</p>}
+
       {/* Body Data */}
       <div className="profile-section">
         <div className="profile-section__title">📏 Body Data</div>
@@ -184,21 +193,21 @@ export default function ProfilePage() {
               <span className="m3-slider-group__label">Age</span>
               <span className="m3-slider-group__value">{age} years</span>
             </div>
-            <input type="range" className="m3-slider" min={14} max={80} value={age} onChange={e => setAge(+e.target.value)} />
+            <input type="range" className="m3-slider" min={14} max={100} value={age} onChange={e => setAge(+e.target.value)} />
           </div>
           <div className="m3-slider-group">
             <div className="m3-slider-group__header">
               <span className="m3-slider-group__label">Height</span>
               <span className="m3-slider-group__value">{height} cm</span>
             </div>
-            <input type="range" className="m3-slider" min={140} max={220} value={height} onChange={e => setHeight(+e.target.value)} />
+            <input type="range" className="m3-slider" min={100} max={250} step={0.5} value={height} onChange={e => setHeight(+e.target.value)} />
           </div>
           <div className="m3-slider-group">
             <div className="m3-slider-group__header">
               <span className="m3-slider-group__label">Weight</span>
               <span className="m3-slider-group__value">{weight} kg</span>
             </div>
-            <input type="range" className="m3-slider" min={35} max={200} value={weight} onChange={e => setWeight(+e.target.value)} />
+            <input type="range" className="m3-slider" min={25} max={350} step={0.5} value={weight} onChange={e => setWeight(+e.target.value)} />
           </div>
           {bmi && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 4 }}>

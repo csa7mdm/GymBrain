@@ -197,7 +197,12 @@ export function healthCheck() {
   return request<string>('/');
 }
 
+export interface PersonalProfile {
+  name: string; age: number; height: number; weight: number; focusAreas: string[];
+}
+
 export interface SaveProfileRequest {
+  personalProfile?: PersonalProfile;
   goal: string;
   equipmentJson: string;
   injuries: string;
@@ -208,6 +213,7 @@ export interface SaveProfileRequest {
 }
 
 export interface ProfileData {
+  personalProfile?: PersonalProfile | null;
   goal: string;
   equipmentJson: string;
   injuries: string;

@@ -22,7 +22,8 @@ public static class ProfileEndpoints
                 request.DaysPerWeek,
                 request.DietaryPreference,
                 request.DailyCalories,
-                request.ExperienceLevel);
+                request.ExperienceLevel,
+                request.PersonalProfile);
             var result = await mediator.Send(command);
             return Results.Ok(result);
         });
@@ -45,4 +46,5 @@ public record SaveProfileRequest(
     int DaysPerWeek,
     string? DietaryPreference,
     int DailyCalories,
-    string ExperienceLevel);
+    string ExperienceLevel,
+    PersonalProfile? PersonalProfile = null);

@@ -91,6 +91,7 @@ export default function OnboardingPage({ onComplete }: OnboardingProps) {
                 goal, equipmentJson: JSON.stringify(equipment), injuries,
                 daysPerWeek, dietaryPreference: 'none', dailyCalories: 2000,
                 experienceLevel: level,
+                personalProfile: { name: name.trim() || 'Athlete', age, height, weight, focusAreas },
             });
             if (result.error) { setVaultError(result.error); return; }
 

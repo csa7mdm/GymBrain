@@ -275,3 +275,35 @@ test('meal plan shows one recipe at a time with ingredients and cooking steps', 
   await page.getByRole('button', { name: 'Previous meal' }).click();
   await expect(page.getByRole('heading', { name: 'Oat bowl' })).toBeVisible();
 });
+
+test('personal profile comes from the server on a fresh browser and ignores stale local values', async ({ page, browser }) => {
+  const personalProfile = { name: 'Server Athlete', age: 34, height: 180, weight: 80, focusAreas: ['Core'] };
+  let saved = personalProfile;
+  await signInLocally(page, { name: 'Stale local name', age: 20, height: 150, weight: 50, focusAreas: ['Arms'] });
+  await page.route('**/api/profile', route => route.fulfill({ json: { ...serverProfile, personalProfile: saved } }));
+  await page.route('**/api/profile/save', route => {
+    saved = route.request().postDataJSON().personalProfile;
+    return route.fulfill({ json: { message: 'Saved' } });
+  });
+  await page.goto('/');
+  await expect(page.getByText('Server Athlete 👋', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Profile/ }).click();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Server Athlete');
+  await expect(page.getByRole('button', { name: '✓ Core', exact: true })).toHaveClass(/selected/);
+  await page.getByLabel('Name', { exact: true }).fill('Updated Athlete');
+  await page.getByRole('button', { name: /Save Profile/ }).click();
+  await expect.poll(() => saved.name).toBe('Updated Athlete');
+  expect(saved).toEqual({ ...personalProfile, name: 'Updated Athlete' });
+  const context = await browser.newContext();
+  const fresh = await context.newPage();
+  await signInLocally(fresh);
+  await fresh.route('**/api/profile', route => route.fulfill({ json: { ...serverProfile, personalProfile: saved } }));
+  await fresh.goto('http://127.0.0.1:5178/');
+  await expect(fresh.getByText('Updated Athlete 👋', { exact: true })).toBeVisible();
+  await fresh.getByRole('button', { name: /Profile/ }).click();
+  await expect(fresh.getByLabel('Name', { exact: true })).toHaveValue('Updated Athlete');
+  await expect(fresh.getByText('34 years', { exact: true })).toBeVisible();
+  await expect(fresh.getByText('180 cm', { exact: true })).toBeVisible();
+  await expect(fresh.getByText('80 kg', { exact: true })).toBeVisible();
+  await context.close();
+});

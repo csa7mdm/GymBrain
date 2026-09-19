@@ -7,7 +7,7 @@ Status: core workout reliability candidate. Public launch is not approved by the
 - Completed workouts load from authenticated server history, including on another browser. The History tab replaces the nonpersistent plan builder.
 - New clients create one session ID per workout. Completion stores actual per-set reps, weight, and completion state. First successful save is immutable; retries do not add records or completion counts. Database insert/counter update is atomic, with optimistic concurrency retries for simultaneous sessions.
 - Failed/ambiguous saves keep the exact attempted payload for retry. Progress and IDs survive reloads in the same browser tab, scoped by account. Drafts are not synchronized between devices; closing the tab can discard an unfinished draft.
-- Account startup reads saved training preferences from the server. A returning account with a goal skips onboarding even without local storage. Display name, age, height, weight, and focus-area metadata still need server persistence.
+- Account startup reads saved training preferences from the server. A returning account with a goal skips onboarding even without local storage. Display name, age, height, weight and focus areas are stored on the user record. Older browser values migrate only when the user explicitly saves their profile. Older clients that omit personalProfile preserve existing server values.
 - Generation reads current profile level. Cache identity includes focus, level, goal, equipment, restrictions, tone, progression count, and provider configuration.
 - Generation and substitutions enforce equipment and existing injury keyword exclusions against catalog IDs. Unknown exercise IDs and malformed component/numeric shapes are rejected; displayed exercise names come from the catalog. This is not clinical validation of exercise programming or comprehensive injury support.
 - Workout and substitution limits are enforced once per request, with separate hourly-limit messages and Retry-After. Cache hits count toward the hourly allowance; managed uncached generation attempts consume the daily allowance, including failed attempts. Generation times out after 40 seconds; browser requests time out after 45 seconds.
@@ -22,7 +22,7 @@ Status: core workout reliability candidate. Public launch is not approved by the
 ## Rollout and compatibility
 
 1. Let backend CI, Docker build, and frontend checks pass for the exact commit.
-2. Deploy the API first and check Railway deployment status plus health. No new schema migration is needed; the existing session primary key implements idempotency, and the existing user counter is configured as an EF concurrency token.
+2. Deploy the API first and check Railway deployment status plus health. The PersistPersonalProfile migration adds five nullable user columns. Apply it before the frontend; it leaves existing values and records intact. Do not run its Down migration on production because it drops the new personal fields.
 3. Deploy the same commit's `firebase-client` build artifact to a Firebase preview, then prove the full journey against a staging API/database before promoting hosting. A frontend artifact upload is not a Firebase deployment.
 4. Record both deployed revisions. On rollback, coordinate frontend and backend versions: the old backend does not honor session IDs.
 
@@ -32,7 +32,7 @@ Old clients without session IDs remain compatible during rollout but are not dup
 
 - Decide invite-only pilot versus open signup and configure admission accordingly.
 - Firebase Google/email sign-in and password recovery are implemented; see FIREBASE_AUTH.md for rollout and remaining live checks. Unlinked legacy recovery, account deletion/export, production abuse controls and immediate global session revocation remain open.
-- Persist the remaining personal profile fields; remove or clearly defer incomplete nutrition/plan experiences.
+- Verify personal profile persistence on deployed PostgreSQL with an authorized test account. Nutrition cards are implemented; recipe quality and meal-plan persistence remain separate checks.
 - Verify the core journey on deployed PostgreSQL/Redis with a controlled provider and a budgeted real-provider smoke test.
 - Have qualified fitness reviewers review representative routines, equipment metadata, restrictions, and advertised claims. The current keyword map is not comprehensive.
 - Provide the product owner's privacy/terms/support details and data retention policy.

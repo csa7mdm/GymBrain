@@ -62,6 +62,27 @@ public class User : BaseEntity
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    public string? DisplayName { get; private set; }
+    public int? Age { get; private set; }
+    public double? HeightCm { get; private set; }
+    public double? WeightKg { get; private set; }
+    public string? FocusAreasJson { get; private set; }
+
+    public void UpdatePersonalProfile(string name, int age, double height, double weight, string[] focusAreas)
+    {
+        string[] allowedFocus = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Glutes", "Full Body"];
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 100 || name.Any(char.IsControl))
+            throw new ArgumentException("Enter a name between 1 and 100 characters.");
+        if (age < 14 || age > 100 || !double.IsFinite(height) || height < 100 || height > 250 ||
+            !double.IsFinite(weight) || weight < 25 || weight > 350)
+            throw new ArgumentException("Check your age, height and weight.");
+        if (focusAreas == null || focusAreas.Length > allowedFocus.Length || focusAreas.Any(f => !allowedFocus.Contains(f)))
+            throw new ArgumentException("Select valid focus areas.");
+        DisplayName = name.Trim(); Age = age; HeightCm = height; WeightKg = weight;
+        FocusAreasJson = System.Text.Json.JsonSerializer.Serialize(focusAreas.Distinct());
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     // === Profile & Usage persistence fields ===
     public int WorkoutsCompleted { get; private set; } = 0;
     public string? Goal { get; private set; }

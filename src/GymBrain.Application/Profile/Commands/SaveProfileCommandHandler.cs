@@ -16,6 +16,9 @@ public sealed class SaveProfileCommandHandler(IApplicationDbContext db)
         var level = Enum.TryParse<ExperienceLevel>(request.ExperienceLevel, ignoreCase: true, out var parsed)
             ? parsed : ExperienceLevel.Beginner;
 
+        if (request.PersonalProfile is { } personal)
+            user.UpdatePersonalProfile(personal.Name, personal.Age, personal.Height, personal.Weight, personal.FocusAreas);
+
         user.UpdateProfile(
             request.Goal,
             request.EquipmentJson,

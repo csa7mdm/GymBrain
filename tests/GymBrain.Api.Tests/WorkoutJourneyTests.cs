@@ -81,6 +81,60 @@ public sealed class WorkoutJourneyTests
         public override DateTimeOffset GetUtcNow() => new(2026, 9, 17, 23, 59, 30, TimeSpan.Zero);
     }
 
+    [Fact]
+    public async Task PersonalProfileSurvivesLoginAndLegacyWritesAndIsAccountScoped()
+    {
+        await using var factory = new Factory();
+        using var client = factory.CreateClient();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<GymBrainDbContext>().Database.EnsureCreatedAsync();
+        var account = await Read(await client.PostAsJsonAsync("/api/auth/register", new { email = "profile@example.invalid", password = "TestPassword123!" }));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", account.GetProperty("token").GetString());
+        var preferences = new { goal = "strength", equipmentJson = "[]", injuries = "", daysPerWeek = 3, dietaryPreference = "Standard", dailyCalories = 2000, experienceLevel = "Advanced" };
+        await Read(await client.PostAsJsonAsync("/api/profile/save", new {
+            preferences.goal, preferences.equipmentJson, preferences.injuries, preferences.daysPerWeek, preferences.dietaryPreference, preferences.dailyCalories, preferences.experienceLevel,
+            personalProfile = new { name = " Test Athlete ", age = 34, height = 180.5, weight = 82.5, focusAreas = new[] { "Back", "Core" } }
+        }));
+        // An older client cannot erase fields it does not know about.
+        await Read(await client.PostAsJsonAsync("/api/profile/save", preferences));
+        client.DefaultRequestHeaders.Authorization = null;
+        var login = await Read(await client.PostAsJsonAsync("/api/auth/login", new { email = "profile@example.invalid", password = "TestPassword123!" }));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.GetProperty("token").GetString());
+        var personal = (await Read(await client.GetAsync("/api/profile"))).GetProperty("personalProfile");
+        Assert.Equal("Test Athlete", personal.GetProperty("name").GetString());
+        Assert.Equal(34, personal.GetProperty("age").GetInt32());
+        Assert.Equal(180.5, personal.GetProperty("height").GetDouble());
+        Assert.Equal(82.5, personal.GetProperty("weight").GetDouble());
+        Assert.Equal(new[] { "Back", "Core" }, personal.GetProperty("focusAreas").EnumerateArray().Select(x => x.GetString()));
+        client.DefaultRequestHeaders.Authorization = null;
+        var second = await Read(await client.PostAsJsonAsync("/api/auth/register", new { email = "separate@example.invalid", password = "TestPassword123!" }));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", second.GetProperty("token").GetString());
+        Assert.Equal(JsonValueKind.Null, (await Read(await client.GetAsync("/api/profile"))).GetProperty("personalProfile").ValueKind);
+    }
+
+    [Theory]
+    [InlineData(0, 180, 80, "Core")]
+    [InlineData(30, 0, 80, "Core")]
+    [InlineData(30, 180, -1, "Core")]
+    [InlineData(30, 180, 80, "Invalid")]
+    public async Task InvalidPersonalProfileDoesNotSavePartialPreferences(int age, double height, double weight, string focus)
+    {
+        await using var factory = new Factory();
+        using var client = factory.CreateClient();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<GymBrainDbContext>().Database.EnsureCreatedAsync();
+        var account = await Read(await client.PostAsJsonAsync("/api/auth/register", new { email = "invalid@example.invalid", password = "TestPassword123!" }));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", account.GetProperty("token").GetString());
+        var response = await client.PostAsJsonAsync("/api/profile/save", new {
+            goal = "strength", daysPerWeek = 4, experienceLevel = "Advanced",
+            personalProfile = new { name = "Athlete", age, height, weight, focusAreas = new[] { focus } }
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var profile = await Read(await client.GetAsync("/api/profile"));
+        Assert.Equal(JsonValueKind.Null, profile.GetProperty("personalProfile").ValueKind);
+        Assert.Equal(JsonValueKind.Null, profile.GetProperty("goal").ValueKind);
+    }
+
     private static async Task<JsonElement> Read(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync();

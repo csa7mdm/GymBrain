@@ -48,12 +48,13 @@ function SignedInApp() {
       const profile = result.data;
       if (profile.goal) {
         let local = {};
-        try { local = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}'); } catch { /* refresh invalid cache */ }
+        try { const value = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}'); if (value && typeof value === 'object' && !Array.isArray(value)) local = value; } catch { /* refresh invalid cache */ }
         let equipment: string[] = [];
         try { const value = JSON.parse(profile.equipmentJson || '[]'); if (Array.isArray(value)) equipment = value.filter(x => typeof x === 'string'); } catch { /* empty equipment */ }
         const old = local as { name?: string };
         localStorage.setItem('gymbrain_profile', JSON.stringify({ ...local,
           name: old.name || user?.email.split('@')[0] || 'Athlete',
+          ...profile.personalProfile,
           goal: profile.goal, level: profile.experienceLevel, equipment, injuries: profile.injuries,
           daysPerWeek: profile.daysPerWeek, diet: profile.dietaryPreference, calories: profile.dailyCalories,
         }));

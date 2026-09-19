@@ -9,6 +9,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.HasKey(u => u.Id);
+        builder.Property(u => u.DisplayName).HasMaxLength(100);
         builder.Property(u => u.FirebaseUid).HasMaxLength(128).IsConcurrencyToken();
         builder.HasIndex(u => u.FirebaseUid).IsUnique();
         builder.Property(u => u.WorkoutsCompleted).IsConcurrencyToken();

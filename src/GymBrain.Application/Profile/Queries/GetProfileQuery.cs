@@ -19,7 +19,8 @@ public record GetProfileResponse(
     int ChapterNumber,
     string ChapterTitle,
     string ChapterSubtitle,
-    string ChapterUnlockMessage);
+    string ChapterUnlockMessage,
+    GymBrain.Application.Profile.Commands.PersonalProfile? PersonalProfile);
 
 public sealed class GetProfileQueryHandler(IApplicationDbContext db)
     : IRequestHandler<GetProfileQuery, GetProfileResponse>
@@ -42,6 +43,9 @@ public sealed class GetProfileQueryHandler(IApplicationDbContext db)
             user.CurrentChapter.Number,
             user.CurrentChapter.Title,
             user.CurrentChapter.Subtitle,
-            user.CurrentChapter.UnlockMessage);
+            user.CurrentChapter.UnlockMessage,
+            user.DisplayName == null ? null : new GymBrain.Application.Profile.Commands.PersonalProfile(
+                user.DisplayName, user.Age!.Value, user.HeightCm!.Value, user.WeightKg!.Value,
+                System.Text.Json.JsonSerializer.Deserialize<string[]>(user.FocusAreasJson ?? "[]") ?? []));
     }
 }
