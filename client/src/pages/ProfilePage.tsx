@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/auth';
-import { generateNutritionPlan, getProfile, saveProfile, type SaveProfileRequest } from '../services/api';
-
-import MealCards from '../components/MealCards';
-import { parseMealPlan, type MealPlan } from '../services/mealPlan';
+import { getProfile, saveProfile, type SaveProfileRequest } from '../services/api';
 
 const GOALS = [
   { id: 'muscle', icon: '💪', label: 'Build Muscle' },
@@ -17,7 +14,7 @@ const LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Athlete'];
 const EQUIPMENT = ['Barbell', 'Dumbbells', 'Cables', 'Machines', 'Kettlebells', 'Bands', 'Bodyweight', 'Pull-up Bar'];
 const FOCUS_AREAS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Glutes', 'Full Body'];
 
-export default function ProfilePage() {
+export default function ProfilePage({ onOpenMeals, onOpenVault }: { onOpenMeals?: () => void; onOpenVault?: () => void }) {
   const { user, logout } = useAuth();
 
   const [name, setName] = useState('');
@@ -113,29 +110,6 @@ export default function ProfilePage() {
     try { existing = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}') || {}; } catch { /* rebuild optional cache */ }
     const updated = { ...existing, name, age, height, weight, goal, level, daysPerWeek, equipment, focusAreas, diet, calories };
     try { localStorage.setItem('gymbrain_profile', JSON.stringify(updated)); } catch { /* server save already succeeded */ }
-  };
-
-  const [generatingNutrition, setGeneratingNutrition] = useState(false);
-  const [nutritionError, setNutritionError] = useState('');
-  const [nutritionPlan, setNutritionPlan] = useState<MealPlan | null>(null);
-
-  const handleGenerateNutrition = async () => {
-    setGeneratingNutrition(true);
-    setNutritionError('');
-    setNutritionPlan(null);
-    try {
-      const res = await generateNutritionPlan(diet, calories, goal);
-      if (res.error) {
-        setNutritionError(res.error);
-      } else if (res.data?.payloadJson) {
-        setNutritionPlan(parseMealPlan(res.data.payloadJson));
-      } else {
-        setNutritionError('The model returned an empty meal plan. Try another model in Vault.');
-      }
-    } catch (error) {
-      setNutritionError(error instanceof Error ? error.message : 'Failed to display the meal plan.');
-    }
-    setGeneratingNutrition(false);
   };
 
   const toggleChip = (list: string[], item: string, setter: (v: string[]) => void) => {
@@ -277,9 +251,9 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Nutrition */}
+      {/* Meal plan and AI connection */}
       <div className="profile-section">
-        <div className="profile-section__title">🍎 Nutrition & Macros</div>
+        <div className="profile-section__title">🍎 Default meal preferences</div>
         <div className="m3-card">
           <div className="md-label-md text-muted mb-sm">Dietary Preference</div>
           <div className="m3-chips mb-md">
@@ -298,15 +272,12 @@ export default function ProfilePage() {
             <input type="range" className="m3-slider" min={1200} max={4000} step={50} value={calories} onChange={e => setCalories(+e.target.value)} />
           </div>
 
-          <button className="m3-btn m3-btn--outlined m3-btn--full" onClick={handleGenerateNutrition} disabled={generatingNutrition}>
-            {generatingNutrition ? 'Generating...' : '✨ Generate AI Meal Plan'}
-          </button>
-
-          {nutritionError && <div className="m3-error-banner mt-sm">{nutritionError}</div>}
-
-          {nutritionPlan && <MealCards plan={nutritionPlan} />}
+          <p className="text-muted">Save Profile to keep these defaults. View and generate plans in Meals.</p>
+          {onOpenMeals && <button type="button" className="m3-btn m3-btn--outlined m3-btn--full" onClick={onOpenMeals}>Open meal plans</button>}
         </div>
       </div>
+
+      {onOpenVault && <button type="button" className="m3-btn m3-btn--outlined m3-btn--full mt-md" onClick={onOpenVault}>AI connection</button>}
 
       {profileError && <div role="alert" className="m3-error-banner">{profileError}</div>}
       {/* Save */}

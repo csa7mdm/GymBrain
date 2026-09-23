@@ -1,0 +1,15 @@
+.meals-page { max-width: 760px; margin-inline: auto; padding-bottom: 100px; }
+.meals-page__header { margin-bottom: 24px; }
+.meals-page__header h1 { margin: 4px 0 6px; }
+.meals-page__header p { color: var(--md-on-surface-variant); margin: 0; }
+.meals-page__eyebrow { color: var(--md-primary); font-size: .78rem; font-weight: 700; letter-spacing: .08em; }
+.meals-page__saved, .meals-page__generate, .meals-page__status { margin-bottom: 24px; }
+.meals-page__saved-header { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.meals-page__saved-header h2 { margin: 4px 0 0; }
+.meals-page__saved-header time { color: var(--md-on-surface-variant); font-size: .85rem; }
+.meals-page__status h2, .meals-page__generate h2 { margin-top: 0; }
+.meals-page__status p, .meals-page__generate p { color: var(--md-on-surface-variant); }
+.meals-page__field { display: grid; gap: 8px; margin: 18px 0; font-weight: 600; }
+.meals-page__field select { width: 100%; min-height: 48px; border: 1px solid var(--md-outline-variant); border-radius: 12px; padding: 0 12px; background: var(--md-surface-container); color: var(--md-on-surface); font: inherit; }
+.meals-page__field input[type="range"] { width: 100%; min-height: 44px; accent-color: var(--md-primary); }
+.meals-page__field strong { font-weight: 700; }

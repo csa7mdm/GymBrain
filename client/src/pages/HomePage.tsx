@@ -1,15 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { readCompletion, useWorkoutHistory } from '../services/workoutHistory';
-
-const QUOTES = [
-  { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
-  { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
-  { text: "Strength does not come from the body. It comes from the will.", author: "Gandhi" },
-  { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
-  { text: "Your body can stand almost anything. It's your mind you have to convince.", author: "Unknown" },
-  { text: "Success isn't always about greatness. It's about consistency.", author: "Dwayne Johnson" },
-  { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
-];
+import { getLatestMealPlan } from '../services/api';
+import { parseMealPlan } from '../services/mealPlan';
+import './HomePage.css';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -18,9 +11,28 @@ interface HomePageProps {
 }
 
 export default function HomePage({ onNavigate }: HomePageProps) {
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-
-  const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+  let profile: { name?: string; goal?: string; level?: string; daysPerWeek?: number } = {};
+  try {
+    const cached = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+    if (cached && typeof cached === 'object' && !Array.isArray(cached)) profile = cached;
+  } catch { /* server-backed pages remain available without the display cache */ }
+  const [mealSummary, setMealSummary] = useState<{ date: string; count: number } | null>(null);
+  const [mealLoading, setMealLoading] = useState(true);
+  const [mealError, setMealError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    getLatestMealPlan().then(result => {
+      if (cancelled) return;
+      if (result.error) setMealError(true);
+      else if (result.data) {
+        try {
+          setMealSummary({ date: result.data.generatedAtUtc, count: parseMealPlan(result.data.payloadJson).meals.length });
+        } catch { setMealError(true); }
+      }
+      setMealLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const { history, error: historyError, retry } = useWorkoutHistory();
   const workouts = (history?.items || []).map(item => {
     const completion = readCompletion(item);
@@ -30,14 +42,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   });
   const recordedWorkouts = workouts.filter(workout => workout.hasResults);
   const missingResults = workouts.length - recordedWorkouts.length;
-  const name = profile.name || 'Athlete';
+  const name = typeof profile.name === 'string' ? profile.name : 'Athlete';
 
   // Calculate stats
   const totalWorkouts = history?.total ?? '—';
   const totalExercises = workouts.reduce((s, w) => s + (w.exercises?.length || 0), 0);
-  const bmi = profile.height && profile.weight
-    ? (profile.weight / ((profile.height / 100) ** 2)).toFixed(1)
-    : null;
 
   // Weekly view
   const today = new Date();
@@ -50,6 +59,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     const isToday = i === dayOfWeek;
     return { name, isDone, isToday };
   });
+  const thisWeekCount = weekDays.filter(day => day.isDone).length;
 
   // Streak (consecutive days with workouts ending today)
   let streak = 0;
@@ -90,10 +100,21 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <span className="home-stat__label">Recent exercises</span>
         </div>
         <div className="home-stat">
-          <span className="home-stat__value">{bmi || '—'}</span>
-          <span className="home-stat__label">BMI</span>
+          <span className="home-stat__value">{thisWeekCount}</span>
+          <span className="home-stat__label">This week</span>
         </div>
       </div>
+
+      <section className="m3-card home-meal mb-md" aria-labelledby="home-meal-title">
+        <div className="home-meal__header"><span aria-hidden="true">🍽️</span><h2 id="home-meal-title">Your meal plan</h2></div>
+        {mealLoading ? <p role="status" className="md-body-md text-muted">Checking saved plan…</p>
+          : mealError ? <p role="alert" className="md-body-md">Saved plan is temporarily unavailable.</p>
+          : mealSummary ? <p className="md-body-md text-muted">{mealSummary.count} meals saved · {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(mealSummary.date))}</p>
+          : <p className="md-body-md text-muted">Create a plan once, then find it here whenever you return.</p>}
+        <button type="button" className="m3-btn m3-btn--outlined" onClick={() => onNavigate('meals')}>
+          {mealSummary ? 'View saved meals' : 'Open meals'}
+        </button>
+      </section>
 
       {/* CTA - moved to top for dominance */}
       <div className="mt-md mb-md">
@@ -118,7 +139,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         <div className="m3-card mb-md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div className="md-label-md text-muted">Goal</div>
-            <div className="md-body-lg">{goalLabels[profile.goal] || profile.goal}</div>
+            <div className="md-body-lg">{profile.goal ? goalLabels[profile.goal] || profile.goal : 'Choose a goal'}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div className="md-label-md text-muted">Level</div>
@@ -130,12 +151,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           </div>
         </div>
       )}
-
-      {/* Quote */}
-      <div className="home-quote">
-        <div className="home-quote__text">"{quote.text}"</div>
-        <div className="home-quote__author">— {quote.author}</div>
-      </div>
 
       {/* Summaries only include sessions with recorded results. */}
       {recordedWorkouts.length > 0 && (

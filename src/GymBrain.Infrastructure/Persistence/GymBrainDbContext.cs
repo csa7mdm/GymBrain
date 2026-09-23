@@ -10,6 +10,7 @@ public class GymBrainDbContext(DbContextOptions<GymBrainDbContext> options)
     public DbSet<User> Users => Set<User>();
     public DbSet<Exercise> Exercises => Set<Exercise>();
     public DbSet<WorkoutSession> WorkoutSessions => Set<WorkoutSession>();
+    public DbSet<NutritionPlan> NutritionPlans => Set<NutritionPlan>();
     public DbSet<AnalyticsEvent> AnalyticsEvents => Set<AnalyticsEvent>();
     public DbSet<Milestone> Milestones => Set<Milestone>();
     public DbSet<UserMilestone> UserMilestones => Set<UserMilestone>();

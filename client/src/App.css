@@ -1,0 +1,26 @@
+.bottom-nav {
+  gap: 2px;
+  padding-inline: max(4px, env(safe-area-inset-left)) max(4px, env(safe-area-inset-right));
+}
+
+.bottom-nav__item {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 2px;
+  font-size: .75rem;
+}
+
+:where(button, input, select, textarea, a, summary):focus-visible {
+  outline: 3px solid var(--md-secondary);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

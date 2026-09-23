@@ -7,26 +7,28 @@ import OnboardingPage from './pages/OnboardingPage';
 import HomePage from './pages/HomePage';
 import WorkoutPage from './pages/WorkoutPage';
 import PlansPage from './pages/PlansPage';
+import MealsPage from './pages/MealsPage';
 import ProfilePage from './pages/ProfilePage';
 import VaultPage from './pages/VaultPage';
+import './App.css';
 
-type Tab = 'home' | 'train' | 'plans' | 'profile' | 'vault';
+type Tab = 'home' | 'train' | 'meals' | 'plans' | 'profile' | 'vault';
 
 function BottomNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const items: { id: Tab; icon: string; label: string }[] = [
     { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'train', icon: '💪', label: 'Train' },
+    { id: 'meals', icon: '🍽️', label: 'Meals' },
     { id: 'plans', icon: '📋', label: 'History' },
     { id: 'profile', icon: '👤', label: 'Profile' },
-    { id: 'vault', icon: '🔐', label: 'Vault' },
   ];
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" aria-label="Main navigation">
       {items.map(i => (
-        <button key={i.id}
-          className={`bottom-nav__item ${tab === i.id ? 'bottom-nav__item--active' : ''}`}
+        <button key={i.id} type="button" aria-current={tab === i.id || (tab === 'vault' && i.id === 'profile') ? 'page' : undefined}
+          className={`bottom-nav__item ${tab === i.id || (tab === 'vault' && i.id === 'profile') ? 'bottom-nav__item--active' : ''}`}
           onClick={() => setTab(i.id)}>
-          <span className="bottom-nav__icon">{i.icon}</span>
+          <span className="bottom-nav__icon" aria-hidden="true">{i.icon}</span>
           {i.label}
         </button>
       ))}
@@ -82,9 +84,10 @@ function SignedInApp() {
     <div className="app-shell">
       {tab === 'home' && <HomePage onNavigate={(t) => setTab(t as Tab)} />}
       {tab === 'train' && <WorkoutPage />}
+      {tab === 'meals' && <MealsPage />}
       {tab === 'plans' && <PlansPage />}
-      {tab === 'profile' && <ProfilePage />}
-      {tab === 'vault' && <VaultPage onComplete={() => setTab('home')} onSkip={() => setTab('home')} />}
+      {tab === 'profile' && <ProfilePage onOpenMeals={() => setTab('meals')} onOpenVault={() => setTab('vault')} />}
+      {tab === 'vault' && <VaultPage onComplete={() => setTab('profile')} onSkip={() => setTab('profile')} />}
       <BottomNav tab={tab} setTab={setTab} />
     </div>
   );

@@ -20,6 +20,6 @@ export default function MealCards({ plan }: { plan: MealPlan }) {
       <h4>Ingredients</h4>{meal.ingredients.length ? <ul className="meal-ingredients">{meal.ingredients.map((item, i) => <li key={i}><span>{item.name}</span><strong>{item.quantity || 'Quantity not supplied'}</strong></li>)}</ul> : <p>Ingredients were not included in this plan. Generate a new plan for recipe details.</p>}
       <h4>How to cook</h4>{meal.steps.length ? <ol className="meal-steps">{meal.steps.map((step, i) => <li key={i}>{step}</li>)}</ol> : <p>Cooking instructions were not included in this plan.</p>}
     </article>
-    <p className="md-body-sm text-muted">Check ingredients for your allergies and dietary needs. This generated plan stays on this screen; leaving it clears the plan.</p>
+    <p className="md-body-sm text-muted">Check ingredients for your allergies and dietary needs. Find your latest saved plan in Meals whenever you return.</p>
   </section>;
 }

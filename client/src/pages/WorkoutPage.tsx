@@ -193,6 +193,13 @@ export default function WorkoutPage() {
     const [exerciseImages, setExerciseImages] = useState<Map<string, ExerciseDbItem>>(new Map());
     const [setProgress, setSetProgress] = useState<Map<number, SetProgress>>(new Map());
     const [expandedCard, setExpandedCard] = useState<number | null>(null);
+    const workoutView = useRef<HTMLDivElement>(null);
+    const revealExercise = () => requestAnimationFrame(() => {
+        workoutView.current?.scrollTo({ top: 0, behavior: 'instant' });
+        workoutView.current?.querySelector<HTMLElement>('.exercise-name')?.focus({ preventScroll: true });
+    });
+    const [selectedExercise, setSelectedExercise] = useState<number | null>(null);
+    const [showAllExercises, setShowAllExercises] = useState(false);
     const restTimer = useRestTimer();
     const [restExerciseIdx, setRestExerciseIdx] = useState<number | null>(null);
     const { toasts, show: showToast } = useToast();
@@ -300,6 +307,11 @@ export default function WorkoutPage() {
     };
 
     const toggleSet = (ei: number, si: number) => {
+        const current = setProgress.get(ei);
+        if (current && !current.completed[si] && current.completed.every((done, index) => done || index === si)) {
+            setSelectedExercise(null);
+            revealExercise();
+        }
         setSetProgress(prev => {
             const m = new Map(prev); const p = m.get(ei);
             if (p) {
@@ -347,89 +359,53 @@ export default function WorkoutPage() {
         const doneSets = progress?.completed.filter(Boolean).length || 0;
         const totalS = progress?.completed.length || (comp.payload.sets as number) || 3;
         const allDone = doneSets === totalS;
-        const isResting = restTimer.isRunning && restExerciseIdx === idx;
-        const isWarmup = comp.payload.phase === 'warmup';
 
         return (
-            <div key={idx} className={`exercise-card ${allDone ? 'exercise-card--done' : ''} ${isResting ? 'exercise-card--resting' : ''}`} style={{ animationDelay: `${idx * 0.08}s` }}>
-                {isWarmup && <div style={{ background: 'rgba(0,250,154,0.1)', borderRadius: '8px 8px 0 0', padding: '4px 12px', fontSize: 11, color: '#00FA9A', letterSpacing: 1 }}>WARM-UP</div>}
-                {comp.swapped && <div style={{ background: 'rgba(255,191,0,0.1)', borderRadius: isWarmup ? 0 : '8px 8px 0 0', padding: '4px 12px', fontSize: 11, color: '#FFBF00', letterSpacing: 1 }}>🔄 SWAPPED</div>}
+            <section key={idx} className={`exercise-card workout-current ${allDone ? 'exercise-card--done' : ''}`} aria-label={`Current exercise: ${comp.payload.exercise_name || 'Exercise'}`}>
                 <div className="exercise-card__progress-bar"><div className="exercise-card__progress-fill" style={{ width: `${(doneSets / totalS) * 100}%` }} /></div>
+                <p className="workout-current__eyebrow">{allDone ? 'Exercise complete' : `Now training · ${doneSets} of ${totalS} sets done`}{comp.swapped ? ' · Alternative' : ''}</p>
                 <div className="exercise-card__header">
                     {exInfo?.gifUrl ? (
                         <div className="exercise-card__gif-container"><img src={exInfo.gifUrl} alt={comp.payload.exercise_name as string} className="exercise-card__gif" loading="lazy" /></div>
                     ) : (
-                        <div className="exercise-card__gif-placeholder" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12, minHeight: 80 }}>
-                            <span style={{ fontSize: 28 }}>🏋️</span>
-                            <span style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{comp.payload.target_muscle as string}</span>
-                        </div>
+                        <div className="exercise-card__gif-placeholder" aria-hidden="true">🏋️</div>
                     )}
                     <div className="exercise-card__title-block">
-                        <h3 className="exercise-name">{comp.payload.exercise_name || 'Exercise'}</h3>
+                        <h3 className="exercise-name" tabIndex={-1}>{comp.payload.exercise_name || 'Exercise'}</h3>
                         <div className="exercise-card__meta">
                             {comp.payload.target_muscle && <span className="exercise-card__muscle-tag">{comp.payload.target_muscle as string}</span>}
                             {exInfo?.equipment && <span className="exercise-card__equipment-tag">{exInfo.equipment}</span>}
                         </div>
-                        {allDone && <span className="exercise-card__done-badge">✅ Complete</span>}
                     </div>
                 </div>
-                <div className="set-circles">
-                    {progress?.completed.map((done, si) => (
-                        <button key={si} className={`set-circle ${done ? 'set-circle--done' : ''}`} onClick={() => toggleSet(idx, si)} title={`Set ${si + 1}`}>
-                            <span className="set-circle__number">{si + 1}</span>
-                            {done && <span className="set-circle__check">✓</span>}
-                            <span className="set-circle__detail">{comp.payload.reps}×{comp.payload.weight_kg}kg</span>
-                        </button>
-                    ))}
-                </div>
-                <div className="exercise-card__stats">
-                    <div className="mini-stat"><span className="mini-stat__value numeric">{comp.payload.sets ?? 3}</span><span className="mini-stat__label">Sets</span></div>
-                    <div className="mini-stat"><span className="mini-stat__value numeric">{comp.payload.reps ?? 10}</span><span className="mini-stat__label">Reps</span></div>
-                    <div className="mini-stat"><span className="mini-stat__value numeric">{comp.payload.weight_kg ?? 0}</span><span className="mini-stat__label">kg</span></div>
-                    <div className="mini-stat mini-stat--rest"><span className="mini-stat__value numeric">{isWarmup ? '5:00' : `${comp.payload.rest_seconds ?? 90}s`}</span><span className="mini-stat__label">Rest</span></div>
-                </div>
-                {isResting && (
-                    <div className="rest-timer-live">
-                        <div className="rest-timer-live__ring">
-                            <svg viewBox="0 0 60 60">
-                                <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
-                                <circle cx="30" cy="30" r="26" fill="none" stroke="var(--accent-secondary)" strokeWidth="4" strokeDasharray={`${2 * Math.PI * 26}`} strokeDashoffset={`${2 * Math.PI * 26 * (1 - restTimer.seconds / ((comp.payload.rest_seconds || 90) as number))}`} strokeLinecap="round" transform="rotate(-90 30 30)" style={{ transition: 'stroke-dashoffset 1s linear' }} />
-                            </svg>
-                            <span className="rest-timer-live__seconds numeric">{restTimer.seconds}</span>
+                <p className="workout-current__prescription">{totalS} sets · {comp.payload.reps ?? 10} reps · {comp.payload.weight_kg ?? 0} kg · Rest {comp.payload.rest_seconds ?? 90}s</p>
+                {progress && <div className="workout-set-list">
+                    {progress.completed.map((done, si) => <div className="workout-set" key={si}>
+                        <div className="workout-set__fields">
+                            <span className="workout-set__name">Set {si + 1}</span>
+                            <label>Reps<input aria-label={`${comp.payload.exercise_name} set ${si + 1} reps`} className="m3-input" type="number" min={0} max={1000} step={1} value={progress.actualReps[si]}
+                                onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const reps = [...p.actualReps]; reps[si] = Math.max(0, Math.min(1000, Math.trunc(Number(e.target.value)))); next.set(idx, { ...p, actualReps: reps }); return next; })} /></label>
+                            <label>kg<input aria-label={`${comp.payload.exercise_name} set ${si + 1} weight kg`} className="m3-input" type="number" min={0} max={1000} step={0.5} value={progress.actualWeight[si]}
+                                onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const weights = [...p.actualWeight]; weights[si] = Math.max(0, Math.min(1000, Number(e.target.value))); next.set(idx, { ...p, actualWeight: weights }); return next; })} /></label>
                         </div>
-                        <span className="rest-timer-live__label">Rest Timer</span>
-                        <button className="rest-timer-live__skip" onClick={restTimer.stop}>Skip →</button>
-                    </div>
-                )}
-                {/* Equipment Busy? Button — only on main exercises, not warmups, not during rest */}
-                {!isWarmup && !isResting && !progress?.completed.some(Boolean) && (
-                    <button
-                        style={{
-                            width: '100%', minHeight: 56, marginTop: 10,
-                            background: '#FFBF00', color: '#000', border: 'none',
-                            borderRadius: 12, fontSize: 15, fontWeight: 700,
-                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
-                        }}
+                        <button className={`set-circle ${done ? 'set-circle--done' : ''}`} title={`Set ${si + 1}`} aria-label={`${done ? 'Undo' : 'Complete'} set ${si + 1} of ${comp.payload.exercise_name || 'Exercise'}`} aria-pressed={done} onClick={() => toggleSet(idx, si)}>
+                            {done ? '✓ Set complete' : `Complete set ${si + 1}`}
+                        </button>
+                    </div>)}
+                </div>}
+                {!progress?.completed.some(Boolean) && (
+                    <button className="workout-current__swap"
                         onClick={() => setSubstituteModal({
                             idx,
                             exerciseId: comp.payload.exercise_id as string || '',
                             exerciseName: comp.payload.exercise_name as string || 'Exercise'
                         })}
                     >
-                        🔄 Equipment Busy?
+                        Equipment busy? Find an alternative
                     </button>
                 )}
-                    {progress && <div className="mt-md">
-                        {progress.completed.map((_, si) => <div key={si} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                            <span>Set {si + 1}</span>
-                            <label style={{ flex: 1 }}>Reps<input aria-label={`${comp.payload.exercise_name} set ${si + 1} reps`} className="m3-input" type="number" min={0} max={1000} step={1} value={progress.actualReps[si]}
-                                onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const reps = [...p.actualReps]; reps[si] = Math.max(0, Math.min(1000, Math.trunc(Number(e.target.value)))); next.set(idx, { ...p, actualReps: reps }); return next; })} /></label>
-                            <label style={{ flex: 1 }}>kg<input aria-label={`${comp.payload.exercise_name} set ${si + 1} weight kg`} className="m3-input" type="number" min={0} max={1000} step={0.5} value={progress.actualWeight[si]}
-                                onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const weights = [...p.actualWeight]; weights[si] = Math.max(0, Math.min(1000, Number(e.target.value))); next.set(idx, { ...p, actualWeight: weights }); return next; })} /></label>
-                        </div>)}
-                    </div>}
                 {exInfo && (<>
-                    <button className="exercise-card__expand-btn" onClick={() => setExpandedCard(isExp ? null : idx)}>{isExp ? '▲ Hide Details' : '▼ Form Tips & Instructions'}</button>
+                    <button className="exercise-card__expand-btn" aria-expanded={isExp} onClick={() => setExpandedCard(isExp ? null : idx)}>{isExp ? 'Hide form tips' : 'Show form tips'}</button>
                     {isExp && (
                         <div className="exercise-card__details">
                             {exInfo.secondaryMuscles.length > 0 && (<div className="exercise-card__secondary"><span className="exercise-card__detail-label">Also works:</span>{exInfo.secondaryMuscles.map((m, i) => <span key={i} className="exercise-card__secondary-tag">{m}</span>)}</div>)}
@@ -437,7 +413,7 @@ export default function WorkoutPage() {
                         </div>
                     )}
                 </>)}
-            </div>
+            </section>
         );
     };
 
@@ -468,7 +444,7 @@ export default function WorkoutPage() {
 
     const resetWorkout = () => {
         sessionStorage.removeItem(draftKey); setPayload(null); setExerciseImages(new Map());
-        setSetProgress(new Map()); setExpandedCard(null); restTimer.stop(); setSaved(false); setPendingJson(null); setSaveError('');
+        setSetProgress(new Map()); setExpandedCard(null); setSelectedExercise(null); setShowAllExercises(false); restTimer.stop(); setSaved(false); setPendingJson(null); setSaveError('');
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -519,9 +495,15 @@ export default function WorkoutPage() {
     );
 
     const { totalSets, completedSets, percent } = getProgress();
-    const exercises = payload.components?.filter(c => c.type === 'set_tracker') || [];
+    const exerciseEntries = (payload.components || []).map((comp, idx) => ({ comp, idx })).filter(({ comp }) => comp.type === 'set_tracker');
+    const exercises = exerciseEntries.map(({ comp }) => comp);
+    const warmups = (payload.components || []).filter(comp => comp.type === 'warmup_card');
+    const nextExercise = exerciseEntries.find(({ idx }) => !setProgress.get(idx)?.completed.every(Boolean))?.idx;
+    const activeExercise = selectedExercise ?? nextExercise ?? exerciseEntries[0]?.idx;
+    const queuedExercises = exerciseEntries.filter(({ idx }) => idx !== activeExercise);
+    const visibleQueue = showAllExercises ? queuedExercises : queuedExercises.slice(0, 4);
     return (
-        <div className="app-content">
+        <div className="app-content workout-page" ref={workoutView}>
             {/* Toast notifications */}
             <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 2000, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', pointerEvents: 'none' }}>
                 {toasts.map(t => (
@@ -539,20 +521,39 @@ export default function WorkoutPage() {
             </div>
 
             <div className="workout-progress-header">
-                <div className="workout-progress-header__top"><h2 className="workout-progress-header__title">Your Workout</h2><span className="workout-progress-header__counter numeric">{completedSets}/{totalSets}</span></div>
-                <p className="workout-progress-header__subtitle">AI-generated workout</p>
+                <div className="workout-progress-header__top"><h2 className="workout-progress-header__title">Today's workout</h2><span className="workout-progress-header__counter numeric">{completedSets}/{totalSets} sets</span></div>
+                <p className="workout-progress-header__subtitle">{exercises.length} exercises · Pick any exercise below when you're ready</p>
                 <div className="workout-progress-bar"><div className="workout-progress-bar__fill" style={{ width: `${percent}%` }} /></div>
                 {percent === 100 && <div className="workout-complete-banner">🎉 Workout Complete! Great job!</div>}
             </div>
 
+            {warmups.length > 0 && <details className="workout-warmup">
+                <summary>Warm up first <span>{warmups.length} movements</span></summary>
+                <ol>{warmups.map((comp, idx) => <li key={idx}><strong>{comp.payload.exercise_name || 'Warm-up'}</strong><span>{comp.payload.notes || 'Move gently and prepare for your workout.'}</span></li>)}</ol>
+            </details>}
+            {restTimer.isRunning && <div className="workout-rest" role="timer" aria-label="Rest timer">
+                <span>Resting after {payload.components?.[restExerciseIdx ?? -1]?.payload.exercise_name || 'your set'}</span>
+                <strong>{Math.floor(restTimer.seconds / 60)}:{String(restTimer.seconds % 60).padStart(2, '0')}</strong>
+                <button type="button" onClick={restTimer.stop}>Skip rest</button>
+            </div>}
             <fieldset disabled={saving || saved || !!pendingJson} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-            {payload.components?.map((comp, idx) => {
-                if (comp.type === 'tone_card') return (<div key={idx} className="tone-card" style={{ animationDelay: `${idx * 0.08}s` }}><div className="tone-card__emoji">💬</div><p>"{comp.payload.message}"</p>{comp.payload.persona && <span className="persona-tag">— {comp.payload.persona as string}</span>}</div>);
-                if (comp.type === 'warmup_card') return renderExerciseCard({ ...comp, type: 'set_tracker', payload: { ...comp.payload, sets: 1, reps: 1 } }, idx);
-                if (comp.type === 'set_tracker') return renderExerciseCard(comp, idx);
-                return null;
-            })}
+                {activeExercise !== undefined && renderExerciseCard(payload.components![activeExercise], activeExercise)}
             </fieldset>
+            {payload.components?.filter(comp => comp.type === 'tone_card' && comp.payload.message).slice(0, 1).map((comp, idx) =>
+                <p className="workout-coach-note" key={idx}>{comp.payload.message}</p>)}
+            {queuedExercises.length > 0 && <section className="workout-queue" aria-label="Exercise list">
+                <div className="workout-queue__heading"><h3>Exercises</h3><span>{exercises.length} total</span></div>
+                <div className="workout-queue__list">{visibleQueue.map(({ comp, idx }) => {
+                    const progress = setProgress.get(idx);
+                    const completed = progress?.completed.filter(Boolean).length || 0;
+                    const total = progress?.completed.length || comp.payload.sets || 3;
+                    return <button type="button" className="workout-queue__item" key={idx} onClick={() => { setSelectedExercise(idx); setExpandedCard(null); revealExercise(); }}>
+                        <span><strong>{comp.payload.exercise_name || 'Exercise'}</strong><small>{completed === total ? 'Complete' : `${completed}/${total} sets · ${comp.payload.target_muscle || 'Strength'}`}</small></span>
+                        <span aria-hidden="true">›</span>
+                    </button>;
+                })}</div>
+                {queuedExercises.length > 4 && <button type="button" className="workout-queue__more" onClick={() => setShowAllExercises(v => !v)}>{showAllExercises ? 'Show fewer exercises' : `Show all ${exercises.length} exercises`}</button>}
+            </section>}
             {(!payload.components || payload.components.length === 0) && (<div className="m3-card m3-card--outlined" style={{ textAlign: 'center' }}><p className="text-muted">No workout components returned.</p></div>)}
             {exercises.length > 0 && (<div className="workout-summary-card"><div className="workout-summary-card__row">
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.length}</span><span>Exercises</span></div>
@@ -560,13 +561,14 @@ export default function WorkoutPage() {
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.reduce((s, c) => s + ((c.payload.sets || 3) as number) * ((c.payload.reps || 10) as number), 0)}</span><span>Total Reps</span></div>
             </div></div>)}
             {!saved && <p className="md-body-sm text-muted">Unfinished workouts stay in this browser tab and may be lost when it closes. Connect to the internet and choose Finish &amp; Save to keep this workout in your account.</p>}
+
             {saveError && <div role="alert" className="m3-error-banner">Not confirmed saved: {saveError} Your session is retained in this browser tab. Retry to confirm it.</div>}
             {saved && <p role="status">Saved to your account. View it in History.</p>}
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button className="m3-btn m3-btn--tonal" style={{ flex: 1 }} disabled={saving || saved} onClick={handleSaveWorkout}>
+            <div className="workout-actions">
+                <button className="m3-btn m3-btn--filled" disabled={saving || saved || completedSets === 0} onClick={handleSaveWorkout}>
                     {saving ? 'Saving…' : saved ? 'Saved' : pendingJson ? 'Retry save' : 'Finish & Save'}
                 </button>
-                <button className="m3-btn m3-btn--outlined" style={{ flex: 1 }} disabled={saving || (!!pendingJson && !saved)} onClick={async () => {
+                <button className="m3-btn m3-btn--outlined" disabled={saving || (!!pendingJson && !saved)} onClick={async () => {
                     if (!saved && completedSets > 0) {
                         if (!window.confirm('Finish and save this session before starting another?')) return;
                         if (!await handleSaveWorkout()) return;

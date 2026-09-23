@@ -49,7 +49,7 @@ export default function VaultPage({ onComplete, onSkip }: VaultPageProps) {
       {success && <p role="status" className="m3-success-banner">{success}</p>}
       <button className="m3-btn m3-btn--filled m3-btn--full mt-md" disabled={busy || !loaded || !model}>Save connection</button>
       {success && <button type="button" className="m3-btn m3-btn--tonal m3-btn--full mt-md" onClick={onComplete}>Done</button>}
-      <button type="button" className="m3-btn m3-btn--text m3-btn--full mt-md" onClick={onSkip}>Back to home</button>
+      <button type="button" className="m3-btn m3-btn--text m3-btn--full mt-md" onClick={onSkip}>Back to profile</button>
     </form>
   </div>;
 }

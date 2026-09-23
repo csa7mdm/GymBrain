@@ -1,5 +1,6 @@
 using GymBrain.Application.Common.Interfaces;
 using GymBrain.Domain.Interfaces;
+using GymBrain.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,7 +85,9 @@ public sealed class GenerateNutritionPlanCommandHandler(
 
         var provider = llmProviderFactory.GetProvider(providerName);
         var rawJson = await provider.ChatCompletionAsync(apiKey, preferredModel, systemPrompt, userMessage, forceJson: true, maxTokens: 6000, ct: ct);
-
-        return new GenerateNutritionPlanResponse(rawJson);
+        var payloadJson = NutritionPlanPayload.ValidateAndExtract(rawJson);
+        db.NutritionPlans.Add(new NutritionPlan(request.UserId, payloadJson));
+        await db.SaveChangesAsync(ct);
+        return new GenerateNutritionPlanResponse(payloadJson);
     }
 }

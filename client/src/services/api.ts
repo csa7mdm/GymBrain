@@ -55,6 +55,7 @@ async function request<T>(
       return { error: errorMessage, code };
     }
 
+    if (res.status === 204) return { data: null as T };
     const data = await res.json();
     return { data };
   } catch (err) {
@@ -188,6 +189,15 @@ export function trackEvent(eventName: string, metadata?: object): void {
 
 export interface NutritionResponse {
   payloadJson: string;
+}
+
+export interface LatestMealPlan {
+  payloadJson: string;
+  generatedAtUtc: string;
+}
+
+export function getLatestMealPlan() {
+  return request<LatestMealPlan | null>('/api/nutrition/latest');
 }
 
 export function generateNutritionPlan(diet: string, calories: number, goal: string) {

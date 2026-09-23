@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<Exercise> Exercises { get; }
     DbSet<WorkoutSession> WorkoutSessions { get; }
+    DbSet<NutritionPlan> NutritionPlans { get; }
     DbSet<AnalyticsEvent> AnalyticsEvents { get; }
     DbSet<Milestone> Milestones { get; }
     DbSet<UserMilestone> UserMilestones { get; }

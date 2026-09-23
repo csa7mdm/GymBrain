@@ -10,6 +10,7 @@ internal sealed class AuthTestDb() : DbContext(new DbContextOptionsBuilder<AuthT
     public DbSet<User> Users => Set<User>();
     public DbSet<Exercise> Exercises => throw new NotSupportedException();
     public DbSet<WorkoutSession> WorkoutSessions => throw new NotSupportedException();
+    public DbSet<NutritionPlan> NutritionPlans => throw new NotSupportedException();
     public DbSet<AnalyticsEvent> AnalyticsEvents => throw new NotSupportedException();
     public DbSet<Milestone> Milestones => throw new NotSupportedException();
     public DbSet<UserMilestone> UserMilestones => throw new NotSupportedException();

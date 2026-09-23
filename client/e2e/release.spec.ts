@@ -18,6 +18,7 @@ async function signInLocally(page: Page, profile: Record<string, unknown> = {}) 
     if (path === '/api/auth/models') return route.fulfill({ json: [] });
     if (path === '/api/profile') return route.fulfill({ json: profile.name ? serverProfile : { ...serverProfile, goal: null } });
     if (path === '/api/workout/history') return route.fulfill({ json: { items: [], total: 0, hasMore: false } });
+    if (path === '/api/nutrition/latest') return route.fulfill({ status: 204 });
     if (path === '/api/events') return route.fulfill({ json: {} });
     return route.fulfill({ status: 503, json: { detail: 'Unconfigured test API request' } });
   });
@@ -128,10 +129,12 @@ test('substituting another exercise preserves completed sets', async ({ page }) 
   const first = page.locator('.exercise-card').first();
   await first.getByTitle('Set 1', { exact: true }).click();
   await expect(first.getByTitle('Set 1', { exact: true })).toHaveClass(/set-circle--done/);
-  await page.locator('.exercise-card').nth(1).getByRole('button', { name: /Equipment Busy/ }).click();
+  await page.getByRole('button', { name: /Row.*0\/3 sets/ }).click();
+  await page.locator('.exercise-card').getByRole('button', { name: /Equipment busy/ }).click();
   await page.getByRole('button', { name: 'Use This' }).click();
-  await expect(page.locator('.exercise-card').nth(1)).toContainText('Band Row');
-  await expect(first.getByTitle('Set 1', { exact: true })).toHaveClass(/set-circle--done/);
+  await expect(page.locator('.exercise-card')).toContainText('Band Row');
+  await page.getByRole('button', { name: /Squat.*1\/3 sets/ }).click();
+  await expect(page.locator('.exercise-card').getByTitle('Set 1', { exact: true })).toHaveClass(/set-circle--done/);
 });
 
 test('completion retry retains actual results and history survives a fresh browser session', async ({ page, browser }) => {
@@ -241,7 +244,8 @@ test('Vault discovers live models, clears stale choices and keeps provider keys 
     expect(route.request().postDataJSON().model).toBe('new/model:free');
     return route.fulfill({ json: { message: 'Connection saved' } });
   });
-  await page.goto('/'); await page.getByRole('button', { name: /Vault/ }).click();
+  await page.goto('/'); await page.getByRole('button', { name: /Profile/ }).click();
+  await page.getByRole('button', { name: 'AI connection', exact: true }).click();
   await page.getByLabel('API key', { exact: true }).fill('test-key-not-real');
   await page.getByRole('button', { name: 'Load latest models' }).click();
   await expect(page.getByRole('alert')).toContainText('rate limiting');
@@ -260,8 +264,8 @@ test('meal plan shows one recipe at a time with ingredients and cooking steps', 
     { day_number: 1, meals: [{ name: 'Oat bowl', type: 'Breakfast', ingredients: [{ name: 'Oats', quantity: '50 g' }], steps: ['Simmer oats in water.'], servings: 1, prep_minutes: 2, cook_minutes: 5 }] },
     { day_number: 2, meals: [{ name: 'Lentil soup', type: 'Lunch', ingredients: [{ name: 'Lentils', quantity: '100 g' }], steps: ['Rinse lentils.', 'Simmer until tender.'] }] },
   ] }) } }));
-  await page.goto('/'); await page.getByRole('button', { name: /Profile/ }).click();
-  await page.getByRole('button', { name: /Generate AI Meal Plan/ }).click();
+  await page.goto('/'); await page.getByRole('navigation').getByRole('button', { name: 'Meals' }).click();
+  await page.getByRole('button', { name: 'Generate meal plan', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Oat bowl' })).toBeVisible();
   await expect(page.getByText('50 g', { exact: true })).toBeVisible();
   await expect(page.getByText('Simmer oats in water.')).toBeVisible();
@@ -281,14 +285,75 @@ test('meal plan accepts a fenced wrapped recipe and displays model format errors
   let payload = '```json\n' + JSON.stringify({ meal_plan: { meals: [{ title: 'Bean bowl', meal_type: 'Lunch',
     ingredients: ['100 g beans'], instructions: ['Rinse beans.', 'Cook until tender.'] }] } }) + '\n```';
   await page.route('**/api/nutrition/generate', route => route.fulfill({ json: { payloadJson: payload } }));
-  await page.goto('/'); await page.getByRole('button', { name: /Profile/ }).click();
-  await page.getByRole('button', { name: /Generate AI Meal Plan/ }).click();
+  await page.goto('/'); await page.getByRole('navigation').getByRole('button', { name: 'Meals' }).click();
+  await page.getByRole('button', { name: 'Generate meal plan', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Bean bowl' })).toBeVisible();
   await expect(page.getByText('100 g beans')).toBeVisible();
   await expect(page.getByText('Cook until tender.')).toBeVisible();
   payload = '{"days":[}';
-  await page.getByRole('button', { name: /Generate AI Meal Plan/ }).click();
+  await page.getByRole('button', { name: 'Generate new meal plan', exact: true }).click();
   await expect(page.getByText(/incomplete meal-plan JSON/)).toBeVisible();
+});
+
+test('saved meals return after navigation and reload, and survive generation failure', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  let saved: { payloadJson: string; generatedAtUtc: string } | null = null;
+  let fail = false;
+  await page.route('**/api/nutrition/latest', route => route.fulfill(saved ? { json: saved } : { status: 204 }));
+  await page.route('**/api/nutrition/generate', route => {
+    if (fail) return route.fulfill({ status: 503, json: { detail: 'Provider unavailable' } });
+    saved = { generatedAtUtc: '2026-09-23T08:00:00Z', payloadJson: JSON.stringify({ meals: [
+      { name: 'Saved bean bowl', ingredients: ['Beans'], steps: ['Cook beans.'] },
+    ] }) };
+    return route.fulfill({ json: saved });
+  });
+  await page.goto('/');
+  const nav = page.getByRole('navigation');
+  await nav.getByRole('button', { name: 'Meals' }).click();
+  await expect(page.getByText('No meal plan yet')).toBeVisible();
+  await page.getByRole('button', { name: 'Generate meal plan', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Saved bean bowl' })).toBeVisible();
+  await nav.getByRole('button', { name: 'Home' }).click();
+  await page.getByRole('button', { name: 'View saved meals' }).click();
+  await expect(page.getByRole('heading', { name: 'Saved bean bowl' })).toBeVisible();
+  await page.reload();
+  await nav.getByRole('button', { name: 'Meals' }).click();
+  await expect(page.getByRole('heading', { name: 'Saved bean bowl' })).toBeVisible();
+  fail = true;
+  await page.getByRole('button', { name: 'Generate new meal plan' }).click();
+  await expect(page.getByRole('alert')).toContainText('Provider unavailable');
+  await expect(page.getByRole('heading', { name: 'Saved bean bowl' })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.app-content')).every(el => el.scrollWidth <= el.clientWidth))).toBe(true);
+  await page.locator('.app-content').evaluate(el => el.scrollTop = 0);
+  await page.screenshot({ path: test.info().outputPath('meals-320.png'), fullPage: true });
+});
+
+test('workout focus view fits a narrow screen and retains sets when switching exercises', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.route('**/api/workout/start', route => route.fulfill({ json: { megaPayloadJson: JSON.stringify({ components: [
+    { type: 'warmup_card', payload: { exercise_name: 'Arm circles', notes: 'Move gently.' } },
+    ...['Dumbbell squat', 'Standing dumbbell shoulder press', 'Row'].map((name, index) => ({ type: 'set_tracker', payload: {
+      exercise_id: `exercise-${index}`, exercise_name: name, sets: 2, reps: 10, weight_kg: 5,
+    } })),
+  ] }) } }));
+  await page.route('**/api/workout/exercise-metadata/**', route => route.fulfill({ status: 204 }));
+  await page.goto('/');
+  await page.getByRole('button', { name: /Start Training/ }).click();
+  await page.getByRole('button', { name: /Generate Workout/ }).click();
+  await expect(page.locator('.exercise-card')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Finish & Save' })).toBeDisabled();
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await page.getByRole('button', { name: /Standing dumbbell shoulder press.*0\/2 sets/ }).click();
+  await expect(page.locator('.exercise-card')).toContainText('Standing dumbbell shoulder press');
+  expect(await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.app-content')).every(el => el.scrollWidth <= el.clientWidth))).toBe(true);
+  await expect(page.getByRole('heading', { name: 'Standing dumbbell shoulder press' })).toBeFocused();
+  await page.screenshot({ path: test.info().outputPath('workout-320.png'), fullPage: true });
+  await page.getByRole('button', { name: /Dumbbell squat.*1\/2 sets/ }).click();
+  await expect(page.getByTitle('Set 1', { exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.evaluate(() => document.documentElement.style.fontSize = '200%');
+  expect(await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.app-content')).every(el => el.scrollWidth <= el.clientWidth))).toBe(true);
 });
 
 test('personal profile comes from the server on a fresh browser and ignores stale local values', async ({ page, browser }) => {
