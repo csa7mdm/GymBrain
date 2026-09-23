@@ -153,9 +153,7 @@ public sealed class StartWorkoutCommandHandler(
         }
 
         if (string.IsNullOrEmpty(rawJson))
-            throw new InvalidOperationException(
-                $"Failed to generate workout after trying {modelsToTry.Count} model(s). Last error: {lastException?.Message}",
-                lastException);
+            throw lastException ?? new InvalidOperationException("No model returned a workout. Choose another model in Vault.");
 
         // Safety Gate: sanitize hallucinated IDs and clamp weights
         var safeJson = SafetyGate.Validate(rawJson, safeExercises, user.ExperienceLevel);

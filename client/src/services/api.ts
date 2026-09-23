@@ -58,6 +58,9 @@ async function request<T>(
     const data = await res.json();
     return { data };
   } catch (err) {
+    if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      return { error: 'The request took too long. Please try again or choose another model in Vault.' };
+    }
     return { error: err instanceof Error ? err.message : 'Network error' };
   }
 }
@@ -124,6 +127,7 @@ export function startWorkout(workoutFocus?: string) {
   return request<WorkoutResponse>('/api/workout/start', {
     method: 'POST',
     body: JSON.stringify({ workoutFocus }),
+    signal: AbortSignal.timeout(50000),
   });
 }
 
@@ -190,6 +194,7 @@ export function generateNutritionPlan(diet: string, calories: number, goal: stri
   return request<NutritionResponse>('/api/nutrition/generate', {
     method: 'POST',
     body: JSON.stringify({ diet, calories, goal, durationDays: 1 }),
+    signal: AbortSignal.timeout(90000),
   });
 }
 

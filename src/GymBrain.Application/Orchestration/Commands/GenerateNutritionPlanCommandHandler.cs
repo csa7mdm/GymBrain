@@ -19,6 +19,9 @@ public sealed class GenerateNutritionPlanCommandHandler(
 
     public async Task<GenerateNutritionPlanResponse> Handle(GenerateNutritionPlanCommand request, CancellationToken ct)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(85));
+        ct = timeout.Token;
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, ct)
             ?? throw new InvalidOperationException("User not found.");
 

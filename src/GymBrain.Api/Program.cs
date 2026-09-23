@@ -6,6 +6,7 @@ using Serilog;
 using GymBrain.Application.Common.Interfaces;
 using GymBrain.Application;
 using GymBrain.Infrastructure;
+using GymBrain.Infrastructure.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +81,11 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         await context.Response.WriteAsJsonAsync(new { detail = ex.Message });
     }
+    catch (ProviderResponseException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status502BadGateway;
+        await context.Response.WriteAsJsonAsync(new { detail = ex.Message });
+    }
     catch (OperationCanceledException) when (!context.RequestAborted.IsCancellationRequested)
     {
         context.Response.StatusCode = StatusCodes.Status504GatewayTimeout;
@@ -107,6 +113,12 @@ app.Use(async (context, next) =>
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
         await context.Response.WriteAsJsonAsync(new { detail = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        Log.Error("Unhandled request failure of type {ExceptionType}", ex.GetType().Name);
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsJsonAsync(new { detail = "The request could not be completed. Please try again." });
     }
 });
 

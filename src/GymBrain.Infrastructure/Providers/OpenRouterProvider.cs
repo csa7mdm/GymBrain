@@ -63,22 +63,58 @@ public sealed class OpenRouterProvider(HttpClient httpClient) : ILlmProvider
         request.Headers.Add("HTTP-Referer", "https://gymbrain.ai");
         request.Headers.Add("X-Title", "GymBrain");
 
-        var response = await httpClient.SendAsync(request, ct);
+        using var response = await httpClient.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            var error = await response.Content.ReadAsStringAsync(ct);
-            throw new InvalidOperationException($"OpenRouter API error: {response.StatusCode} - {error}");
+            throw new ProviderResponseException(response.StatusCode switch
+            {
+                System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden =>
+                    "OpenRouter rejected the saved API key or its permissions. Update the connection in Vault.",
+                System.Net.HttpStatusCode.TooManyRequests =>
+                    "OpenRouter is limiting this model right now (429). Wait or choose another model in Vault.",
+                System.Net.HttpStatusCode.NotFound =>
+                    "The selected OpenRouter model is unavailable (404). Load the latest models in Vault.",
+                _ => "OpenRouter could not complete the request. Try again or choose another model in Vault."
+            });
         }
 
         var responseJson = await response.Content.ReadAsStringAsync(ct);
-        using var doc = JsonDocument.Parse(responseJson);
+        try
+        {
+            using var doc = JsonDocument.Parse(responseJson);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.Object &&
+                error.TryGetProperty("code", out var code))
+            {
+                var codeText = code.ValueKind switch
+                {
+                    JsonValueKind.Number => code.GetRawText(),
+                    JsonValueKind.String => code.GetString(),
+                    _ => null
+                };
+                if (codeText is "429" or "rate_limit_exceeded")
+                    throw new ProviderResponseException("OpenRouter is limiting this model right now (429). Wait or choose another model in Vault.");
+                if (codeText is "404" or "model_not_found")
+                    throw new ProviderResponseException("The selected OpenRouter model is unavailable (404). Load the latest models in Vault.");
+            }
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("choices", out var choices) &&
+                choices.ValueKind == JsonValueKind.Array && choices.GetArrayLength() > 0 &&
+                choices[0].ValueKind == JsonValueKind.Object &&
+                choices[0].TryGetProperty("message", out var message) &&
+                message.ValueKind == JsonValueKind.Object &&
+                message.TryGetProperty("content", out var content) &&
+                content.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(content.GetString()))
+                return content.GetString()!;
+        }
+        catch (JsonException) { /* A successful HTTP status is not proof of usable model output. */ }
 
-        return doc.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString() ?? throw new InvalidOperationException("OpenRouter returned empty content.");
+        // Never expose the provider body; it may contain private request details.
+        throw new ProviderResponseException(
+            "OpenRouter did not return a usable answer for this model. Choose another current model in Vault and retry.");
     }
 
     public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default)

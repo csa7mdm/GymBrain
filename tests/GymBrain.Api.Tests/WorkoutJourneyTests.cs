@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using GymBrain.Application.Common.Interfaces;
 using GymBrain.Infrastructure.Persistence;
+using GymBrain.Infrastructure.Providers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -19,6 +20,31 @@ namespace GymBrain.Api.Tests;
 
 public sealed class WorkoutJourneyTests
 {
+    [Fact]
+    public async Task ProviderFailureReturnsSafeCorsReadableError()
+    {
+        await using var factory = new Factory();
+        using var client = factory.CreateClient();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<GymBrainDbContext>().Database.EnsureCreatedAsync();
+        var account = await Read(await client.PostAsJsonAsync("/api/auth/register", new {
+            email = "provider-error@example.invalid", password = "TestPassword123!"
+        }));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", account.GetProperty("token").GetString());
+        client.DefaultRequestHeaders.Add("Origin", "http://localhost:5173");
+        factory.Provider.Fail = true;
+
+        var response = await client.PostAsJsonAsync("/api/nutrition/generate", new {
+            diet = "Standard", calories = 2000, goal = "strength", durationDays = 1
+        });
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        Assert.Equal("http://localhost:5173", response.Headers.GetValues("Access-Control-Allow-Origin").Single());
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("another model", body);
+        Assert.DoesNotContain("StackTrace", body);
+    }
+
     [Fact]
     public async Task RealHttpJourneyPersistsCompletionAcrossLoginAndEnforcesOwnershipAndLimits()
     {
@@ -172,10 +198,11 @@ public sealed class WorkoutJourneyTests
     private sealed class TestProvider : ILlmProviderFactory, ILlmProvider
     {
         public string LastMessage = ""; public string LastPrompt = "";
+        public bool Fail;
         public string ProviderName => "groq";
         public ILlmProvider GetProvider(string name) => this;
         public Task<string> ChatCompletionAsync(string apiKey, string model, string systemPrompt, string userMessage, bool forceJson = true, int maxTokens = 2048, CancellationToken ct = default)
-        { LastMessage = userMessage; LastPrompt = systemPrompt; return Task.FromResult("""{"components":[{"type":"set_tracker","payload":{"exercise_id":"10000001-0000-0000-0000-000000000013","sets":2,"reps":8,"weight_kg":0}}]}"""); }
+        { if (Fail) throw new ProviderResponseException("Choose another model in Vault."); LastMessage = userMessage; LastPrompt = systemPrompt; return Task.FromResult("""{"components":[{"type":"set_tracker","payload":{"exercise_id":"10000001-0000-0000-0000-000000000013","sets":2,"reps":8,"weight_kg":0}}]}"""); }
         public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default) => Task.FromResult(Enumerable.Empty<string>());
         public Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default) => Task.FromResult(true);
     }
