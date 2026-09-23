@@ -14,6 +14,7 @@ public static class SafetyGate
             var start = rawJson.IndexOf('{'); var end = rawJson.LastIndexOf('}');
             if (start < 0 || end <= start) throw new JsonException();
             var root = JsonNode.Parse(rawJson[start..(end + 1)]) as JsonObject ?? throw new JsonException();
+            root = root["workout"] as JsonObject ?? root["plan"] as JsonObject ?? root;
             var catalog = validExercises.ToDictionary(e => e.Id.ToString(), StringComparer.OrdinalIgnoreCase);
             if (catalog.Count == 0) throw new JsonException();
             var maxWeight = level switch { ExperienceLevel.Advanced or ExperienceLevel.Athlete => 200, ExperienceLevel.Intermediate => 100, _ => 40 };
@@ -40,6 +41,16 @@ public static class SafetyGate
                     else throw new JsonException();
                 }
             }
+            else if (root["exercises"] is JsonArray exercises)
+            {
+                if (exercises.Count > 20) throw new JsonException();
+                foreach (var item in exercises)
+                {
+                    var payload = item as JsonObject ?? throw new JsonException();
+                    components.Add(new JsonObject { ["type"] = "set_tracker", ["payload"] = ExercisePayload(payload, catalog, maxWeight) });
+                    count++;
+                }
+            }
             else if (root.ContainsKey("exercise_id"))
             {
                 components.Add(new JsonObject { ["type"] = "set_tracker", ["payload"] = ExercisePayload(root, catalog, maxWeight) });
@@ -49,9 +60,9 @@ public static class SafetyGate
             return new JsonObject { ["screen_id"] = "workout_today", ["components"] = components }
                 .ToJsonString(new JsonSerializerOptions { WriteIndented = true });
         }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException or ArgumentException)
         {
-            throw new InvalidOperationException("The generated workout did not pass validation. Please try again.", ex);
+            throw new InvalidOperationException("The selected model returned a workout GymBrain could not use. Choose another model in Vault and retry.", ex);
         }
     }
 

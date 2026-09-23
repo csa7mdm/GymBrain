@@ -96,4 +96,21 @@ public class SafetyGateTests
         var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Beginner);
         result.Should().Contain("Barbell Squat").And.NotContain("Unsafe invented movement").And.NotContain("wrong");
     }
+
+    [Fact]
+    public void AcceptsExerciseArrayButUsesCatalogIdentity()
+    {
+        var json = """{"workout":{"exercises":[{"exercise_id":"10000001-0000-0000-0000-000000000001","exercise_name":"Invented name","sets":3,"reps":8}]}}""";
+        var result = SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Intermediate);
+        result.Should().Contain("Barbell Squat").And.NotContain("Invented name");
+        result.Should().Contain("set_tracker");
+    }
+
+    [Fact]
+    public void RejectsExerciseArrayContainingUnknownId()
+    {
+        var json = """{"exercises":[{"exercise_id":"10000001-0000-0000-0000-000000000001"},{"exercise_id":"00000000-0000-0000-0000-fakefakefake"}]}""";
+        var action = () => SafetyGate.Validate(json, ValidExercises, ExperienceLevel.Intermediate);
+        action.Should().Throw<InvalidOperationException>();
+    }
 }

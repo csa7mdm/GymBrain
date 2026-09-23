@@ -142,7 +142,7 @@ public sealed class StartWorkoutCommandHandler(
         {
             try
             {
-                rawJson = await provider.ChatCompletionAsync(apiKey, modelToTry, systemPrompt, userMessage, forceJson: true, ct: ct);
+                rawJson = await provider.ChatCompletionAsync(apiKey, modelToTry, systemPrompt, userMessage, forceJson: true, maxTokens: 3500, ct: ct);
                 break;
             }
             catch (Exception ex) when (ex.Message.Contains("429") || ex.Message.Contains("TooManyRequests") || ex.Message.Contains("404"))

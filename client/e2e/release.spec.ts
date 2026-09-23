@@ -276,6 +276,21 @@ test('meal plan shows one recipe at a time with ingredients and cooking steps', 
   await expect(page.getByRole('heading', { name: 'Oat bowl' })).toBeVisible();
 });
 
+test('meal plan accepts a fenced wrapped recipe and displays model format errors', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  let payload = '```json\n' + JSON.stringify({ meal_plan: { meals: [{ title: 'Bean bowl', meal_type: 'Lunch',
+    ingredients: ['100 g beans'], instructions: ['Rinse beans.', 'Cook until tender.'] }] } }) + '\n```';
+  await page.route('**/api/nutrition/generate', route => route.fulfill({ json: { payloadJson: payload } }));
+  await page.goto('/'); await page.getByRole('button', { name: /Profile/ }).click();
+  await page.getByRole('button', { name: /Generate AI Meal Plan/ }).click();
+  await expect(page.getByRole('heading', { name: 'Bean bowl' })).toBeVisible();
+  await expect(page.getByText('100 g beans')).toBeVisible();
+  await expect(page.getByText('Cook until tender.')).toBeVisible();
+  payload = '{"days":[}';
+  await page.getByRole('button', { name: /Generate AI Meal Plan/ }).click();
+  await expect(page.getByText(/incomplete meal-plan JSON/)).toBeVisible();
+});
+
 test('personal profile comes from the server on a fresh browser and ignores stale local values', async ({ page, browser }) => {
   const personalProfile = { name: 'Server Athlete', age: 34, height: 180, weight: 80, focusAreas: ['Core'] };
   let saved = personalProfile;

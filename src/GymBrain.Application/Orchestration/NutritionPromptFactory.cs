@@ -108,6 +108,7 @@ public static class NutritionPromptFactory
             - Respect the available resources when selecting recipes and prep complexity
             - shopping_notes should help the user buy once and reuse ingredients efficiently
             - reminders should be practical and non-spammy
+            - Prioritize complete, valid JSON and all meal recipes over optional narrative. Keep notes and descriptions short so the answer fits the output limit.
             - Output raw JSON only. No markdown fences, no backticks.
             """;
     }

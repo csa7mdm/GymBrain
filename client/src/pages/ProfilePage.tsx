@@ -128,14 +128,12 @@ export default function ProfilePage() {
       if (res.error) {
         setNutritionError(res.error);
       } else if (res.data?.payloadJson) {
-        let raw = res.data.payloadJson;
-        if (raw.startsWith('```')) {
-          raw = raw.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-        }
-        setNutritionPlan(parseMealPlan(raw));
+        setNutritionPlan(parseMealPlan(res.data.payloadJson));
+      } else {
+        setNutritionError('The model returned an empty meal plan. Try another model in Vault.');
       }
-    } catch {
-      setNutritionError('Failed to generate nutrition plan.');
+    } catch (error) {
+      setNutritionError(error instanceof Error ? error.message : 'Failed to display the meal plan.');
     }
     setGeneratingNutrition(false);
   };
