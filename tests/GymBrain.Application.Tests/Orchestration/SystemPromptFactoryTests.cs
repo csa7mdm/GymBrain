@@ -36,6 +36,8 @@ public class SystemPromptFactoryTests
         var prompt = SystemPromptFactory.Build("Coach", Exercises, workoutsCompleted: 0);
         prompt.Should().Contain("MUST match an entry from the EXERCISES list");
         prompt.Should().Contain("Never invent");
+        prompt.Should().Contain("\"exercises\"");
+        prompt.Should().NotContain("tone_card");
     }
 
     [Fact]

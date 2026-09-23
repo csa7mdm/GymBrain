@@ -40,6 +40,17 @@ public sealed class OpenRouterProviderTests
         Assert.DoesNotContain("private provider detail", error.Message);
     }
 
+    [Fact]
+    public async Task TruncatedCompletionReturnsSpecificErrorWithoutLeakingContent()
+    {
+        using var http = Client(HttpStatusCode.OK,
+            """{"choices":[{"finish_reason":"length","message":{"content":"private partial recipe"}}]}""");
+        var error = await Assert.ThrowsAsync<ProviderResponseException>(() =>
+            new OpenRouterProvider(http).ChatCompletionAsync("test-key", "example:free", "system", "user"));
+        Assert.Contains("ran out of output space", error.Message);
+        Assert.DoesNotContain("private partial recipe", error.Message);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized, "saved API key")]
     [InlineData(HttpStatusCode.TooManyRequests, "429")]

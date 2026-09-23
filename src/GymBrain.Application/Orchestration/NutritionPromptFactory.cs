@@ -25,6 +25,45 @@ public static class NutritionPromptFactory
         if (string.IsNullOrWhiteSpace(locationLine))
             locationLine = "Not specified";
 
+        // The app currently requests one day. Keep that response focused on the
+        // recipe fields it actually displays; optional planning metadata made
+        // reasoning models exhaust their output budget before closing the JSON.
+        if (durationDays == 1)
+        {
+            return $$"""
+                Return one complete JSON object containing a one-day meal plan. No markdown or extra text.
+                Diet: {{diet}}. Goal: {{goal}}. Target: {{calories}} kcal for the day.
+                Coach tone: {{tonePersona}}. Location: {{locationLine}}.
+                Monthly budget: {{budgetLine}}. Cooking resources: {{resources}}.
+
+                Use exactly this compact shape:
+                {
+                  "message_from_coach": "one short sentence",
+                  "days": [{
+                    "day_number": 1,
+                    "meals": [{
+                      "type": "Breakfast, Lunch, or Dinner",
+                      "name": "recipe name",
+                      "calories": 600,
+                      "protein_g": 25,
+                      "carbs_g": 70,
+                      "fat_g": 20,
+                      "description": "one short sentence",
+                      "servings": 1,
+                      "prep_minutes": 10,
+                      "cook_minutes": 15,
+                      "ingredients": [{ "name": "ingredient", "quantity": "measured amount" }],
+                      "steps": ["actionable cooking step"]
+                    }]
+                  }]
+                }
+                Include exactly three complete meals with measured ingredients and ordered cooking steps.
+                Keep descriptions and steps concise so the JSON finishes within the output limit.
+                Respect the stated diet and resources. Calories and macros are estimates per serving.
+                Never claim medical suitability. Return valid JSON only.
+                """;
+        }
+
         return $$"""
             You are a world-class NutritionExpert, MealPrepPlanner, and BudgetAwareCoach.
             User Profile:

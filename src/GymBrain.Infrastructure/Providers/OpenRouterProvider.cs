@@ -108,7 +108,14 @@ public sealed class OpenRouterProvider(HttpClient httpClient) : ILlmProvider
                 message.TryGetProperty("content", out var content) &&
                 content.ValueKind == JsonValueKind.String &&
                 !string.IsNullOrWhiteSpace(content.GetString()))
+            {
+                if (choices[0].TryGetProperty("finish_reason", out var finishReason) &&
+                    finishReason.ValueKind == JsonValueKind.String &&
+                    finishReason.GetString() == "length")
+                    throw new ProviderResponseException(
+                        "The selected OpenRouter model ran out of output space before finishing. Choose another model in Vault and retry.");
                 return content.GetString()!;
+            }
         }
         catch (JsonException) { /* A successful HTTP status is not proof of usable model output. */ }
 
