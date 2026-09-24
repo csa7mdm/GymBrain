@@ -4,7 +4,7 @@ namespace GymBrain.Application.Orchestration;
 
 public static class NutritionPlanPayload
 {
-    public static string ValidateAndExtract(string response)
+    public static string ValidateAndExtract(string response, int expectedDays = 1)
     {
         if (string.IsNullOrWhiteSpace(response) || response.Length > 500_000)
             throw Invalid();
@@ -21,12 +21,23 @@ public static class NutritionPlanPayload
             var plan = Child(root, "meal_plan") ?? Child(root, "plan") ?? root;
             var meals = Child(plan, "meals");
             if (meals is { ValueKind: JsonValueKind.Array })
+            {
+                if (expectedDays != 1) throw Invalid();
                 ValidateMeals(meals.Value);
+            }
             else if (Child(plan, "days") is { ValueKind: JsonValueKind.Array } days)
             {
+                if (days.GetArrayLength() != expectedDays) throw Invalid();
+                var seenDays = new HashSet<int>();
                 var count = 0;
                 foreach (var day in days.EnumerateArray())
                 {
+                    if (expectedDays > 1)
+                    {
+                        var number = Child(day, "day_number") ?? Child(day, "day");
+                        if (number is not { ValueKind: JsonValueKind.Number } n || !n.TryGetInt32(out var dayNumber) ||
+                            dayNumber < 1 || dayNumber > expectedDays || !seenDays.Add(dayNumber)) throw Invalid();
+                    }
                     if (Child(day, "meals") is not { ValueKind: JsonValueKind.Array } dayMeals) throw Invalid();
                     count += ValidateMeals(dayMeals);
                 }

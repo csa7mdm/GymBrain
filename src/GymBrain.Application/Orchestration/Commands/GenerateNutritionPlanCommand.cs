@@ -13,6 +13,9 @@ public sealed record GenerateNutritionPlanCommand(
     string? Country,
     string? City,
     string[]? AvailableResources,
-    string? ReminderTime) : IRequest<GenerateNutritionPlanResponse>;
+    string? ReminderTime,
+    decimal? DailyBudget = null,
+    string[]? PreferredItems = null,
+    string? Restrictions = null) : IRequest<GenerateNutritionPlanResponse>;
 
 public sealed record GenerateNutritionPlanResponse(string PayloadJson);

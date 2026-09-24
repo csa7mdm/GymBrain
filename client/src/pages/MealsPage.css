@@ -13,3 +13,12 @@
 .meals-page__field select { width: 100%; min-height: 48px; border: 1px solid var(--md-outline-variant); border-radius: 12px; padding: 0 12px; background: var(--md-surface-container); color: var(--md-on-surface); font: inherit; }
 .meals-page__field input[type="range"] { width: 100%; min-height: 44px; accent-color: var(--md-primary); }
 .meals-page__field strong { font-weight: 700; }
+
+.meals-page__options { margin: 20px 0; border-block: 1px solid var(--md-outline-variant); }
+.meals-page__options summary { min-height: 52px; padding: 14px 0; cursor: pointer; font-weight: 700; }
+.meals-page__options summary span { color: var(--md-on-surface-variant); font-weight: 400; font-size: .85rem; margin-left: 8px; }
+.meals-page__budget { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+.meals-page__field input[type="number"], .meals-page__field textarea { min-width: 0; width: 100%; min-height: 48px; padding: 12px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface-container); color: var(--md-on-surface); font: inherit; }
+.meals-page__field textarea { resize: vertical; }
+.meals-page__help { font-size: .875rem; line-height: 1.5; margin-top: -8px; }
+@media (max-width: 360px) { .meals-page__budget { grid-template-columns: minmax(0, 1fr); gap: 0; } }

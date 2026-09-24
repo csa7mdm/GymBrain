@@ -175,26 +175,66 @@ public sealed class WorkoutJourneyTests
 
         var firstPlan = """{"days":[{"day_number":1,"meals":[{"name":"Oat bowl","ingredients":[{"name":"Oats","quantity":"50 g"}],"steps":["Simmer oats"]}]}]}""";
         factory.Provider.NutritionResponse = firstPlan;
-        var generated = await Read(await client.PostAsJsonAsync("/api/nutrition/generate", new { diet = "Standard", calories = 2000, goal = "health", durationDays = 1 }));
-        Assert.Equal(firstPlan, generated.GetProperty("payloadJson").GetString());
+        var generated = await Read(await client.PostAsJsonAsync("/api/nutrition/generate", new { diet = "Standard", calories = 2000, goal = "health" }));
+        var persisted = generated.GetProperty("payloadJson").GetString()!;
+        Assert.Equal(JsonDocument.Parse(firstPlan).RootElement.GetProperty("days").GetRawText(),
+            JsonDocument.Parse(persisted).RootElement.GetProperty("days").GetRawText());
+        Assert.Equal(1, JsonDocument.Parse(persisted).RootElement.GetProperty("planning_preferences").GetProperty("durationDays").GetInt32());
 
         client.DefaultRequestHeaders.Authorization = null;
         var login = await Read(await client.PostAsJsonAsync("/api/auth/login", new { email = "meals-one@example.invalid", password = "TestPassword123!" }));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.GetProperty("token").GetString());
         var saved = await Read(await client.GetAsync("/api/nutrition/latest"));
-        Assert.Equal(firstPlan, saved.GetProperty("payloadJson").GetString());
+        Assert.Equal(persisted, saved.GetProperty("payloadJson").GetString());
         Assert.NotEqual(default, saved.GetProperty("generatedAtUtc").GetDateTime());
 
         factory.Provider.NutritionResponse = """{"days":[{"meals":[{"name":"Truncated soup","ingredients":["lentils"]}]}]}""";
         var invalid = await client.PostAsJsonAsync("/api/nutrition/generate", new { diet = "Standard", calories = 2000, goal = "health", durationDays = 1 });
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         Assert.Contains("incomplete meal plan", await invalid.Content.ReadAsStringAsync());
-        Assert.Equal(firstPlan, (await Read(await client.GetAsync("/api/nutrition/latest"))).GetProperty("payloadJson").GetString());
+        Assert.Equal(persisted, (await Read(await client.GetAsync("/api/nutrition/latest"))).GetProperty("payloadJson").GetString());
 
         client.DefaultRequestHeaders.Authorization = null;
         var second = await Read(await client.PostAsJsonAsync("/api/auth/register", new { email = "meals-two@example.invalid", password = "TestPassword123!" }));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", second.GetProperty("token").GetString());
         Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/nutrition/latest")).StatusCode);
+    }
+
+    [Fact]
+    public async Task MealOptionsAreValidatedBeforeProviderCallAndSavedWithThePlan()
+    {
+        await using var factory = new Factory();
+        using var client = factory.CreateClient();
+        using (var scope = factory.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<GymBrainDbContext>().Database.EnsureCreatedAsync();
+        var account = await Read(await client.PostAsJsonAsync("/api/auth/register", new { email = "meal-options@example.invalid", password = "TestPassword123!" }));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", account.GetProperty("token").GetString());
+        foreach (var invalidOptions in new object[] {
+            new { durationDays = 0 }, new { durationDays = 8 }, new { dailyBudget = -10 },
+            new { dailyBudget = 100 }, new { dailyBudget = 100, currencyCode = "invalid" },
+            new { restrictions = new string('x', 501) }, new { preferredItems = new[] { new string('x', 81) } }
+        })
+        {
+            var body = JsonSerializer.SerializeToNode(invalidOptions)!.AsObject();
+            body["diet"] = "Standard"; body["calories"] = 2000; body["goal"] = "health";
+            var invalid = await client.PostAsJsonAsync("/api/nutrition/generate", body);
+            Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        }
+        Assert.Equal(0, factory.Provider.NutritionCalls);
+        factory.Provider.NutritionResponse = JsonSerializer.Serialize(new { days = Enumerable.Range(1, 7).Select(day => new {
+            day_number = day, meals = new[] { new { name = "Bean bowl", ingredients = new[] { "beans", "rice" }, steps = new[] { "Cook beans and rice." } } }
+        }) });
+        var result = await Read(await client.PostAsJsonAsync("/api/nutrition/generate", new {
+            diet = "Standard", calories = 2000, goal = "health", durationDays = 7,
+            dailyBudget = 150, currencyCode = "EGP", preferredItems = new[] { "rice" }, restrictions = "no peanuts"
+        }));
+        Assert.Contains("no peanuts", factory.Provider.LastPrompt);
+        Assert.Contains("\"dailyBudget\":150", factory.Provider.LastPrompt);
+        using var plan = JsonDocument.Parse(result.GetProperty("payloadJson").GetString()!);
+        Assert.Equal(7, plan.RootElement.GetProperty("days").GetArrayLength());
+        Assert.Equal(150, plan.RootElement.GetProperty("planning_preferences").GetProperty("dailyBudget").GetInt32());
+        Assert.Equal(result.GetProperty("payloadJson").GetString(),
+            (await Read(await client.GetAsync("/api/nutrition/latest"))).GetProperty("payloadJson").GetString());
     }
 
     private static async Task<JsonElement> Read(HttpResponseMessage response)
@@ -236,10 +276,11 @@ public sealed class WorkoutJourneyTests
         public string LastMessage = ""; public string LastPrompt = "";
         public bool Fail;
         public string NutritionResponse = "";
+        public int NutritionCalls;
         public string ProviderName => "groq";
         public ILlmProvider GetProvider(string name) => this;
         public Task<string> ChatCompletionAsync(string apiKey, string model, string systemPrompt, string userMessage, bool forceJson = true, int maxTokens = 2048, CancellationToken ct = default)
-        { if (Fail) throw new ProviderResponseException("Choose another model in Vault."); LastMessage = userMessage; LastPrompt = systemPrompt; return Task.FromResult(userMessage.Contains("meal plan") && NutritionResponse.Length > 0 ? NutritionResponse : """{"components":[{"type":"set_tracker","payload":{"exercise_id":"10000001-0000-0000-0000-000000000013","sets":2,"reps":8,"weight_kg":0}}]}"""); }
+        { if (userMessage.Contains("meal plan")) NutritionCalls++; if (Fail) throw new ProviderResponseException("Choose another model in Vault."); LastMessage = userMessage; LastPrompt = systemPrompt; return Task.FromResult(userMessage.Contains("meal plan") && NutritionResponse.Length > 0 ? NutritionResponse : """{"components":[{"type":"set_tracker","payload":{"exercise_id":"10000001-0000-0000-0000-000000000013","sets":2,"reps":8,"weight_kg":0}}]}"""); }
         public Task<IEnumerable<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default) => Task.FromResult(Enumerable.Empty<string>());
         public Task<bool> CheckHealthAsync(string apiKey, string model, CancellationToken ct = default) => Task.FromResult(true);
     }

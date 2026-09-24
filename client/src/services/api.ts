@@ -200,10 +200,18 @@ export function getLatestMealPlan() {
   return request<LatestMealPlan | null>('/api/nutrition/latest');
 }
 
-export function generateNutritionPlan(diet: string, calories: number, goal: string) {
+export interface MealPlanningOptions {
+  durationDays?: number;
+  dailyBudget?: number;
+  currencyCode?: string;
+  preferredItems?: string[];
+  restrictions?: string;
+}
+
+export function generateNutritionPlan(diet: string, calories: number, goal: string, options: MealPlanningOptions = {}) {
   return request<NutritionResponse>('/api/nutrition/generate', {
     method: 'POST',
-    body: JSON.stringify({ diet, calories, goal, durationDays: 1 }),
+    body: JSON.stringify({ diet, calories, goal, ...options }),
     signal: AbortSignal.timeout(90000),
   });
 }

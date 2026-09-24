@@ -387,3 +387,56 @@ test('personal profile comes from the server on a fresh browser and ignores stal
   await expect(fresh.getByText('80 kg', { exact: true })).toBeVisible();
   await context.close();
 });
+
+
+test('meal options are optional, sent accurately, restored, and support day navigation', async ({ page }) => {
+  await signInLocally(page, { name: 'Athlete' });
+  let saved: { payloadJson: string; generatedAtUtc: string } | null = null;
+  const writes: Record<string, unknown>[] = [];
+  await page.route('**/api/nutrition/latest', route => route.fulfill(saved ? { json: saved } : { status: 204 }));
+  await page.route('**/api/nutrition/generate', route => {
+    const options = route.request().postDataJSON();
+    writes.push(options);
+    saved = { generatedAtUtc: '2026-09-23T10:00:00Z', payloadJson: JSON.stringify({
+      planning_preferences: { ...options, durationDays: options.durationDays || 1 },
+      days: Array.from({ length: options.durationDays || 1 }, (_, index) => ({ day_number: index + 1,
+        meals: [{ name: `Bean bowl day ${index + 1}`, ingredients: ['beans'], steps: ['Cook beans.'] }] })),
+    }) };
+    return route.fulfill({ json: saved });
+  });
+  await page.goto('/');
+  await page.getByRole('navigation').getByRole('button', { name: 'Meals' }).click();
+  await page.getByRole('button', { name: 'Generate meal plan', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Bean bowl day 1' })).toBeVisible();
+  expect(writes[0]).toEqual({ diet: 'Standard', calories: 2000, goal: 'muscle' });
+  await page.getByText('More options', { exact: false }).click();
+  await page.getByLabel('Number of days').selectOption('7');
+  await page.getByLabel('Budget per day').fill('150.50');
+  await page.getByLabel('Currency', { exact: true }).selectOption('EGP');
+  await page.getByLabel('Preferred items', { exact: true }).fill('rice, chicken\nlentils');
+  await page.getByLabel('Restrictions', { exact: true }).fill('No peanuts');
+  await page.getByRole('button', { name: 'Generate new meal plan' }).click();
+  await expect(page.getByLabel('Jump to day')).toBeVisible();
+  expect(writes[1]).toMatchObject({ durationDays: 7, dailyBudget: 150.5, currencyCode: 'EGP',
+    preferredItems: ['rice', 'chicken', 'lentils'], restrictions: 'No peanuts' });
+  await page.getByLabel('Jump to day').selectOption('7');
+  await expect(page.getByRole('heading', { name: 'Bean bowl day 7' })).toBeVisible();
+  await expect(page.getByText('Cook beans.', { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole('navigation').getByRole('button', { name: 'Meals' }).click();
+  await page.getByText('More options', { exact: false }).click();
+  await expect(page.getByLabel('Number of days')).toHaveValue('7');
+  await expect(page.getByLabel('Budget per day')).toHaveValue('150.5');
+  await expect(page.getByLabel('Preferred items', { exact: true })).toHaveValue('rice, chicken, lentils');
+  await expect(page.getByLabel('Restrictions', { exact: true })).toHaveValue('No peanuts');
+  await page.getByLabel('Budget per day').fill('-10');
+  await page.getByText('More options', { exact: false }).click();
+  await page.getByRole('button', { name: 'Generate new meal plan' }).click();
+  await expect(page.locator('.meals-page__options')).toHaveAttribute('open', '');
+  expect(writes).toHaveLength(2);
+  await page.getByLabel('Budget per day').fill('');
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.locator('.app-content').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await page.getByLabel('Number of days').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('meal-options-320.png') });
+});

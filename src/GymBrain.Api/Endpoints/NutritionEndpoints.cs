@@ -25,13 +25,16 @@ public static class NutritionEndpoints
                 request.Diet,
                 request.Calories,
                 request.Goal,
-                request.DurationDays,
+                request.DurationDays ?? 1,
                 request.MonthlyBudget,
                 request.CurrencyCode,
                 request.Country,
                 request.City,
                 request.AvailableResources,
-                request.ReminderTime);
+                request.ReminderTime,
+                request.DailyBudget,
+                request.PreferredItems,
+                request.Restrictions);
             var result = await sender.Send(command);
 
             return Results.Ok(result);
@@ -58,12 +61,15 @@ public record GenerateNutritionRequest(
     string Diet,
     int Calories,
     string Goal,
-    int DurationDays,
+    int? DurationDays,
     decimal? MonthlyBudget,
     string? CurrencyCode,
     string? Country,
     string? City,
     string[]? AvailableResources,
-    string? ReminderTime);
+    string? ReminderTime,
+    decimal? DailyBudget = null,
+    string[]? PreferredItems = null,
+    string? Restrictions = null);
 
 public record LatestNutritionPlanResponse(string PayloadJson, DateTime GeneratedAtUtc);

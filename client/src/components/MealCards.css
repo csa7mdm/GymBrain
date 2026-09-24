@@ -15,3 +15,9 @@
 .meal-steps { padding-left: 24px; }
 .meal-steps li { padding: 0 0 16px 8px; }
 .meal-steps li::marker { color: var(--md-primary); font-weight: 700; }
+
+.meal-preferences { margin: 16px 0; overflow-wrap: anywhere; }
+.meal-preferences summary { min-height: 44px; padding: 12px 0; cursor: pointer; font-weight: 600; }
+.meal-preferences p { color: var(--md-on-surface-variant); font-size: .875rem; line-height: 1.5; }
+.meal-day-picker { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 16px 0; font-weight: 600; }
+.meal-day-picker select { flex: 1; min-height: 48px; padding: 8px 12px; border: 1px solid var(--md-outline-variant); border-radius: 12px; background: var(--md-surface-container); color: var(--md-on-surface); font: inherit; }

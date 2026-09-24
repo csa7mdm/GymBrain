@@ -1,6 +1,7 @@
+import type { MealPlanningOptions } from './api';
 type Meal = { type: string; name: string; description: string; calories?: number; protein_g?: number; carbs_g?: number; fat_g?: number;
   servings?: number; prep_minutes?: number; cook_minutes?: number; ingredients: { name: string; quantity: string }[]; steps: string[]; day: number };
-export interface MealPlan { message: string; meals: Meal[]; }
+export interface MealPlan { message: string; meals: Meal[]; options?: MealPlanningOptions; }
 export function parseMealPlan(raw: string): MealPlan {
   const start = raw.indexOf('{');
   const end = raw.lastIndexOf('}');
@@ -39,6 +40,13 @@ export function parseMealPlan(raw: string): MealPlan {
     }
   }
   if (!meals.length) throw new Error('The model returned no readable meals. Try another model in Vault.');
-  return { message: text(plan.message_from_coach) || text(plan.message), meals };
+  const saved = object(data.planning_preferences);
+  const options: MealPlanningOptions | undefined = saved ? {
+    durationDays: number(saved.durationDays), dailyBudget: number(saved.dailyBudget),
+    currencyCode: text(saved.currencyCode) || undefined,
+    preferredItems: Array.isArray(saved.preferredItems) ? saved.preferredItems.map(text).filter(Boolean) : [],
+    restrictions: text(saved.restrictions) || undefined,
+  } : undefined;
+  return { options, message: text(plan.message_from_coach) || text(plan.message), meals };
 }
 

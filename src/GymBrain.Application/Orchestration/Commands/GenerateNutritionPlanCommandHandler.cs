@@ -2,6 +2,8 @@ using GymBrain.Application.Common.Interfaces;
 using GymBrain.Domain.Interfaces;
 using GymBrain.Domain.Entities;
 using MediatR;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymBrain.Application.Orchestration.Commands;
@@ -20,6 +22,18 @@ public sealed class GenerateNutritionPlanCommandHandler(
 
     public async Task<GenerateNutritionPlanResponse> Handle(GenerateNutritionPlanCommand request, CancellationToken ct)
     {
+        if (request.DurationDays is < 1 or > 7)
+            throw new ArgumentException("Choose between 1 and 7 days.");
+        if (request.DailyBudget is <= 0 or > 1000000)
+            throw new ArgumentException("Daily budget must be greater than zero and at most 1,000,000.");
+        if (request.DailyBudget.HasValue && (request.CurrencyCode is null ||
+            !System.Text.RegularExpressions.Regex.IsMatch(request.CurrencyCode, "^[A-Z]{3}$")))
+            throw new ArgumentException("Choose a three-letter currency for your daily budget.");
+        if (request.PreferredItems is { Length: > 20 } ||
+            request.PreferredItems?.Any(item => string.IsNullOrWhiteSpace(item) || item.Length > 80) == true)
+            throw new ArgumentException("Use up to 20 preferred items, each at most 80 characters.");
+        if (request.Restrictions?.Length > 500)
+            throw new ArgumentException("Keep restrictions within 500 characters.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(85));
         ct = timeout.Token;
@@ -59,7 +73,7 @@ public sealed class GenerateNutritionPlanCommandHandler(
 
         }
 
-        var durationDays = Math.Clamp(request.DurationDays, 1, 31);
+        var durationDays = request.DurationDays;
         var systemPrompt = NutritionPromptFactory.Build(
             user.TonePersona,
             request.Diet,
@@ -71,21 +85,25 @@ public sealed class GenerateNutritionPlanCommandHandler(
             request.Country,
             request.City,
             request.AvailableResources,
-            request.ReminderTime);
+            request.ReminderTime,
+            request.DailyBudget,
+            request.PreferredItems,
+            request.Restrictions);
 
-        var locationLine = string.Join(", ", new[] { request.City, request.Country }.Where(x => !string.IsNullOrWhiteSpace(x)));
-        if (string.IsNullOrWhiteSpace(locationLine))
-            locationLine = "the user's region";
-
-        var resourcesLine = request.AvailableResources is { Length: > 0 }
-            ? string.Join(", ", request.AvailableResources)
-            : "standard home cooking resources";
-
-        var userMessage = $"Generate a {durationDays}-day {request.Diet} meal plan for {request.Calories} daily calories focused on {request.Goal}. Use a monthly budget of {request.MonthlyBudget?.ToString("0.##") ?? "unspecified"} {request.CurrencyCode ?? "local currency"}, assume the user is in {locationLine}, and only rely on these available resources: {resourcesLine}.";
-
+        var userMessage = $"Generate the requested {durationDays}-day meal plan. Apply the planning preferences and restrictions in the system prompt. Return all requested days as complete JSON.";
         var provider = llmProviderFactory.GetProvider(providerName);
-        var rawJson = await provider.ChatCompletionAsync(apiKey, preferredModel, systemPrompt, userMessage, forceJson: true, maxTokens: 6000, ct: ct);
-        var payloadJson = NutritionPlanPayload.ValidateAndExtract(rawJson);
+        // Longer plans need more output room; keep the existing one-day budget.
+        var maxTokens = Math.Min(16000, 6000 + (durationDays - 1) * 1800);
+        var rawJson = await provider.ChatCompletionAsync(apiKey, preferredModel, systemPrompt, userMessage, forceJson: true, maxTokens: maxTokens, ct: ct);
+        var payloadJson = NutritionPlanPayload.ValidateAndExtract(rawJson, durationDays);
+        var payload = JsonNode.Parse(payloadJson)!.AsObject();
+        // Save the user's actual settings, not model-reported preferences.
+        payload["planning_preferences"] = JsonSerializer.SerializeToNode(new {
+            durationDays, dailyBudget = request.DailyBudget,
+            currencyCode = request.DailyBudget.HasValue ? request.CurrencyCode : null,
+            preferredItems = request.PreferredItems ?? [], restrictions = request.Restrictions?.Trim()
+        });
+        payloadJson = payload.ToJsonString();
         db.NutritionPlans.Add(new NutritionPlan(request.UserId, payloadJson));
         await db.SaveChangesAsync(ct);
         return new GenerateNutritionPlanResponse(payloadJson);
