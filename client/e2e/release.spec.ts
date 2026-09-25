@@ -1,5 +1,152 @@
 import { test, expect, type Page } from '@playwright/test';
 
+async function startTrainingFixture(page: Page) {
+  await signInLocally(page, { name: 'Athlete' });
+  await page.route('**/api/workout/start', route => route.fulfill({ json: { megaPayloadJson: JSON.stringify({ components: ['Squat', 'Row'].map((name, i) => ({
+    type: 'set_tracker', payload: { exercise_id: `fixture-${i}`, exercise_name: name, sets: 2, reps: 10, weight_kg: 5, rest_seconds: 90 },
+  })) }) } }));
+  await page.route('**/api/workout/exercise-metadata/**', route => route.fulfill({ status: 204 }));
+  await page.goto('/');
+  await page.getByRole('button', { name: /Start Training/ }).click();
+  await page.getByRole('button', { name: /Generate Workout/ }).click();
+  await expect(page.getByRole('heading', { name: 'Squat', exact: true })).toBeVisible();
+}
+
+test('rest timer pauses, extends, survives navigation and reload, and catches up after suspension', async ({ page }) => {
+  await startTrainingFixture(page);
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
+  await page.getByTitle('Set 1', { exact: true }).click();
+  const timer = page.getByRole('timer', { name: 'Rest time remaining' });
+  await expect(timer).toHaveText('1:30');
+  await page.locator('.app-content').evaluate(el => el.scrollTop = 0);
+  await page.screenshot({ path: test.info().outputPath('training-rest.png') });
+  await page.clock.runFor(10000);
+  await expect(timer).toHaveText('1:20');
+  await page.getByRole('button', { name: 'Pause timer' }).click();
+  await page.clock.fastForward(60000);
+  await expect(timer).toHaveText('1:20');
+  await page.getByRole('button', { name: '+15 seconds', exact: true }).click();
+  await expect(timer).toHaveText('1:35');
+  const nav = page.getByRole('navigation');
+  await nav.getByRole('button', { name: 'Home', exact: true }).click();
+  await nav.getByRole('button', { name: 'Train', exact: true }).click();
+  await page.getByRole('button', { name: /Resume Workout/ }).click();
+  await expect(timer).toHaveText('1:35');
+  await page.getByRole('button', { name: 'Resume timer' }).click();
+  await page.clock.runFor(5000);
+  await expect(timer).toHaveText('1:30');
+  await page.reload();
+  await nav.getByRole('button', { name: 'Train', exact: true }).click();
+  await page.getByRole('button', { name: /Resume Workout/ }).click();
+  await expect(timer).toHaveText('1:30');
+  await page.clock.fastForward(120000);
+  await expect(page.getByRole('heading', { name: 'Rest complete', exact: true })).toBeVisible();
+  await expect(timer).toHaveText('0:00');
+  await page.getByRole('button', { name: 'Restart timer' }).click();
+  await expect(timer).toHaveText('1:30');
+  await page.getByRole('button', { name: 'Pause timer' }).focus();
+  await page.clock.fastForward(120000);
+  await expect(page.getByRole('button', { name: 'Restart timer' })).toBeFocused();
+  await page.getByRole('button', { name: '+15 seconds', exact: true }).click();
+  await expect(timer).toHaveText('0:15');
+  await page.getByRole('button', { name: 'Skip rest', exact: true }).click();
+  await expect(timer).toHaveCount(0);
+  await page.clock.runFor(50);
+  await expect(page.getByRole('heading', { name: 'Squat', exact: true })).toBeFocused();
+});
+
+test('empty workouts remain retryable and expired rest restores with the selected exercise', async ({ page }) => {
+  await startTrainingFixture(page);
+  await page.getByRole('button', { name: /Row.*0\/2 sets/ }).click();
+  await page.getByTitle('Set 1', { exact: true }).click();
+  const nav = page.getByRole('navigation');
+  await nav.getByRole('button', { name: 'Home', exact: true }).click();
+  await page.clock.install();
+  await page.clock.fastForward(120000);
+  await nav.getByRole('button', { name: 'Train', exact: true }).click();
+  await page.getByRole('button', { name: /Resume Workout/ }).click();
+  await expect(page.getByRole('heading', { name: 'Row', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Rest complete', exact: true })).toBeVisible();
+  await page.reload();
+  await nav.getByRole('button', { name: 'Train', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Fresh' }).click();
+  await page.route('**/api/workout/start', route => route.fulfill({ json: { megaPayloadJson: JSON.stringify({ components: [] }) } }));
+  await page.getByRole('button', { name: /Generate Workout/ }).click();
+  await expect(page.getByRole('alert')).toContainText('No exercises returned');
+  await expect(page.getByRole('button', { name: 'Finish & Save' })).toBeDisabled();
+  await page.getByRole('button', { name: 'New workout', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Generate Workout/ })).toBeVisible();
+});
+
+test('set completion keeps exercise and focus stable, undo cancels its rest, final set starts no rest', async ({ page }) => {
+  await startTrainingFixture(page);
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await expect(page.getByRole('timer')).toBeVisible();
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await expect(page.getByRole('timer')).toHaveCount(0);
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await page.getByTitle('Set 2', { exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Squat', exact: true })).toBeVisible();
+  await expect(page.getByTitle('Set 2', { exact: true })).toBeFocused();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2');
+  // Undoing a different set must not cancel the most recent rest.
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await expect(page.getByRole('timer')).toBeVisible();
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await page.getByRole('button', { name: 'Next exercise: Row' }).click();
+  await expect(page.getByRole('heading', { name: 'Row', exact: true })).toBeFocused();
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await page.getByTitle('Set 2', { exact: true }).click();
+  await expect(page.getByRole('timer')).toHaveCount(0);
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '4');
+  await expect(page.getByRole('button', { name: 'Finish & Save' })).toBeEnabled();
+});
+
+test('swap dialog distinguishes failure and empty results, retries, contains focus and restores it', async ({ page }) => {
+  await startTrainingFixture(page);
+  let fail = true;
+  await page.route('**/api/workout/substitute', route => route.fulfill(fail ? { status: 503, json: { detail: 'Unavailable' } } : { json: { substitutes: [] } }));
+  const trigger = page.getByRole('button', { name: /Equipment busy/ });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Swap exercise' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Swap exercise', exact: true })).toBeFocused();
+  await expect(dialog.getByRole('alert')).toContainText('Could not load alternatives');
+  await expect(dialog.getByText('No matching alternatives', { exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Keep original exercise' }).focus();
+  await page.keyboard.press('Tab');
+  expect(await dialog.evaluate(el => el.contains(document.activeElement))).toBe(true);
+  fail = false;
+  await dialog.getByRole('button', { name: 'Try again' }).click();
+  await expect(dialog.getByText('No matching alternatives', { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.evaluate(() => document.documentElement.style.fontSize = '200%');
+  expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('training-dialog-large-text.png') });
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test('training controls reflow at 320px and large text with adequate touch targets', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await startTrainingFixture(page);
+  await page.getByTitle('Set 1', { exact: true }).click();
+  await page.locator('.app-content').evaluate(el => el.scrollTop = 0);
+  await page.screenshot({ path: test.info().outputPath('training-timer-320.png') });
+  for (const button of await page.locator('.workout-rest-panel button, .workout-current button, .workout-queue__item').all()) {
+    const box = await button.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+  }
+  await page.evaluate(() => document.documentElement.style.fontSize = '200%');
+  const layout = await page.locator('.app-content').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth,
+    overflow: [...el.querySelectorAll<HTMLElement>('*')].filter(node => node.getBoundingClientRect().right > el.getBoundingClientRect().right).map(node => ({ tag: node.tagName, class: node.className, width: node.clientWidth, text: node.textContent?.slice(0, 70) })) }));
+  expect(layout.scroll, JSON.stringify(layout)).toBeLessThanOrEqual(layout.width);
+  await expect(page.getByRole('button', { name: 'Pause timer' })).toBeVisible();
+});
+
 const serverProfile = {
   goal: 'muscle', equipmentJson: '["Dumbbells"]', injuries: '', daysPerWeek: 4,
   dietaryPreference: 'Standard', dailyCalories: 2000, experienceLevel: 'Advanced', workoutsCompleted: 2,

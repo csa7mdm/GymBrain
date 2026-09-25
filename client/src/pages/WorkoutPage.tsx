@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { startWorkout, saveWorkout, getSubstitute, trackEvent } from '../services/api';
+import { startWorkout, saveWorkout, trackEvent } from '../services/api';
 import type { SubstituteOption } from '../services/api';
 import { searchExercise, type ExerciseDbItem } from '../services/exerciseDb';
 import { useAuth } from '../context/auth';
 import type { Completion } from '../services/workoutHistory';
+import { useRestTimer } from '../hooks/useRestTimer';
+import WorkoutSubstituteDialog from '../components/WorkoutSubstituteDialog';
+import './WorkoutPage.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SduiPayload {
@@ -29,153 +32,6 @@ function useToast() {
     return { toasts, show };
 }
 
-// ─── Rest Timer ───────────────────────────────────────────────────────────────
-function useRestTimer() {
-    const [seconds, setSeconds] = useState(0);
-    const [isRunning, setIsRunning] = useState(false);
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const [duration, setDuration] = useState(0);
-    const start = useCallback((duration: number) => {
-        setDuration(duration);
-        setSeconds(duration);
-        setIsRunning(true);
-    }, []);
-    const stop = useCallback(() => { setIsRunning(false); setSeconds(0); }, []);
-    useEffect(() => {
-        if (isRunning && seconds > 0) {
-            intervalRef.current = setInterval(() => {
-                setSeconds(s => {
-                    if (s <= 1) {
-                        setIsRunning(false);
-                        // Haptic feedback when timer hits 0
-                        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
-                        // Audio chime
-                        try {
-                            const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-                            if (AudioContextClass) {
-                                const ctx = new AudioContextClass();
-                                const osc = ctx.createOscillator();
-                                const gain = ctx.createGain();
-                                osc.type = 'sine';
-                                osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-                                osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3); // A4
-                                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                                osc.connect(gain);
-                                gain.connect(ctx.destination);
-                                osc.start();
-                                osc.stop(ctx.currentTime + 0.3);
-                            }
-                        } catch { /* ignore if audio blocked */ }
-                        return 0;
-                    }
-                    return s - 1;
-                });
-            }, 1000);
-        }
-        return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-    }, [isRunning, seconds]);
-    return { seconds, isRunning, start, stop, duration };
-}
-
-// ─── Substitute Modal ─────────────────────────────────────────────────────────
-interface SubstituteModalProps {
-    exerciseId: string;
-    exerciseName: string;
-    onSelect: (sub: SubstituteOption) => void;
-    onDismiss: () => void;
-}
-function SubstituteModal({ exerciseId, exerciseName, onSelect, onDismiss }: SubstituteModalProps) {
-    const [subs, setSubs] = useState<SubstituteOption[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [offline, setOffline] = useState(false);
-
-    useEffect(() => {
-        let cancelled = false;
-        const timeout = setTimeout(() => {
-            if (!cancelled) {
-                setOffline(true);
-                setLoading(false);
-                setSubs([]);
-            }
-        }, 3000);
-
-        getSubstitute(exerciseId).then(res => {
-            clearTimeout(timeout);
-            if (cancelled) return;
-            if (res.data?.substitutes && res.data.substitutes.length > 0) {
-                setSubs(res.data.substitutes);
-                setOffline(false);
-            } else {
-                setSubs([]);
-                setOffline(true);
-            }
-            setLoading(false);
-        }).catch(() => {
-            clearTimeout(timeout);
-            if (cancelled) return;
-            setSubs([]);
-            setOffline(true);
-            setLoading(false);
-        });
-        return () => { cancelled = true; clearTimeout(timeout); };
-    }, [exerciseId]);
-
-    return (
-        <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-            zIndex: 1000, animation: 'fadeIn 0.2s ease'
-        }}>
-            <div style={{
-                background: 'var(--surface-elevated, #1e2030)', borderRadius: '20px 20px 0 0',
-                padding: '24px 20px 36px', width: '100%', maxWidth: 480,
-                maxHeight: '80vh', overflowY: 'auto'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <h3 style={{ color: 'var(--md-primary, #00FA9A)', margin: 0 }}>🔄 Swap Exercise</h3>
-                    <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: 'var(--md-on-surface, #fff)', fontSize: 22, cursor: 'pointer', padding: 4, lineHeight: 1 }}>✕</button>
-                </div>
-                <p style={{ color: 'var(--md-on-surface-variant, #aaa)', fontSize: 13, marginBottom: 16 }}>
-                    Original: <strong style={{ color: '#fff' }}>{exerciseName}</strong>
-                </p>
-                {offline && <div style={{ background: 'rgba(255,165,0,0.15)', border: '1px solid #FFBF00', borderRadius: 8, padding: '6px 12px', fontSize: 12, color: '#FFBF00', marginBottom: 12 }}>Could not load alternatives. Check your connection and try again.</div>}
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: 40 }}><div className="m3-spinner" style={{ width: 32, height: 32, borderWidth: 3 }} /><p style={{ color: '#aaa', marginTop: 12, fontSize: 14 }}>Checking alternatives against your profile...</p></div>
-                ) : subs.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 20, color: '#aaa' }}>
-                        <p>No alternatives match your current profile.</p>
-                        <p style={{ fontSize: 12 }}>Consider skipping this exercise.</p>
-                        <button className="m3-btn m3-btn--outlined" style={{ marginTop: 12 }} onClick={onDismiss}>I'll Wait</button>
-                    </div>
-                ) : (
-                    <>
-                        {subs.map((sub, i) => (
-                            <div key={i} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: '14px 16px', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 600, color: '#fff', fontSize: 15 }}>{sub.name}</div>
-                                        <div style={{ color: '#aaa', fontSize: 12, marginTop: 2 }}>🏋️ {sub.equipment}</div>
-                                    </div>
-                                    <button
-                                        className="m3-btn m3-btn--filled"
-                                        style={{ background: '#00FA9A', color: '#000', fontSize: 13, padding: '8px 14px', minHeight: 36, whiteSpace: 'nowrap' }}
-                                        onClick={() => onSelect(sub)}
-                                    >
-                                        Use This
-                                    </button>
-                                </div>
-                                <p style={{ color: '#bbb', fontSize: 12, margin: 0 }}>{sub.reason}</p>
-                            </div>
-                        ))}
-                        <button className="m3-btn m3-btn--outlined" style={{ width: '100%', marginTop: 8 }} onClick={onDismiss}>I'll Wait</button>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function WorkoutPage() {
     const { user } = useAuth();
@@ -195,13 +51,13 @@ export default function WorkoutPage() {
     const [expandedCard, setExpandedCard] = useState<number | null>(null);
     const workoutView = useRef<HTMLDivElement>(null);
     const revealExercise = () => requestAnimationFrame(() => {
-        workoutView.current?.scrollTo({ top: 0, behavior: 'instant' });
+        workoutView.current?.querySelector('.workout-current')?.scrollIntoView({ block: 'start', behavior: 'instant' });
         workoutView.current?.querySelector<HTMLElement>('.exercise-name')?.focus({ preventScroll: true });
     });
     const [selectedExercise, setSelectedExercise] = useState<number | null>(null);
     const [showAllExercises, setShowAllExercises] = useState(false);
     const restTimer = useRestTimer();
-    const [restExerciseIdx, setRestExerciseIdx] = useState<number | null>(null);
+    const [setAnnouncement, setSetAnnouncement] = useState('');
     const { toasts, show: showToast } = useToast();
 
     // Machine Taken state
@@ -211,12 +67,12 @@ export default function WorkoutPage() {
     useEffect(() => {
         if (payload && !saved) {
             try {
-                sessionStorage.setItem(draftKey, JSON.stringify({ payload, focus, sessionId, progress: [...setProgress], pendingJson }));
+                sessionStorage.setItem(draftKey, JSON.stringify({ payload, focus, sessionId, progress: [...setProgress], pendingJson, selectedExercise, rest: restTimer.state }));
             } catch { /* ignore storage quota */ }
         }
-    }, [payload, focus, sessionId, setProgress, pendingJson, draftKey, saved]);
+    }, [payload, focus, sessionId, setProgress, pendingJson, draftKey, saved, selectedExercise, restTimer.state]);
 
-    const [showResume, setShowResume] = useState(() => !!sessionStorage.getItem(draftKey));
+    const [showResume, setShowResume] = useState(() => { try { return !!sessionStorage.getItem(draftKey); } catch { return false; } });
 
     const parseMegaPayload = (raw: string): MegaPayload => {
         let cleaned = raw.trim();
@@ -291,6 +147,8 @@ export default function WorkoutPage() {
                 const parsed = parseMegaPayload(result.data.megaPayloadJson);
                 setSessionId(crypto.randomUUID()); setSaved(false); setPendingJson(null); setSaveError('');
                 setSetProgress(initialProgress(parsed));
+                setSelectedExercise(parsed.components?.findIndex(c => c.type === 'set_tracker') ?? null);
+                restTimer.stop();
                 setPayload(parsed);
                 const exerciseCount = parsed.components?.filter(c => c.type === 'set_tracker').length || 0;
                 trackEvent('workout_started', { exerciseCount });
@@ -301,25 +159,24 @@ export default function WorkoutPage() {
     const handleResume = () => {
         try {
             const saved = sessionStorage.getItem(draftKey);
-            if (saved) { const draft = JSON.parse(saved); setSessionId(draft.sessionId || crypto.randomUUID()); setPendingJson(draft.pendingJson || null); setSetProgress(draft.progress ? new Map(draft.progress) : initialProgress(draft.payload)); setPayload(draft.payload); setFocus(draft.focus || ''); }
+            if (saved) { const draft = JSON.parse(saved); setSessionId(draft.sessionId || crypto.randomUUID()); setPendingJson(draft.pendingJson || null); setSetProgress(draft.progress ? new Map(draft.progress) : initialProgress(draft.payload)); setPayload(draft.payload); setFocus(draft.focus || ''); setSelectedExercise(draft.selectedExercise ?? draft.payload.components?.findIndex((c: SduiComponent) => c.type === 'set_tracker') ?? null); restTimer.restore(draft.rest); }
         } catch { /* ignore */ }
         setShowResume(false);
     };
 
     const toggleSet = (ei: number, si: number) => {
         const current = setProgress.get(ei);
-        if (current && !current.completed[si] && current.completed.every((done, index) => done || index === si)) {
-            setSelectedExercise(null);
-            revealExercise();
-        }
-        setSetProgress(prev => {
-            const m = new Map(prev); const p = m.get(ei);
-            if (p) {
-                const c = [...p.completed]; c[si] = !c[si]; m.set(ei, { ...p, completed: c });
-                if (c[si]) { const comp = payload?.components?.[ei]; if (comp) { restTimer.start((comp.payload.rest_seconds || 90) as number); setRestExerciseIdx(ei); } }
-            }
-            return m;
-        });
+        if (!current) return;
+        const completing = !current.completed[si];
+        const completed = current.completed.map((done, index) => index === si ? completing : done);
+        setSetProgress(prev => new Map(prev).set(ei, { ...current, completed }));
+        // Keep the current exercise and focus stable. Navigation is always an explicit action.
+        setSelectedExercise(ei);
+        const name = payload?.components?.[ei]?.payload.exercise_name || 'Exercise';
+        setSetAnnouncement(`${name}, set ${si + 1} ${completing ? 'recorded' : 'marked incomplete'}.`);
+        const hasMoreSets = [...setProgress].some(([index, p]) => (index === ei ? completed : p.completed).some(done => !done));
+        if (completing && hasMoreSets) restTimer.start(payload?.components?.[ei]?.payload.rest_seconds ?? 90, ei, si);
+        else if (!hasMoreSets || (restTimer.state.exerciseIndex === ei && restTimer.state.setIndex === si)) restTimer.stop();
     };
 
     const getProgress = () => {
@@ -359,13 +216,18 @@ export default function WorkoutPage() {
         const doneSets = progress?.completed.filter(Boolean).length || 0;
         const totalS = progress?.completed.length || (comp.payload.sets as number) || 3;
         const allDone = doneSets === totalS;
+        const ordinal = payload?.components?.slice(0, idx + 1).filter(c => c.type === 'set_tracker').length;
+        const exerciseCount = payload?.components?.filter(c => c.type === 'set_tracker').length;
+        const firstIncomplete = progress?.completed.findIndex(done => !done);
+        const following = payload?.components?.map((c, i) => ({ c, i })).filter(({ c, i }) => c.type === 'set_tracker' && i !== idx && !setProgress.get(i)?.completed.every(Boolean));
+        const next = following?.find(({ i }) => i > idx) ?? following?.[0];
 
         return (
             <section key={idx} className={`exercise-card workout-current ${allDone ? 'exercise-card--done' : ''}`} aria-label={`Current exercise: ${comp.payload.exercise_name || 'Exercise'}`}>
                 <div className="exercise-card__progress-bar"><div className="exercise-card__progress-fill" style={{ width: `${(doneSets / totalS) * 100}%` }} /></div>
-                <p className="workout-current__eyebrow">{allDone ? 'Exercise complete' : `Now training · ${doneSets} of ${totalS} sets done`}{comp.swapped ? ' · Alternative' : ''}</p>
+                <p className="workout-current__eyebrow">{`Exercise ${ordinal} of ${exerciseCount}`} · {allDone ? 'Complete' : `${doneSets} of ${totalS} sets done`}{comp.swapped ? ' · Alternative' : ''}</p>
                 <div className="exercise-card__header">
-                    {exInfo?.gifUrl ? (
+                    {isExp && exInfo?.gifUrl ? (
                         <div className="exercise-card__gif-container"><img src={exInfo.gifUrl} alt={comp.payload.exercise_name as string} className="exercise-card__gif" loading="lazy" /></div>
                     ) : (
                         <div className="exercise-card__gif-placeholder" aria-hidden="true">🏋️</div>
@@ -380,18 +242,22 @@ export default function WorkoutPage() {
                 </div>
                 <p className="workout-current__prescription">{totalS} sets · {comp.payload.reps ?? 10} reps · {comp.payload.weight_kg ?? 0} kg · Rest {comp.payload.rest_seconds ?? 90}s</p>
                 {progress && <div className="workout-set-list">
-                    {progress.completed.map((done, si) => <div className="workout-set" key={si}>
+                    {progress.completed.map((done, si) => <div className={`workout-set ${done ? 'workout-set--done' : si === firstIncomplete ? 'workout-set--next' : ''}`} key={si}>
                         <div className="workout-set__fields">
-                            <span className="workout-set__name">Set {si + 1}</span>
+                            <span className="workout-set__name">Set {si + 1}{!done && si === firstIncomplete && <small>Up next</small>}</span>
                             <label>Reps<input aria-label={`${comp.payload.exercise_name} set ${si + 1} reps`} className="m3-input" type="number" min={0} max={1000} step={1} value={progress.actualReps[si]}
                                 onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const reps = [...p.actualReps]; reps[si] = Math.max(0, Math.min(1000, Math.trunc(Number(e.target.value)))); next.set(idx, { ...p, actualReps: reps }); return next; })} /></label>
                             <label>kg<input aria-label={`${comp.payload.exercise_name} set ${si + 1} weight kg`} className="m3-input" type="number" min={0} max={1000} step={0.5} value={progress.actualWeight[si]}
                                 onChange={e => setSetProgress(prev => { const next = new Map(prev); const p = next.get(idx)!; const weights = [...p.actualWeight]; weights[si] = Math.max(0, Math.min(1000, Number(e.target.value))); next.set(idx, { ...p, actualWeight: weights }); return next; })} /></label>
                         </div>
                         <button className={`set-circle ${done ? 'set-circle--done' : ''}`} title={`Set ${si + 1}`} aria-label={`${done ? 'Undo' : 'Complete'} set ${si + 1} of ${comp.payload.exercise_name || 'Exercise'}`} aria-pressed={done} onClick={() => toggleSet(idx, si)}>
-                            {done ? '✓ Set complete' : `Complete set ${si + 1}`}
+                            {done ? '✓ Set complete · Undo' : `Complete set ${si + 1}`}
                         </button>
                     </div>)}
+                </div>}
+                {allDone && <div className="workout-exercise-finished">
+                    <p>All {totalS} sets recorded. {next ? 'Continue when you’re ready.' : 'Your workout is ready to save.'}</p>
+                    {next && <button type="button" className="m3-btn m3-btn--filled" onClick={() => { setSelectedExercise(next.i); setExpandedCard(null); revealExercise(); }}>Next exercise: {next.c.payload.exercise_name || 'Exercise'}</button>}
                 </div>}
                 {!progress?.completed.some(Boolean) && (
                     <button className="workout-current__swap"
@@ -431,26 +297,26 @@ export default function WorkoutPage() {
         const json = pendingJson || JSON.stringify(completion);
         setPendingJson(json);
         // Freeze and persist the exact first attempt before sending, for lost-response retries.
-        try { sessionStorage.setItem(draftKey, JSON.stringify({ payload, focus, sessionId, progress: [...setProgress], pendingJson: json })); } catch { /* request remains retryable while mounted */ }
+        try { sessionStorage.setItem(draftKey, JSON.stringify({ payload, focus, sessionId, progress: [...setProgress], pendingJson: json, selectedExercise, rest: restTimer.state })); } catch { /* request remains retryable while mounted */ }
         saveInFlight.current = true; setSaving(true); setSaveError('');
         const result = await saveWorkout(json, sessionId);
         saveInFlight.current = false; setSaving(false);
         if (result.error || !result.data) { setSaveError(result.error || 'Save failed. Retry this session.'); return false; }
-        setSaved(true); sessionStorage.removeItem(draftKey); restTimer.stop();
+        setSaved(true); try { sessionStorage.removeItem(draftKey); } catch { /* storage unavailable */ } restTimer.stop();
         trackEvent('workout_completed', { exerciseCount: completion.exercises.length, completedSets: getProgress().completedSets });
         showToast('Workout saved to your account.', 'success');
         return true;
     };
 
     const resetWorkout = () => {
-        sessionStorage.removeItem(draftKey); setPayload(null); setExerciseImages(new Map());
+        try { sessionStorage.removeItem(draftKey); } catch { /* storage unavailable */ } setPayload(null); setExerciseImages(new Map());
         setSetProgress(new Map()); setExpandedCard(null); setSelectedExercise(null); setShowAllExercises(false); restTimer.stop(); setSaved(false); setPendingJson(null); setSaveError('');
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
     if (loading) return (<div className="app-content"><div className="m3-spinner-container"><div className="m3-spinner" /><p className="md-body-lg">Generating your workout with AI...</p><p className="md-body-sm text-muted">Checking the generated workout</p></div></div>);
 
-    const profile = JSON.parse(localStorage.getItem('gymbrain_profile') || '{}');
+    const profile = (() => { try { return JSON.parse(localStorage.getItem('gymbrain_profile') || '{}') || {}; } catch { return {}; } })();
     const profileContext = profile.name
         ? `${profile.level || 'Intermediate'} | ${profile.goal || 'muscle'} | ${profile.equipment?.join(', ') || 'Bodyweight'}`
         : null;
@@ -461,7 +327,7 @@ export default function WorkoutPage() {
             <h2 className="md-headline-sm" style={{ color: 'var(--md-primary)', textAlign: 'center' }}>Resume Your Workout?</h2>
             <p className="md-body-sm text-muted" style={{ textAlign: 'center' }}>This unfinished workout is saved only in this browser tab. Closing the tab may lose it.</p>
             <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg" style={{ maxWidth: 320 }} onClick={handleResume}>▶ Resume Workout</button>
-            <button className="m3-btn m3-btn--outlined" style={{ maxWidth: 320 }} onClick={() => { sessionStorage.removeItem(draftKey); setShowResume(false); }}>Start Fresh</button>
+            <button className="m3-btn m3-btn--outlined" style={{ maxWidth: 320 }} onClick={() => { resetWorkout(); setShowResume(false); }}>Start Fresh</button>
         </div>
     );
 
@@ -483,11 +349,10 @@ export default function WorkoutPage() {
                 <div className="m3-field"><label className="m3-field__label" htmlFor="focus">Workout Focus</label>
                     <select id="focus" className="m3-select" value={focus} onChange={e => setFocus(e.target.value)}><option value="">Full Body</option><option value="upper body strength">Upper Body Strength</option><option value="lower body power">Lower Body Power</option><option value="chest and arms">Chest &amp; Arms</option><option value="back and shoulders">Back &amp; Shoulders</option><option value="core and abs">Core &amp; Abs</option></select>
                 </div>
-                {error && <div className="m3-error-banner">{error}</div>}
+                {error && <div role="alert" className="m3-error-banner">{error}</div>}
                 <button className="m3-btn m3-btn--filled m3-btn--full m3-btn--lg" onClick={handleStart}>🚀 Generate Workout</button>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-                <span className="chip chip-success">✓ AI Ready</span>
                 {profile.equipment?.length > 0 && <span className="chip chip-info">{profile.equipment.length} Equipment</span>}
                 {profile.focusAreas?.length > 0 && <span className="chip chip-warning">{profile.focusAreas.join(', ')}</span>}
             </div>
@@ -499,8 +364,9 @@ export default function WorkoutPage() {
     const exercises = exerciseEntries.map(({ comp }) => comp);
     const warmups = (payload.components || []).filter(comp => comp.type === 'warmup_card');
     const nextExercise = exerciseEntries.find(({ idx }) => !setProgress.get(idx)?.completed.every(Boolean))?.idx;
-    const activeExercise = selectedExercise ?? nextExercise ?? exerciseEntries[0]?.idx;
-    const queuedExercises = exerciseEntries.filter(({ idx }) => idx !== activeExercise);
+    const activeExercise = exerciseEntries.some(({ idx }) => idx === selectedExercise)
+        ? selectedExercise! : nextExercise ?? exerciseEntries[0]?.idx;
+    const queuedExercises = exerciseEntries;
     const visibleQueue = showAllExercises ? queuedExercises : queuedExercises.slice(0, 4);
     return (
         <div className="app-content workout-page" ref={workoutView}>
@@ -523,42 +389,52 @@ export default function WorkoutPage() {
             <div className="workout-progress-header">
                 <div className="workout-progress-header__top"><h2 className="workout-progress-header__title">Today's workout</h2><span className="workout-progress-header__counter numeric">{completedSets}/{totalSets} sets</span></div>
                 <p className="workout-progress-header__subtitle">{exercises.length} exercises · Pick any exercise below when you're ready</p>
-                <div className="workout-progress-bar"><div className="workout-progress-bar__fill" style={{ width: `${percent}%` }} /></div>
-                {percent === 100 && <div className="workout-complete-banner">🎉 Workout Complete! Great job!</div>}
+                <div className="workout-progress-bar" role="progressbar" aria-label="Workout sets completed" aria-valuemin={0} aria-valuemax={totalSets} aria-valuenow={completedSets}><div className="workout-progress-bar__fill" style={{ width: `${percent}%` }} /></div>
+                {percent === 100 && <div className="workout-complete-banner">All sets recorded. Finish & Save to keep your workout.</div>}
             </div>
 
             {warmups.length > 0 && <details className="workout-warmup">
                 <summary>Warm up first <span>{warmups.length} movements</span></summary>
                 <ol>{warmups.map((comp, idx) => <li key={idx}><strong>{comp.payload.exercise_name || 'Warm-up'}</strong><span>{comp.payload.notes || 'Move gently and prepare for your workout.'}</span></li>)}</ol>
             </details>}
-            {restTimer.isRunning && <div className="workout-rest" role="timer" aria-label="Rest timer">
-                <span>Resting after {payload.components?.[restExerciseIdx ?? -1]?.payload.exercise_name || 'your set'}</span>
-                <strong>{Math.floor(restTimer.seconds / 60)}:{String(restTimer.seconds % 60).padStart(2, '0')}</strong>
-                <button type="button" onClick={restTimer.stop}>Skip rest</button>
-            </div>}
+            <p className="workout-sr-only" role="status">{setAnnouncement}</p>
+            <p className="workout-sr-only" role="status">{restTimer.state.phase === 'finished' ? 'Rest complete. Continue when you’re ready.' : restTimer.state.phase === 'paused' ? 'Rest timer paused.' : ''}</p>
+            {restTimer.state.phase !== 'idle' && <section className={`workout-rest-panel workout-rest-panel--${restTimer.state.phase}`} aria-label="Rest controls">
+                <div className="workout-rest-panel__heading">
+                    <div><h3>{restTimer.state.phase === 'finished' ? 'Rest complete' : restTimer.state.phase === 'paused' ? 'Rest paused' : 'Rest time'}</h3>
+                    <p>After {payload.components?.[restTimer.state.exerciseIndex]?.payload.exercise_name || 'your exercise'} · Set {restTimer.state.setIndex + 1}</p></div>
+                    <strong role="timer" aria-label="Rest time remaining" aria-live="off">{Math.floor(restTimer.seconds / 60)}:{String(restTimer.seconds % 60).padStart(2, '0')}</strong>
+                </div>
+                <div className="workout-rest-panel__controls">
+                    <button type="button" aria-label={restTimer.state.phase === 'finished' ? 'Restart timer' : restTimer.state.phase === 'paused' ? 'Resume timer' : 'Pause timer'} onClick={restTimer.state.phase === 'finished' ? () => restTimer.start(payload.components?.[restTimer.state.exerciseIndex]?.payload.rest_seconds ?? 90, restTimer.state.exerciseIndex, restTimer.state.setIndex) : restTimer.state.phase === 'paused' ? restTimer.resume : restTimer.pause}>{restTimer.state.phase === 'finished' ? 'Restart' : restTimer.state.phase === 'paused' ? 'Resume' : 'Pause'}</button>
+                    <button type="button" aria-label="+15 seconds" onClick={restTimer.extend}>+15s</button>
+                    <button type="button" onClick={() => { restTimer.stop(); revealExercise(); }}>{restTimer.state.phase === 'finished' ? 'Dismiss timer' : 'Skip rest'}</button>
+                </div>
+                <p className="workout-rest-panel__hint">{restTimer.state.phase === 'finished' ? 'Continue when you feel ready.' : 'Silent timer · You control when to continue.'}</p>
+            </section>}
             <fieldset disabled={saving || saved || !!pendingJson} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                 {activeExercise !== undefined && renderExerciseCard(payload.components![activeExercise], activeExercise)}
             </fieldset>
             {payload.components?.filter(comp => comp.type === 'tone_card' && comp.payload.message).slice(0, 1).map((comp, idx) =>
                 <p className="workout-coach-note" key={idx}>{comp.payload.message}</p>)}
             {queuedExercises.length > 0 && <section className="workout-queue" aria-label="Exercise list">
-                <div className="workout-queue__heading"><h3>Exercises</h3><span>{exercises.length} total</span></div>
+                <div className="workout-queue__heading"><h3>Workout order</h3><span>{exercises.length} total</span></div>
                 <div className="workout-queue__list">{visibleQueue.map(({ comp, idx }) => {
                     const progress = setProgress.get(idx);
                     const completed = progress?.completed.filter(Boolean).length || 0;
                     const total = progress?.completed.length || comp.payload.sets || 3;
-                    return <button type="button" className="workout-queue__item" key={idx} onClick={() => { setSelectedExercise(idx); setExpandedCard(null); revealExercise(); }}>
-                        <span><strong>{comp.payload.exercise_name || 'Exercise'}</strong><small>{completed === total ? 'Complete' : `${completed}/${total} sets · ${comp.payload.target_muscle || 'Strength'}`}</small></span>
+                    return <button type="button" className="workout-queue__item" aria-current={idx === activeExercise ? 'step' : undefined} key={idx} onClick={() => { setSelectedExercise(idx); setExpandedCard(null); revealExercise(); }}>
+                        <span className="workout-queue__number" aria-hidden="true">{exerciseEntries.findIndex(entry => entry.idx === idx) + 1}</span><span className="workout-queue__label"><strong>{comp.payload.exercise_name || 'Exercise'}</strong><small>{completed === total ? 'Complete' : `${completed}/${total} sets · ${comp.payload.target_muscle || 'Strength'}`}{idx === activeExercise ? ' · Current' : ''}</small></span>
                         <span aria-hidden="true">›</span>
                     </button>;
                 })}</div>
                 {queuedExercises.length > 4 && <button type="button" className="workout-queue__more" onClick={() => setShowAllExercises(v => !v)}>{showAllExercises ? 'Show fewer exercises' : `Show all ${exercises.length} exercises`}</button>}
             </section>}
-            {(!payload.components || payload.components.length === 0) && (<div className="m3-card m3-card--outlined" style={{ textAlign: 'center' }}><p className="text-muted">No workout components returned.</p></div>)}
+            {exercises.length === 0 && (<div role="alert" className="m3-card m3-card--outlined" style={{ textAlign: 'center' }}><p className="text-muted">No exercises returned. Choose New workout to try again.</p></div>)}
             {exercises.length > 0 && (<div className="workout-summary-card"><div className="workout-summary-card__row">
                 <div className="workout-summary-card__stat"><span className="numeric">{exercises.length}</span><span>Exercises</span></div>
-                <div className="workout-summary-card__stat"><span className="numeric">{totalSets}</span><span>Total Sets</span></div>
-                <div className="workout-summary-card__stat"><span className="numeric">{exercises.reduce((s, c) => s + ((c.payload.sets || 3) as number) * ((c.payload.reps || 10) as number), 0)}</span><span>Total Reps</span></div>
+                <div className="workout-summary-card__stat"><span className="numeric">{totalSets}</span><span>Planned sets</span></div>
+                <div className="workout-summary-card__stat"><span className="numeric">{exercises.reduce((s, c) => s + ((c.payload.sets || 3) as number) * ((c.payload.reps || 10) as number), 0)}</span><span>Planned reps</span></div>
             </div></div>)}
             {!saved && <p className="md-body-sm text-muted">Unfinished workouts stay in this browser tab and may be lost when it closes. Connect to the internet and choose Finish &amp; Save to keep this workout in your account.</p>}
 
@@ -579,7 +455,7 @@ export default function WorkoutPage() {
 
             {/* Substitute Modal */}
             {substituteModal && (
-                <SubstituteModal
+                <WorkoutSubstituteDialog
                     exerciseId={substituteModal.exerciseId}
                     exerciseName={substituteModal.exerciseName}
                     onSelect={(sub) => handleSubstituteSelect(substituteModal.idx, sub)}
